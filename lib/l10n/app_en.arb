@@ -1,0 +1,71 @@
+{
+  "app_name": "RoamQuest",
+  "app_tagline": "Discover cities, one adventure at a time",
+
+  "home_title": "Discover Your City",
+  "home_subtitle": "Generate your personalized checklist",
+  "finding_location": "Finding your location...",
+  "location_denied": "Location access denied",
+  "location_disabled": "Location services disabled",
+  "try_again": "Try Again",
+
+  "generate_checklist": "Generate My Checklist",
+  "generating_checklist": "Generating your checklist...",
+  "checklist_ready": "Your checklist is ready!",
+  "experiences_await": "20 curated experiences await",
+
+  "checklist_title": "Must-Do List",
+  "your_progress": "Your Progress",
+  "percent_complete": "% complete",
+  "completed": "Completed",
+
+  "category_all": "All",
+  "category_landmark": "Landmarks",
+  "category_food": "Food",
+  "category_experience": "Experiences",
+  "category_hidden": "Hidden Gems",
+
+  "checkin": "Check In",
+  "capture_moment": "Capture the Moment",
+  "take_photo": "Take Photo",
+  "choose_gallery": "Choose from Gallery",
+  "complete_checkin": "Complete Check-in",
+  "checkin_complete": "Check-in complete! Great job!",
+  "already_completed": "Already Completed",
+  "unlock_full": "Unlock Full Experience",
+
+  "report_title": "Your Adventure Report",
+  "view_report": "View Report",
+  "share_report": "Share Report",
+  "download_report": "Download Report",
+
+  "subscription_title": "Go Premium",
+  "subscribe_monthly": "Monthly",
+  "subscribe_yearly": "Yearly",
+  "save_percent": "Save %%",
+  "subscribe_button": "Subscribe Now",
+  "restore_purchase": "Restore Purchase",
+  "terms": "Terms",
+  "privacy": "Privacy Policy",
+
+  "free_tier": "Free",
+  "premium_tier": "Premium",
+  "free_limit": "Free: % check-ins",
+  "unlimited": "Unlimited",
+
+  "error_title": "Error",
+  "error_generic": "Something went wrong. Please try again.",
+  "error_network": "Network error. Please check your connection.",
+  "error_location": "Could not get your location.",
+  "error_camera": "Could not access camera.",
+  "error_upload": "Failed to upload photo.",
+
+  "retry": "Retry",
+  "cancel": "Cancel",
+  "ok": "OK",
+  "close": "Close",
+  "done": "Done",
+  "save": "Save",
+  "share": "Share",
+  "delete": "Delete"
+}

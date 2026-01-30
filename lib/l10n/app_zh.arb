@@ -1,0 +1,71 @@
+{
+  "app_name": "RoamQuest",
+  "app_tagline": "探索城市，一次一段冒险",
+
+  "home_title": "探索你的城市",
+  "home_subtitle": "生成你的个性化清单",
+  "finding_location": "正在获取位置...",
+  "location_denied": "位置访问被拒绝",
+  "location_disabled": "位置服务已禁用",
+  "try_again": "重试",
+
+  "generate_checklist": "生成我的清单",
+  "generating_checklist": "正在生成清单...",
+  "checklist_ready": "你的清单已准备好！",
+  "experiences_await": "20个精选体验等着你",
+
+  "checklist_title": "必做清单",
+  "your_progress": "你的进度",
+  "percent_complete": "% 完成",
+  "completed": "已完成",
+
+  "category_all": "全部",
+  "category_landmark": "著名景点",
+  "category_food": "特色美食",
+  "category_experience": "文化体验",
+  "category_hidden": "小众探索",
+
+  "checkin": "打卡",
+  "capture_moment": "记录时刻",
+  "take_photo": "拍照",
+  "choose_gallery": "从相册选择",
+  "complete_checkin": "完成打卡",
+  "checkin_complete": "打卡完成！太棒了！",
+  "already_completed": "已完成",
+  "unlock_full": "解锁完整体验",
+
+  "report_title": "你的冒险报告",
+  "view_report": "查看报告",
+  "share_report": "分享报告",
+  "download_report": "下载报告",
+
+  "subscription_title": "升级高级版",
+  "subscribe_monthly": "月付",
+  "subscribe_yearly": "年付",
+  "save_percent": "节省 %%",
+  "subscribe_button": "立即订阅",
+  "restore_purchase": "恢复购买",
+  "terms": "条款",
+  "privacy": "隐私政策",
+
+  "free_tier": "免费版",
+  "premium_tier": "高级版",
+  "free_limit": "免费：%次打卡",
+  "unlimited": "无限",
+
+  "error_title": "错误",
+  "error_generic": "出了点问题，请重试。",
+  "error_network": "网络错误，请检查连接。",
+  "error_location": "无法获取你的位置。",
+  "error_camera": "无法访问相机。",
+  "error_upload": "照片上传失败。",
+
+  "retry": "重试",
+  "cancel": "取消",
+  "ok": "确定",
+  "close": "关闭",
+  "done": "完成",
+  "save": "保存",
+  "share": "分享",
+  "delete": "删除"
+}
