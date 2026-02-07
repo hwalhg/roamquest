@@ -75,8 +75,7 @@ class SubscriptionStatusService {
   /// Check if user can check in to an item (free tier limitation)
   /// Returns true if:
   /// - City is unlocked, OR
-  /// - The item is within free tier (order < 5), regardless of category limits
-  /// - Not yet reached free tier limits
+  /// - Not yet reached free tier limits (1 per category: landmark, food, experience)
   Future<bool> canCheckIn(
     City city,
     List<ChecklistItem> completedItems,
@@ -85,17 +84,7 @@ class SubscriptionStatusService {
     // If city is unlocked, no restrictions
     if (await isCityUnlocked(city)) return true;
 
-    // If checking a specific item within free tier (order < 5), always allow
-    if (itemToCheck != null && itemToCheck.order < 5) {
-      return true;
-    }
-
-    // Paid items (order >= 5) require city unlock
-    if (itemToCheck != null && itemToCheck.order >= 5) {
-      return false;
-    }
-
-    // Count by category for remaining free tier (for showing remaining count)
+    // Count by category for remaining free tier
     final landmarkCount = completedItems
         .where((item) => item.category == 'landmark' && item.isCompleted)
         .length;
@@ -108,15 +97,10 @@ class SubscriptionStatusService {
         .where((item) => item.category == 'experience' && item.isCompleted)
         .length;
 
-    final hiddenCount = completedItems
-        .where((item) => item.category == 'hidden' && item.isCompleted)
-        .length;
-
-    // Free tier limits
-    if (landmarkCount >= 2) return false;
+    // Free tier limits: 1 per category
+    if (landmarkCount >= 1) return false;
     if (foodCount >= 1) return false;
     if (experienceCount >= 1) return false;
-    if (hiddenCount >= 1) return false;
 
     return true;
   }
@@ -127,7 +111,7 @@ class SubscriptionStatusService {
     List<ChecklistItem> completedItems,
   ) async {
     if (await isCityUnlocked(city)) {
-      return {'landmark': 999, 'food': 999, 'experience': 999, 'hidden': 999};
+      return {'landmark': 999, 'food': 999, 'experience': 999};
     }
 
     final landmarkCount = completedItems
@@ -142,15 +126,10 @@ class SubscriptionStatusService {
         .where((item) => item.category == 'experience' && item.isCompleted)
         .length;
 
-    final hiddenCount = completedItems
-        .where((item) => item.category == 'hidden' && item.isCompleted)
-        .length;
-
     return {
-      'landmark': 2 - landmarkCount,
+      'landmark': 1 - landmarkCount,
       'food': 1 - foodCount,
       'experience': 1 - experienceCount,
-      'hidden': 1 - hiddenCount,
     };
   }
 }

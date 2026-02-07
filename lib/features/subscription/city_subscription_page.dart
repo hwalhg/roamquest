@@ -6,6 +6,7 @@ import '../../core/theme/app_text_styles.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/constants/app_constants.dart';
 import '../../data/models/city.dart';
+import '../../data/repositories/city_subscription_repository.dart';
 import '../../data/services/subscription_status_service.dart';
 
 /// City subscription page for unlocking individual cities
@@ -23,17 +24,22 @@ class CitySubscriptionPage extends StatefulWidget {
 
 class _CitySubscriptionPageState extends State<CitySubscriptionPage> {
   final SubscriptionStatusService _subscriptionService = SubscriptionStatusService();
-  final InAppPurchase _iap = InAppPurchase.instance;
+  final CitySubscriptionRepository _citySubscriptionRepo = CitySubscriptionRepository();
 
   bool _isUnlocked = false;
-  bool _isPurchasing = false;
   bool _isAvailable = false;
 
   @override
   void initState() {
     super.initState();
     _checkStatus();
-    _checkIAPAvailability();
+    _initializeSubscription();
+  }
+
+  @override
+  void dispose() {
+    _citySubscriptionRepo.dispose();
+    super.dispose();
   }
 
   Future<void> _checkStatus() async {
@@ -45,8 +51,11 @@ class _CitySubscriptionPageState extends State<CitySubscriptionPage> {
     }
   }
 
-  Future<void> _checkIAPAvailability() async {
-    final available = await _iap.isAvailable();
+  Future<void> _initializeSubscription() async {
+    await _citySubscriptionRepo.initializeForCity(widget.city);
+
+    final iap = InAppPurchase.instance;
+    final available = await iap.isAvailable();
     if (mounted) {
       setState(() {
         _isAvailable = available;
@@ -55,15 +64,8 @@ class _CitySubscriptionPageState extends State<CitySubscriptionPage> {
   }
 
   Future<void> _unlockCity() async {
-    setState(() => _isPurchasing = true);
-
     try {
-      // For free cities or when IAP is not available (web), just unlock directly
-      if (!mounted) return;
-
-      final success = widget.city.isFree || !_isAvailable
-          ? await _subscriptionService.unlockCity(widget.city)
-          : await _purchaseWithIAP();
+      final success = await _citySubscriptionRepo.purchaseCityUnlock(widget.city);
 
       if (success && mounted) {
         setState(() {
@@ -77,17 +79,7 @@ class _CitySubscriptionPageState extends State<CitySubscriptionPage> {
       if (mounted) {
         _showErrorDialog();
       }
-    } finally {
-      if (mounted) {
-        setState(() => _isPurchasing = false);
-      }
     }
-  }
-
-  Future<bool> _purchaseWithIAP() async {
-    // TODO: Implement actual IAP purchase with product ID
-    // For now, just unlock directly for demo purposes
-    return await _subscriptionService.unlockCity(widget.city);
   }
 
   void _showSuccessDialog() {
@@ -392,30 +384,35 @@ class _CitySubscriptionPageState extends State<CitySubscriptionPage> {
   }
 
   Widget _buildPurchaseButton() {
-    return SizedBox(
-      width: double.infinity,
-      height: 56,
-      child: ElevatedButton(
-        onPressed: _isPurchasing ? null : _unlockCity,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.textOnDark,
-          foregroundColor: AppColors.primary,
-          disabledBackgroundColor: AppColors.textOnDark.withOpacity(0.5),
-        ),
-        child: _isPurchasing
-            ? const SizedBox(
-                width: 24,
-                height: 24,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: AppColors.primary,
-                ),
-              )
-            : Text(
-                widget.city.isFree ? 'Unlock Free' : 'Unlock \$${widget.city.subscriptionPrice.toStringAsFixed(2)}',
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-              ),
-      ),
+    return ValueListenableBuilder<bool>(
+      valueListenable: _citySubscriptionRepo.isPurchasing,
+      builder: (context, isPurchasing, _) {
+        return SizedBox(
+          width: double.infinity,
+          height: 56,
+          child: ElevatedButton(
+            onPressed: isPurchasing ? null : _unlockCity,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.textOnDark,
+              foregroundColor: AppColors.primary,
+              disabledBackgroundColor: AppColors.textOnDark.withOpacity(0.5),
+            ),
+            child: isPurchasing
+                ? const SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: AppColors.primary,
+                    ),
+                  )
+                : Text(
+                    widget.city.isFree ? 'Unlock Free' : 'Unlock \$${widget.city.subscriptionPrice.toStringAsFixed(2)}',
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                  ),
+          ),
+        );
+      },
     );
   }
 

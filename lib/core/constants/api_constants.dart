@@ -52,20 +52,21 @@ class PromptTemplates {
     final lang = language == 'zh' ? 'Chinese' : 'English';
 
     return '''
-You are a local travel expert. Generate 20 must-do things in $city, $country.
+You are a local travel expert. Generate a list of must-do things in $city, $country.
 
-Include exactly:
-- 5 famous landmarks/attractions
-- 5 local food/dishes to try
-- 5 cultural experiences
-- 5 hidden gems (lesser-known spots)
+Include the following categories:
+- Famous landmarks/attractions
+- Local food/dishes to try
+- Cultural experiences
 
 Requirements:
+- Generate as many items as appropriate for the city (not all cities have the same number of attractions)
 - Each title: maximum 8 words
 - Each location: specific name of the place
 - Make it exciting and actionable
 - Avoid overly touristy traps when possible
 - Mix of free and paid activities
+- Only include REAL attractions that actually exist in this city
 
 Language: $lang
 
@@ -74,12 +75,11 @@ Output ONLY valid JSON in this exact format:
   "items": [
     {"title": "Visit the Eiffel Tower", "location": "Eiffel Tower", "category": "landmark"},
     {"title": "Try authentic croissants", "location": "Du Pain et des Idées", "category": "food"},
-    {"title": "Take a Seine river cruise", "location": "Seine River", "category": "experience"},
-    {"title": "Explore covered passageways", "location": "Passages Couverts", "category": "hidden"}
+    {"title": "Take a Seine river cruise", "location": "Seine River", "category": "experience"}
   ]
 }
 
-Ensure exactly 20 items, one per line in the JSON array.
+Return as many items as are genuinely relevant for this city.
 ''';
   }
 

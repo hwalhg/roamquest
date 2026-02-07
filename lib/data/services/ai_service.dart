@@ -61,13 +61,9 @@ class AIService {
       final jsonData = json.decode(jsonStr) as Map<String, dynamic>;
       final items = jsonData['items'] as List<dynamic>;
 
-      if (items.length != 20) {
-        AppLogger.warning(
-          'Expected 20 items, got ${items.length}',
-        );
-      }
+      AppLogger.info('Generated ${items.length} items for ${city.name}');
 
-      // Ensure we have exactly 20 items
+      // Validate items (no longer enforcing 20 items)
       final validatedItems = _validateItems(items);
 
       return Checklist.fromAIResponse(
@@ -101,7 +97,7 @@ class AIService {
 
   /// Validate and normalize items
   List<Map<String, dynamic>> _validateItems(List<dynamic> items) {
-    final validCategories = ['landmark', 'food', 'experience', 'hidden'];
+    final validCategories = ['landmark', 'food', 'experience'];
     final result = <Map<String, dynamic>>[];
 
     for (final item in items) {
@@ -127,15 +123,8 @@ class AIService {
       });
     }
 
-    // Ensure we have 20 items by duplicating if needed
-    while (result.length < 20 && result.isNotEmpty) {
-      result.addAll(result.sublist(
-        0,
-        (20 - result.length).clamp(1, result.length),
-      ));
-    }
-
-    return result.take(20).toList();
+    // Return all valid items (no longer enforcing 20 items)
+    return result;
   }
 
   /// Generate checklist with retry logic

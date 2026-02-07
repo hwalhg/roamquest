@@ -15,7 +15,6 @@ class AppConstants {
     'landmark', // 著名景点
     'food',     // 特色美食
     'experience', // 文化体验
-    'hidden',   // 小众探索
   ];
 
   // Category Colors (for UI)
@@ -23,7 +22,6 @@ class AppConstants {
     'landmark': '#FF6B6B',
     'food': '#4ECDC4',
     'experience': '#45B7D1',
-    'hidden': '#96CEB4',
   };
 
   // Category Icons (emoji for simplicity)
@@ -31,7 +29,6 @@ class AppConstants {
     'landmark': '🏛️',
     'food': '🍜',
     'experience': '🎭',
-    'hidden': '💎',
   };
 
   // Storage Keys
@@ -53,7 +50,16 @@ class AppConstants {
 }
 
 /// Subscription Product IDs
+/// City-based permanent unlock: com.roamquest.city.{city_id}
 class SubscriptionProducts {
+  /// Generate product ID for a city
+  static String getCityProductId(String cityName) {
+    // Sanitize city name for product ID
+    final sanitized = cityName.toLowerCase().replaceAll(' ', '_').replaceAll(RegExp(r'[^a-z0-9_]'), '');
+    return 'com.roamquest.city.$sanitized';
+  }
+
+  /// Legacy monthly/weekly subscriptions (deprecated, kept for reference)
   static const String monthly = 'com.roamquest.subscription.monthly';
   static const String yearly = 'com.roamquest.subscription.yearly';
 

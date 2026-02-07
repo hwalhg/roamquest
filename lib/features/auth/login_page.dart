@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
+
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/theme/app_theme.dart';
@@ -205,6 +208,36 @@ class _LoginPageState extends State<LoginPage> {
                   ),
           ),
         ),
+        const SizedBox(height: 24),
+        // Divider
+        Row(
+          children: [
+            Expanded(
+              child: Divider(
+                color: AppColors.textOnDark.withOpacity(0.3),
+                thickness: 1,
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Text(
+                'OR',
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: AppColors.textOnDark.withOpacity(0.7),
+                ),
+              ),
+            ),
+            Expanded(
+              child: Divider(
+                color: AppColors.textOnDark.withOpacity(0.3),
+                thickness: 1,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 24),
+        // Sign in with Apple button
+        _buildAppleSignInButton(),
       ],
     );
   }
@@ -495,5 +528,70 @@ class _LoginPageState extends State<LoginPage> {
         ],
       ),
     );
+  }
+
+  Widget _buildAppleSignInButton() {
+    return Container(
+      height: 56,
+      constraints: const BoxConstraints(minWidth: 250),
+      child: SignInWithAppleButton(
+        onPressed: () {
+          if (!_isLoading) {
+            _handleAppleSignIn();
+          }
+        },
+        text: 'Sign in with Apple',
+        height: 56,
+        style: SignInWithAppleButtonStyle.black,
+      ),
+    );
+  }
+
+  Future<void> _handleAppleSignIn() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      // Check if Sign in with Apple is available
+      final isAvailable = await SignInWithApple.isAvailable();
+
+      if (!isAvailable) {
+        setState(() {
+          _errorMessage = 'Sign in with Apple is not available on this device';
+          _isLoading = false;
+        });
+        return;
+      }
+
+      // Perform Sign in with Apple
+      final credential = await SignInWithApple.getAppleIDCredential(
+        scopes: [
+          AppleIDAuthorizationScopes.email,
+          AppleIDAuthorizationScopes.fullName,
+        ],
+      );
+
+      // Send credential to Supabase
+      await _auth.signInWithApple();
+
+      // Auth state change will be handled by main.dart
+      // Navigation to home will happen automatically
+    } on PlatformException catch (e) {
+      if (mounted) {
+        setState(() {
+          _errorMessage = 'Apple sign-in failed: ${e.message ?? "Unknown error"}';
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _errorMessage = 'Apple sign-in failed: $e';
+          _isLoading = false;
+        });
+      }
+    }
   }
 }
