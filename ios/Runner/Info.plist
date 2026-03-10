@@ -59,5 +59,11 @@
 	<string>RoamQuest needs photo library access to let you choose photos for your check-ins.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>RoamQuest needs permission to save photos to your library.</string>
+	<key>NSAppTransparency</key>
+	<true/>
+	<key>NSPrivacyPolicyLocationUsageDescription</key>
+	<string>Visit our privacy policy to learn how we use your location data: https://roamquest.xyz/privacy</string>
+	<key>NSUserTrackingUsageDescription</key>
+	<string>We do not use your data for cross-app tracking.</string>
 </dict>
 </plist>

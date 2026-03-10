@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 import '../models/checklist.dart';
 import '../models/checklist_item.dart';
@@ -131,6 +130,7 @@ class StorageService {
   Future<void> saveCheckin({
     required String checklistId,
     required String itemId,
+    required int itemIndex,
     required String photoUrl,
     double? latitude,
     double? longitude,
@@ -143,6 +143,7 @@ class StorageService {
       final data = {
         'checklist_id': checklistId,
         'item_id': itemId,
+        'item_index': itemIndex,
         'photo_url': photoUrl,
         'latitude': latitude,
         'longitude': longitude,
@@ -236,7 +237,7 @@ class StorageService {
             'items': items.map((item) => item.toJson()).toList(),
             'is_active': true,
             'updated_at': DateTime.now().toIso8601String(),
-          }, onConflict: 'city_name, country, language');
+          }, onConflict: 'ignore');
 
       AppLogger.info('Checklist template saved successfully');
     } catch (e) {

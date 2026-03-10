@@ -4,7 +4,7 @@ import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/subscription.dart';
-import '../../core/constants/api_constants.dart';
+import '../services/subscription_notification_service.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/utils/app_logger.dart';
 
@@ -30,6 +30,9 @@ class SubscriptionRepository {
         status.value = SubscriptionStatus.unavailable;
         return;
       }
+
+      // Initialize notification service
+      await SubscriptionNotificationService().initialize();
 
       // Listen to purchase updates
       final purchaseStream = _iap.purchaseStream;
@@ -130,11 +133,10 @@ class SubscriptionRepository {
     try {
       final prefs = await SharedPreferences.getInstance();
 
-      // Calculate expiry date
+      // Calculate expiry date based on subscription type
       final now = DateTime.now();
-      final expiry = productId.contains('yearly')
-          ? now.add(const Duration(days: 365))
-          : now.add(const Duration(days: 30));
+      final duration = SubscriptionProducts.getDuration(productId);
+      final expiry = now.add(duration);
 
       await prefs.setString('subscription_product_id', productId);
       await prefs.setString('subscription_transaction_id', transactionId ?? '');
@@ -142,7 +144,11 @@ class SubscriptionRepository {
       await prefs.setString('subscription_end_date', expiry.toIso8601String());
       await prefs.setBool('subscription_is_active', true);
 
-      AppLogger.info('Subscription saved: $productId');
+      AppLogger.info('Subscription saved: $productId (expires: $expiry)');
+
+      // Schedule expiry notification
+      await SubscriptionNotificationService()
+          .onSubscriptionChanged(isActive: true, endDate: expiry);
     } catch (e) {
       AppLogger.error('Failed to save subscription', error: e);
     }
@@ -183,6 +189,7 @@ class SubscriptionRepository {
       );
 
       final purchaseParam = PurchaseParam(productDetails: product);
+      // Use buyNonConsumable for auto-renewable subscriptions on iOS
       final result = await _iap.buyNonConsumable(purchaseParam: purchaseParam);
 
       return result;
@@ -215,6 +222,9 @@ class SubscriptionRepository {
 
       status.value = SubscriptionStatus.free;
       AppLogger.info('Subscription cleared');
+
+      // Cancel expiry notifications
+      await SubscriptionNotificationService().cancelAllNotifications();
     } catch (e) {
       AppLogger.error('Failed to clear subscription', error: e);
     }
@@ -268,10 +278,7 @@ class SubscriptionRepository {
 
 /// Extension for SubscriptionProducts
 extension SubscriptionProductsExtension on SubscriptionProducts {
-  static List<String> get allIds => [
-        SubscriptionProducts.monthly,
-        SubscriptionProducts.yearly,
-      ];
+  static List<String> get allIds => SubscriptionProducts.allIds;
 }
 
 /// Subscription status enum

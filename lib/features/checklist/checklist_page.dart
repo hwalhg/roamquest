@@ -399,7 +399,8 @@ class _ChecklistPageState extends State<ChecklistPage>
           size: 20,
         ),
       );
-    } else if (item.order < AppConstants.freeCheckinLimit) {
+    } else if (_hasFreeCheckInRemaining(item)) {
+      // Check if this category has remaining free check-ins
       return Container(
         padding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.sm,
@@ -423,6 +424,15 @@ class _ChecklistPageState extends State<ChecklistPage>
         color: AppColors.textTertiary,
       );
     }
+  }
+
+  /// Check if this item still has free check-in remaining based on category
+  bool _hasFreeCheckInRemaining(ChecklistItem item) {
+    final category = item.category;
+    if (_remainingFreeCheckIns == null) return false;
+
+    final remaining = _remainingFreeCheckIns![category];
+    return remaining != null && remaining > 0;
   }
 
   void _openItem(ChecklistItem item, AppLocalizations l10n) async {

@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
+import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/constants/api_constants.dart';
 import '../../core/constants/app_constants.dart';
+import '../../data/models/subscription.dart';
 import '../../data/repositories/subscription_repository.dart';
 import '../../l10n/app_localizations.dart';
 
@@ -21,6 +24,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
   final SubscriptionRepository _subscriptionRepo = SubscriptionRepository();
   ProductDetails? _selectedProduct;
   bool _isPurchasing = false;
+  Subscription? _currentSubscription;
 
   @override
   void initState() {
@@ -37,9 +41,11 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
   Future<void> _initializeSubscription() async {
     await _subscriptionRepo.initialize();
 
-    // Default to yearly selection
+    // Load current subscription details
+    final subscription = await _subscriptionRepo.getSubscription();
     if (mounted) {
       setState(() {
+        _currentSubscription = subscription;
         _selectedProduct = _getYearlyProduct();
       });
     }
@@ -48,6 +54,12 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
   ProductDetails? _getMonthlyProduct() {
     return _subscriptionRepo.products.value
         .where((p) => p.id == SubscriptionProducts.monthly)
+        .firstOrNull;
+  }
+
+  ProductDetails? _getQuarterlyProduct() {
+    return _subscriptionRepo.products.value
+        .where((p) => p.id == SubscriptionProducts.quarterly)
         .firstOrNull;
   }
 
@@ -184,6 +196,8 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                   padding: const EdgeInsets.all(AppSpacing.lg),
                   children: [
                     _buildHeader(),
+                    const SizedBox(height: AppSpacing.md),
+                    _buildSubscriptionStatus(),
                     const SizedBox(height: AppSpacing.xl),
                     _buildSubscriptionPlans(),
                     const SizedBox(height: AppSpacing.xl),
@@ -257,6 +271,81 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
     );
   }
 
+  Widget _buildSubscriptionStatus() {
+    if (_currentSubscription == null) {
+      return const SizedBox.shrink();
+    }
+
+    final subscription = _currentSubscription!;
+    final isExpiringSoon = subscription.daysRemaining > 0 && subscription.daysRemaining <= 3;
+    final isExpired = subscription.daysRemaining < 0;
+
+    final dateFormatter = DateFormat.yMd();
+    final expiryDate = subscription.endDate;
+    final expiryText = expiryDate != null
+        ? dateFormatter.format(expiryDate)
+        : 'Lifetime';
+
+    final bgColor = isExpired
+        ? AppColors.error.withOpacity(0.1)
+        : isExpiringSoon
+            ? AppColors.warning.withOpacity(0.1)
+            : AppColors.success.withOpacity(0.1);
+
+    final icon = isExpired
+        ? Icons.error_outline
+        : isExpiringSoon
+            ? Icons.warning_amber_outlined
+            : Icons.check_circle_outline;
+
+    final iconColor = isExpired
+        ? AppColors.error
+        : isExpiringSoon
+            ? AppColors.warning
+            : AppColors.success;
+
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: iconColor, size: 24),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  isExpired
+                      ? 'Subscription Expired'
+                      : isExpiringSoon
+                          ? 'Expiring Soon'
+                          : 'Active Subscription',
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: iconColor,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                if (expiryDate != null) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    'Expires: $expiryText',
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: AppColors.textOnDark.withOpacity(0.8),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildSubscriptionPlans() {
     return ValueListenableBuilder(
       valueListenable: _subscriptionRepo.status,
@@ -308,6 +397,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
             }
 
             final monthly = _getMonthlyProduct();
+            final quarterly = _getQuarterlyProduct();
             final yearly = _getYearlyProduct();
 
             return Column(
@@ -323,12 +413,21 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                 ),
                 const SizedBox(height: AppSpacing.md),
                 _buildPlanOption(
+                  product: quarterly,
+                  isSelected: _selectedProduct == quarterly,
+                  onTap: () {
+                    setState(() => _selectedProduct = quarterly);
+                  },
+                  badge: _buildSavingsBadge(quarterly, monthly, quarterly: true),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                _buildPlanOption(
                   product: yearly,
                   isSelected: _selectedProduct == yearly,
                   onTap: () {
                     setState(() => _selectedProduct = yearly);
                   },
-                  badge: _buildSavingsBadge(yearly, monthly),
+                  badge: _buildBestValueBadge(),
                 ),
               ],
             );
@@ -424,10 +523,17 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
     );
   }
 
-  Widget _buildSavingsBadge(ProductDetails? yearly, ProductDetails? monthly) {
-    if (yearly == null || monthly == null) return const SizedBox.shrink();
+  Widget _buildSavingsBadge(ProductDetails? current, ProductDetails? monthly, {bool quarterly = false}) {
+    if (current == null || monthly == null) return const SizedBox.shrink();
 
-    // Calculate savings (rough estimate)
+    // Calculate savings percentage
+    String savingsText;
+    if (quarterly) {
+      savingsText = 'SAVE 15%';
+    } else {
+      savingsText = 'SAVE 50%';
+    }
+
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.sm,
@@ -438,7 +544,29 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
         borderRadius: BorderRadius.circular(AppBorderRadius.sm),
       ),
       child: Text(
-        'SAVE 50%',
+        savingsText,
+        style: AppTextStyles.caption.copyWith(
+          color: AppColors.textOnDark,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBestValueBadge() {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.xs,
+      ),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [AppColors.success, AppColors.primary],
+        ),
+        borderRadius: BorderRadius.circular(AppBorderRadius.sm),
+      ),
+      child: Text(
+        'BEST VALUE',
         style: AppTextStyles.caption.copyWith(
           color: AppColors.textOnDark,
           fontWeight: FontWeight.w600,
@@ -578,22 +706,81 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
   Widget _buildTerms() {
     return Column(
       children: [
-        Text(
-          '订阅即表示您同意我们的服务条款和隐私政策。',
-          style: AppTextStyles.caption.copyWith(
-            color: AppColors.textOnDark.withOpacity(0.7),
+        Text.rich(
+          TextSpan(
+            style: AppTextStyles.caption.copyWith(
+              color: AppColors.textOnDark.withOpacity(0.7),
+            ),
+            children: [
+              const TextSpan(text: '订阅即表示您同意我们的'),
+              WidgetSpan(
+                alignment: PlaceholderAlignment.middle,
+                child: InkWell(
+                  onTap: () => _openUrl('https://roamquest.xyz/terms'),
+                  child: const Text(
+                    '服务条款',
+                    style: TextStyle(
+                      color: AppColors.textOnDark,
+                      decoration: TextDecoration.underline,
+                      decorationColor: AppColors.textOnDark,
+                    ),
+                  ),
+                ),
+              ),
+              const TextSpan(text: '和'),
+              WidgetSpan(
+                alignment: PlaceholderAlignment.middle,
+                child: InkWell(
+                  onTap: () => _openUrl('https://roamquest.xyz/privacy'),
+                  child: const Text(
+                    '隐私政策',
+                    style: TextStyle(
+                      color: AppColors.textOnDark,
+                      decoration: TextDecoration.underline,
+                      decorationColor: AppColors.textOnDark,
+                    ),
+                  ),
+                ),
+              ),
+              const TextSpan(text: '。'),
+            ],
           ),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: AppSpacing.xs),
-        Text(
-          '订阅将自动续订，除非在到期前至少24小时取消。',
-          style: AppTextStyles.caption.copyWith(
-            color: AppColors.textOnDark.withOpacity(0.6),
+        Text.rich(
+          TextSpan(
+            style: AppTextStyles.caption.copyWith(
+              color: AppColors.textOnDark.withOpacity(0.6),
+            ),
+            children: [
+              const TextSpan(text: '订阅将自动续订，除非在到期前至少24小时取消。订阅期间可解锁所有城市。'),
+              WidgetSpan(
+                alignment: PlaceholderAlignment.middle,
+                child: InkWell(
+                  onTap: () => _openUrl('https://support.apple.com/HT202039'),
+                  child: const Text(
+                    '\n\n如何取消订阅？',
+                    style: TextStyle(
+                      color: AppColors.textOnDark,
+                      decoration: TextDecoration.underline,
+                      decorationColor: AppColors.textOnDark,
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
           textAlign: TextAlign.center,
         ),
       ],
     );
+  }
+
+  Future<void> _openUrl(String url) async {
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
   }
 }

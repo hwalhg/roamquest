@@ -26,6 +26,7 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
 
   final List<Widget> _pages = [
     const HomePageContent(),
+    const SubscriptionPage(),
     const ProfilePage(),
   ];
 
@@ -73,6 +74,11 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
               icon: Icon(Icons.home_outlined),
               activeIcon: Icon(Icons.home),
               label: 'Home',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.workspace_premium_outlined),
+              activeIcon: Icon(Icons.workspace_premium),
+              label: 'Premium',
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.person_outline),

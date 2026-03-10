@@ -5,7 +5,6 @@ import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/theme/app_theme.dart';
-import '../../core/constants/app_constants.dart';
 import '../../data/services/auth_service.dart';
 import '../../l10n/app_localizations.dart';
 

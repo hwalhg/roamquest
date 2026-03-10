@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:typed_data';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:image_picker/image_picker.dart';
 import '../models/checklist.dart';
@@ -179,12 +178,24 @@ class ChecklistRepository {
   Future<String> uploadPhoto({
     required String checklistId,
     required String itemId,
+    required int itemIndex,
     required dynamic photoFile, // Can be XFile (web) or File (mobile)
     double? latitude,
     double? longitude,
     int? rating, // Stored as int 1-20, display as /2.0 for 0.5-10.0 scale
   }) async {
     try {
+      // Ensure checklist is saved to remote database first
+      final checklist = await loadChecklist(checklistId);
+      if (checklist != null) {
+        final userId = _authService.currentUserId;
+        if (userId != null) {
+          // Ensure checklist is saved to remote database before uploading photo
+          await _remoteStorage.saveChecklist(checklist, userId: userId);
+          AppLogger.info('Checklist ensured to be saved to remote: $checklistId');
+        }
+      }
+
       // Read file bytes (works for both XFile and web)
       List<int>? fileBytes;
       String filePath;
@@ -223,6 +234,7 @@ class ChecklistRepository {
       await _remoteStorage.saveCheckin(
         checklistId: checklistId,
         itemId: itemId,
+        itemIndex: itemIndex,
         photoUrl: photoUrl,
         latitude: latitude,
         longitude: longitude,

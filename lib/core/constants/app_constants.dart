@@ -4,8 +4,8 @@ class AppConstants {
   static const String appName = 'RoamQuest';
   static const String appVersion = '1.0.0';
 
-  // Free Tier Limits
-  static const int freeCheckinLimit = 5;
+  // Free Tier Limits (removed - using per-category limits in SubscriptionStatusService)
+  // Each category (landmark, food, experience, hidden) has 1 free check-in
 
   // Checklist Configuration
   static const int checklistItemCount = 20;
@@ -50,20 +50,43 @@ class AppConstants {
 }
 
 /// Subscription Product IDs
-/// City-based permanent unlock: com.roamquest.city.{city_id}
+/// Global subscription - unlocks all cities for a period of time
 class SubscriptionProducts {
-  /// Generate product ID for a city
-  static String getCityProductId(String cityName) {
-    // Sanitize city name for product ID
-    final sanitized = cityName.toLowerCase().replaceAll(' ', '_').replaceAll(RegExp(r'[^a-z0-9_]'), '');
-    return 'com.roamquest.city.$sanitized';
-  }
-
-  /// Legacy monthly/weekly subscriptions (deprecated, kept for reference)
+  // Auto-renewable subscriptions
   static const String monthly = 'com.roamquest.subscription.monthly';
+  static const String quarterly = 'com.roamquest.subscription.quarterly';
   static const String yearly = 'com.roamquest.subscription.yearly';
 
-  static List<String> get allIds => [monthly, yearly];
+  /// All subscription product IDs
+  static List<String> get allIds => [monthly];
+
+  /// Subscription period display names
+  static String getPeriodName(String productId) {
+    switch (productId) {
+      case monthly:
+        return 'Monthly';
+      case quarterly:
+        return 'Quarterly';
+      case yearly:
+        return 'Yearly';
+      default:
+        return 'Subscription';
+    }
+  }
+
+  /// Get duration for each subscription type
+  static Duration getDuration(String productId) {
+    switch (productId) {
+      case monthly:
+        return const Duration(days: 30);
+      case quarterly:
+        return const Duration(days: 90);
+      case yearly:
+        return const Duration(days: 365);
+      default:
+        return const Duration(days: 30);
+    }
+  }
 }
 
 /// Supported Languages

@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:in_app_purchase/in_app_purchase.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/theme/app_theme.dart';
-import '../../core/constants/app_constants.dart';
 import '../../data/models/city.dart';
-import '../../data/repositories/city_subscription_repository.dart';
+import '../../data/repositories/subscription_repository.dart';
 import '../../data/services/subscription_status_service.dart';
+import 'subscription_page.dart';
 
-/// City subscription page for unlocking individual cities
+/// City subscription page - now redirects to global subscription
 class CitySubscriptionPage extends StatefulWidget {
   final City city;
 
@@ -23,131 +22,47 @@ class CitySubscriptionPage extends StatefulWidget {
 }
 
 class _CitySubscriptionPageState extends State<CitySubscriptionPage> {
+  final SubscriptionRepository _subscriptionRepo = SubscriptionRepository();
   final SubscriptionStatusService _subscriptionService = SubscriptionStatusService();
-  final CitySubscriptionRepository _citySubscriptionRepo = CitySubscriptionRepository();
 
   bool _isUnlocked = false;
-  bool _isAvailable = false;
+  bool _hasActiveSubscription = false;
 
   @override
   void initState() {
     super.initState();
     _checkStatus();
-    _initializeSubscription();
   }
 
   @override
   void dispose() {
-    _citySubscriptionRepo.dispose();
+    _subscriptionRepo.dispose();
     super.dispose();
   }
 
   Future<void> _checkStatus() async {
-    final unlocked = await _subscriptionService.isCityUnlocked(widget.city);
+    // Check if user has active global subscription
+    final subscription = await _subscriptionRepo.getSubscription();
+    final hasActiveSubscription = subscription?.isActive ?? false;
+
+    // Check if this specific city is unlocked (for backward compatibility)
+    final cityUnlocked = await _subscriptionService.isCityUnlocked(widget.city);
+
     if (mounted) {
       setState(() {
-        _isUnlocked = unlocked;
+        _hasActiveSubscription = hasActiveSubscription;
+        _isUnlocked = hasActiveSubscription || cityUnlocked;
       });
     }
   }
 
-  Future<void> _initializeSubscription() async {
-    await _citySubscriptionRepo.initializeForCity(widget.city);
-
-    final iap = InAppPurchase.instance;
-    final available = await iap.isAvailable();
-    if (mounted) {
-      setState(() {
-        _isAvailable = available;
-      });
-    }
-  }
-
-  Future<void> _unlockCity() async {
-    try {
-      final success = await _citySubscriptionRepo.purchaseCityUnlock(widget.city);
-
-      if (success && mounted) {
-        setState(() {
-          _isUnlocked = true;
-        });
-        _showSuccessDialog();
-      } else if (mounted) {
-        _showErrorDialog();
-      }
-    } catch (e) {
-      if (mounted) {
-        _showErrorDialog();
-      }
-    }
-  }
-
-  void _showSuccessDialog() {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(AppSpacing.md),
-              decoration: BoxDecoration(
-                color: AppColors.success.withOpacity(0.1),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.check_circle,
-                size: 48,
-                color: AppColors.success,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            Text(
-              '${widget.city.name} Unlocked!',
-              style: AppTextStyles.h3,
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            Text(
-              'You now have permanent access to all ${widget.city.name} experiences',
-              style: AppTextStyles.bodyMedium.copyWith(
-                color: AppColors.textSecondary,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Start Exploring'),
-              ),
-            ),
-          ],
-        ),
+  void _goToSubscriptionPage() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const SubscriptionPage(),
       ),
-    ).then((_) => Navigator.of(context).pop());
-  }
-
-  void _showErrorDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Purchase Failed'),
-        content: const Text(
-          'Unable to complete purchase. Please try again.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('OK'),
-          ),
-        ],
-      ),
-    );
+    ).then((_) => _checkStatus());
   }
 
   @override
@@ -175,11 +90,11 @@ class _CitySubscriptionPageState extends State<CitySubscriptionPage> {
                   children: [
                     _buildHeader(),
                     const SizedBox(height: AppSpacing.xl),
-                    _buildPriceCard(),
+                    _buildSubscriptionInfo(),
                     const SizedBox(height: AppSpacing.xl),
                     _buildFeatures(),
                     const SizedBox(height: AppSpacing.xl),
-                    _buildPurchaseButton(),
+                    _buildSubscribeButton(),
                   ],
                 ),
               ),
@@ -219,7 +134,7 @@ class _CitySubscriptionPageState extends State<CitySubscriptionPage> {
             color: AppColors.textOnDark.withOpacity(0.2),
             shape: BoxShape.circle,
           ),
-          child: Icon(
+          child: const Icon(
             Icons.location_city,
             size: 48,
             color: AppColors.textOnDark,
@@ -234,7 +149,7 @@ class _CitySubscriptionPageState extends State<CitySubscriptionPage> {
         ),
         const SizedBox(height: AppSpacing.sm),
         Text(
-          'Get unlimited access to all ${widget.city.name} experiences',
+          'Subscribe to unlock all cities including ${widget.city.name}',
           style: AppTextStyles.bodyMedium.copyWith(
             color: AppColors.textOnDark.withOpacity(0.9),
           ),
@@ -244,44 +159,42 @@ class _CitySubscriptionPageState extends State<CitySubscriptionPage> {
     );
   }
 
-  Widget _buildPriceCard() {
-    final price = widget.city.subscriptionPrice;
-
+  Widget _buildSubscriptionInfo() {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.xl),
       decoration: BoxDecoration(
-        color: widget.city.isFree
-            ? AppColors.success.withOpacity(0.2)
-            : AppColors.textOnDark.withOpacity(0.2),
+        color: AppColors.textOnDark.withOpacity(0.2),
         borderRadius: BorderRadius.circular(AppBorderRadius.lg),
         border: Border.all(
-          color: widget.city.isFree
-              ? AppColors.success
-              : AppColors.textOnDark,
+          color: AppColors.primary,
           width: 2,
         ),
       ),
       child: Column(
         children: [
+          const Icon(
+            Icons.workspace_premium,
+            size: 32,
+            color: AppColors.primary,
+          ),
+          const SizedBox(height: AppSpacing.md),
           Text(
-            widget.city.isFree ? 'FREE' : 'One-time Purchase',
+            'Premium Subscription',
             style: AppTextStyles.h4.copyWith(
               color: AppColors.textOnDark,
             ),
           ),
           const SizedBox(height: AppSpacing.sm),
           Text(
-            widget.city.isFree ? 'Forever' : '\$${price.toStringAsFixed(2)}',
-            style: AppTextStyles.h2.copyWith(
-              color: widget.city.isFree
-                  ? AppColors.success
-                  : AppColors.textOnDark,
+            'Unlock ALL cities',
+            style: AppTextStyles.h3.copyWith(
+              color: AppColors.primary,
               fontWeight: FontWeight.bold,
             ),
           ),
           const SizedBox(height: AppSpacing.xs),
           Text(
-            'Permanent access',
+            'Choose Monthly, Quarterly, or Yearly',
             style: AppTextStyles.bodySmall.copyWith(
               color: AppColors.textOnDark.withOpacity(0.8),
             ),
@@ -309,9 +222,15 @@ class _CitySubscriptionPageState extends State<CitySubscriptionPage> {
           ),
           const SizedBox(height: AppSpacing.md),
           _buildFeatureItem(
+            icon: Icons.public,
+            title: 'All Cities Access',
+            description: 'Unlock every city worldwide with one subscription',
+          ),
+          const SizedBox(height: AppSpacing.md),
+          _buildFeatureItem(
             icon: Icons.all_inclusive,
             title: 'Unlimited Check-ins',
-            description: 'Complete all 20 experiences in ${widget.city.name}',
+            description: 'Complete all experiences in any city',
           ),
           const SizedBox(height: AppSpacing.md),
           _buildFeatureItem(
@@ -322,14 +241,14 @@ class _CitySubscriptionPageState extends State<CitySubscriptionPage> {
           const SizedBox(height: AppSpacing.md),
           _buildFeatureItem(
             icon: Icons.assessment,
-            title: 'Complete Diary',
-            description: 'Beautiful report of your journey',
+            title: 'Complete Reports',
+            description: 'Beautiful diaries of your journeys',
           ),
           const SizedBox(height: AppSpacing.md),
           _buildFeatureItem(
             icon: Icons.share,
             title: 'Share & Download',
-            description: 'Share your diary with friends',
+            description: 'Share your adventures with friends',
           ),
         ],
       ),
@@ -383,36 +302,21 @@ class _CitySubscriptionPageState extends State<CitySubscriptionPage> {
     );
   }
 
-  Widget _buildPurchaseButton() {
-    return ValueListenableBuilder<bool>(
-      valueListenable: _citySubscriptionRepo.isPurchasing,
-      builder: (context, isPurchasing, _) {
-        return SizedBox(
-          width: double.infinity,
-          height: 56,
-          child: ElevatedButton(
-            onPressed: isPurchasing ? null : _unlockCity,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.textOnDark,
-              foregroundColor: AppColors.primary,
-              disabledBackgroundColor: AppColors.textOnDark.withOpacity(0.5),
-            ),
-            child: isPurchasing
-                ? const SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: AppColors.primary,
-                    ),
-                  )
-                : Text(
-                    widget.city.isFree ? 'Unlock Free' : 'Unlock \$${widget.city.subscriptionPrice.toStringAsFixed(2)}',
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-                  ),
-          ),
-        );
-      },
+  Widget _buildSubscribeButton() {
+    return SizedBox(
+      width: double.infinity,
+      height: 56,
+      child: ElevatedButton(
+        onPressed: _goToSubscriptionPage,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.textOnDark,
+          foregroundColor: AppColors.primary,
+        ),
+        child: const Text(
+          'View Subscription Plans',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+        ),
+      ),
     );
   }
 
@@ -442,10 +346,13 @@ class _CitySubscriptionPageState extends State<CitySubscriptionPage> {
             ),
             const SizedBox(height: AppSpacing.sm),
             Text(
-              'You have full access to all experiences',
+              _hasActiveSubscription
+                  ? 'Your active subscription unlocks all cities'
+                  : 'You have full access to all experiences',
               style: AppTextStyles.bodyMedium.copyWith(
                 color: AppColors.textSecondary,
               ),
+              textAlign: TextAlign.center,
             ),
             const SizedBox(height: AppSpacing.xl),
             ElevatedButton(

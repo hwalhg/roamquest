@@ -24,6 +24,10 @@ dependencies:
   # Payments
   in_app_purchase: ^3.1.13
 
+  # Utilities
+  url_launcher: ^6.2.0
+  # flutter_local_notifications: ^17.0.0 # Temporarily disabled
+
   # Authentication
   sign_in_with_apple: ^6.1.1
 
@@ -56,6 +60,8 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^3.0.1
+  integration_test:
+    sdk: flutter
 
 flutter:
   uses-material-design: true

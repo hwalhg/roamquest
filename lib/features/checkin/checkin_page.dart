@@ -482,6 +482,7 @@ class _CheckinPageState extends State<CheckinPage> {
         photoUrl = await _repository.uploadPhoto(
           checklistId: widget.checklist.id,
           itemId: widget.item.id,
+          itemIndex: widget.item.order,
           photoFile: _imageFile!,
           latitude: latitude ?? widget.checklist.city.latitude,
           longitude: longitude ?? widget.checklist.city.longitude,

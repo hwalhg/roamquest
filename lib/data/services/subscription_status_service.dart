@@ -1,5 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+
 import '../../core/config/supabase_config.dart';
+import '../../core/utils/app_logger.dart';
 import '../models/city.dart';
 import '../models/checklist_item.dart';
 import 'auth_service.dart';
@@ -48,7 +50,7 @@ class SubscriptionStatusService {
 
       return true;
     } catch (e) {
-      print('Error unlocking city: $e');
+      AppLogger.error('Error unlocking city', error: e);
       return false;
     }
   }

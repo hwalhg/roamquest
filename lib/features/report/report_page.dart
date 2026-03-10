@@ -37,10 +37,16 @@ class _ReportPageState extends State<ReportPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
+      appBar: AppBar(
+        leading: IconButton(
+          onPressed: () => Navigator.pop(context),
+          icon: const Icon(Icons.arrow_back_ios),
+        ),
+        title: const Text('Check-in Diary'),
+        backgroundColor: AppColors.surface,
+      ),
       body: Column(
         children: [
-          // Header
-          _buildHeader(),
           // Content
           Expanded(
             child: SingleChildScrollView(
@@ -52,33 +58,23 @@ class _ReportPageState extends State<ReportPage> {
               ),
             ),
           ),
-          // Bottom share button
           _buildShareButton(),
         ],
       ),
     );
   }
 
-  /// Build header with back button and title
+  /// Build header with title only (back button moved to bottom)
   Widget _buildHeader() {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.lg),
       color: AppColors.surface,
-      child: Row(
-        children: [
-          IconButton(
-            onPressed: () => Navigator.pop(context),
-            icon: const Icon(Icons.arrow_back),
-          ),
-          Expanded(
-            child: Text(
-              'Check-in Diary',
-              style: AppTextStyles.h3,
-              textAlign: TextAlign.center,
-            ),
-          ),
-          const SizedBox(width: 48), // Balance the back button
-        ],
+      child: Center(
+        child: Text(
+          'Check-in Diary',
+          style: AppTextStyles.h3,
+          textAlign: TextAlign.center,
+        ),
       ),
     );
   }
@@ -411,20 +407,19 @@ class _ShareCardPreviewPageState extends State<ShareCardPreviewPage> {
           ),
         ],
       ),
+      clipBehavior: Clip.antiAlias,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Simplified header - only city name and date
           Container(
+            width: double.infinity,
             padding: const EdgeInsets.all(32),
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: categoryColors,
-              ),
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(16),
               ),
             ),
             child: Column(
@@ -456,8 +451,7 @@ class _ShareCardPreviewPageState extends State<ShareCardPreviewPage> {
 
           // Waterfall photos section
           if (completedItems.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Container(
+            Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
               child: Column(
                 children: completedItems.asMap().entries.map((entry) {
@@ -469,16 +463,8 @@ class _ShareCardPreviewPageState extends State<ShareCardPreviewPage> {
             ),
           ],
 
-          // Bottom rounded cap
-          Container(
-            height: 16,
-            decoration: BoxDecoration(
-              color: AppColors.surfaceVariant.withOpacity(0.3),
-              borderRadius: const BorderRadius.vertical(
-                bottom: Radius.circular(16),
-              ),
-            ),
-          ),
+          // Bottom spacer for padding
+          const SizedBox(height: 16),
         ],
       ),
     );
