@@ -34,6 +34,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
 
   @override
   void dispose() {
+    _subscriptionRepo.products.removeListener(_onProductsLoaded);
     _subscriptionRepo.dispose();
     super.dispose();
   }
@@ -43,10 +44,38 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
 
     // Load current subscription details
     final subscription = await _subscriptionRepo.getSubscription();
+
+    // Wait for products to load and select one
+    _subscriptionRepo.products.addListener(_onProductsLoaded);
+
     if (mounted) {
       setState(() {
         _currentSubscription = subscription;
-        _selectedProduct = _getYearlyProduct();
+      });
+
+      // Try to set selected product immediately if already loaded
+      _onProductsLoaded();
+    }
+  }
+
+  void _onProductsLoaded() {
+    if (!mounted) return;
+
+    final products = _subscriptionRepo.products.value;
+    if (products.isEmpty) return;
+
+    // Try to select yearly, then quarterly, then monthly as fallback
+    ProductDetails? selected = _getYearlyProduct();
+    if (selected == null) {
+      selected = _getQuarterlyProduct();
+    }
+    if (selected == null) {
+      selected = _getMonthlyProduct();
+    }
+
+    if (selected != null && _selectedProduct == null) {
+      setState(() {
+        _selectedProduct = selected;
       });
     }
   }

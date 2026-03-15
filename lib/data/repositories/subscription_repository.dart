@@ -57,23 +57,31 @@ class SubscriptionRepository {
   /// Load available products
   Future<void> loadProducts() async {
     try {
+      AppLogger.info('Loading products: ${SubscriptionProducts.allIds}');
       final response = await _iap.queryProductDetails(
         SubscriptionProducts.allIds.toSet(),
       );
 
       if (response.notFoundIDs.isNotEmpty) {
         AppLogger.warning('Products not found: ${response.notFoundIDs}');
+        AppLogger.warning('Please check App Store Connect to ensure these products exist');
       }
 
       if (response.productDetails.isEmpty) {
-        AppLogger.error('No products found');
+        AppLogger.error('No products found. Status: ${response.error?.message}');
         status.value = SubscriptionStatus.error;
       } else {
         products.value = response.productDetails.toList();
-        AppLogger.info('Loaded ${products.value.length} products');
+        AppLogger.info('Loaded ${products.value.length} products:');
+        for (final p in products.value) {
+          AppLogger.info('  - ${p.id}: ${p.title} (${p.price})');
+        }
       }
     } catch (e) {
       AppLogger.error('Failed to load products', error: e);
+      if (e.toString().contains('No active account')) {
+        AppLogger.warning('No active App Store account. Please sign in to App Store in Settings');
+      }
       status.value = SubscriptionStatus.error;
     }
   }

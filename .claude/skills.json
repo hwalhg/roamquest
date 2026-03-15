@@ -1,0 +1,235 @@
+{
+  "name": "RoamQuest Project Skills",
+  "description": "Efficient development skills for RoamQuest Flutter app",
+  "skills": [
+    {
+      "id": "roamquest.run",
+      "name": "Run RoamQuest on iOS Simulator",
+      "description": "Launch the iOS simulator and run the RoamQuest app in debug mode",
+      "command": "xcrun simctl boot '04EECB16-13C4-42E0-8E95-452982683A5A' 2>/dev/null || true && flutter run",
+      "category": "flutter"
+    },
+    {
+      "id": "roamquest.hot_reload",
+      "name": "Hot Reload Flutter App",
+      "description": "Trigger hot reload on the running Flutter app without rebuilding",
+      "command": "echo 'r' | nc -w 1 localhost 50100 2>/dev/null || true",
+      "category": "flutter"
+    },
+    {
+      "id": "roamquest.restart",
+      "name": "Hot Restart Flutter App",
+      "description": "Trigger hot restart on the running Flutter app to reset state",
+      "command": "echo 'R' | nc -w 1 localhost 50100 2>/dev/null || true",
+      "category": "flutter"
+    },
+    {
+      "id": "roamquest.build_ios",
+      "name": "Build iOS App",
+      "description": "Clean build the iOS app using Flutter",
+      "command": "flutter clean && flutter build ios --debug",
+      "category": "flutter"
+    },
+    {
+      "id": "roamquest.run_test",
+      "name": "Run Flutter Tests",
+      "description": "Run Flutter tests for the RoamQuest project",
+      "command": "flutter test",
+      "category": "flutter"
+    },
+    {
+      "id": "roamquest.analyze",
+      "name": "Analyze Code",
+      "description": "Run static analysis on Flutter code to find issues",
+      "command": "flutter analyze",
+      "category": "flutter"
+    },
+    {
+      "id": "roamquest.format",
+      "name": "Format Code",
+      "description": "Format all Dart files using dart format",
+      "command": "dart format .",
+      "category": "flutter"
+    },
+    {
+      "id": "roamquest.fix",
+      "name": "Auto-fix Code Issues",
+      "description": "Run dart fix to automatically fix code issues",
+      "command": "dart fix --apply",
+      "category": "flutter"
+    },
+    {
+      "id": "roamquest.open_main",
+      "name": "Open Main Entry File",
+      "description": "Open the main.dart file in the IDE",
+      "command": "code lib/main.dart",
+      "category": "navigation"
+    },
+    {
+      "id": "roamquest.open_home",
+      "name": "Open Home Page",
+      "description": "Open the home page file in the IDE",
+      "command": "code lib/features/home/home_page.dart",
+      "category": "navigation"
+    },
+    {
+      "id": "roamquest.find_files",
+      "name": "Find Files by Pattern",
+      "description": "Search for files matching a pattern (glob)",
+      "arguments": [
+        {
+          "name": "pattern",
+          "description": "File pattern to search for (e.g., *.dart, **/*service*)",
+          "type": "string"
+        }
+      ],
+      "command": "find_files",
+      "category": "navigation"
+    },
+    {
+      "id": "roamquest.grep_code",
+      "name": "Grep Search in Code",
+      "description": "Search for text/pattern in code files",
+      "arguments": [
+        {
+          "name": "pattern",
+          "description": "Text or regex pattern to search for (e.g., is_active, City)",
+          "type": "string"
+        },
+        {
+          "name": "path",
+          "description": "Directory path to search in (default: lib/)",
+          "type": "string"
+        }
+      ],
+      "command": "grep_code",
+      "category": "navigation"
+    },
+    {
+      "id": "roamquest.show_structure",
+      "name": "Show Project Structure",
+      "description": "Display the directory structure of the project",
+      "command": "tree -L -3 lib/ || find lib -type d | head -30",
+      "category": "navigation"
+    },
+    {
+      "id": "roamquest.check_supabase",
+      "name": "Check Supabase Connection",
+      "description": "Verify Supabase connection status and check tables",
+      "arguments": [
+        {
+          "name": "action",
+          "description": "Action: check, connect, or query",
+          "type": "string",
+          "default": "check"
+        }
+      ],
+      "command": "supabase_check",
+      "category": "backend"
+    },
+    {
+      "id": "roamquest.query_cities",
+      "name": "Query Cities Table",
+      "description": "Query the cities table from Supabase",
+      "command": "supabase_query_cities",
+      "category": "backend"
+    },
+    {
+      "id": "roamquest.query_checklists",
+      "name": "Query Checklists Table",
+      "description": "Query the checklists table from Supabase",
+      "command": "supabase_query_checklists",
+      "category": "backend"
+    },
+    {
+      "id": "roamquest.run_sql",
+      "name": "Run SQL Script",
+      "description": "Execute SQL script on Supabase database",
+      "arguments": [
+        {
+          "name": "file",
+          "description": "Path to SQL file (e.g., sql/add_is_approved_to_cities.sql)",
+          "type": "string"
+        }
+      ],
+      "command": "run_sql",
+      "category": "backend"
+    },
+    {
+      "id": "roamquest.test_location",
+      "name": "Test Location Service",
+      "description": "Test the location service functionality with mock data",
+      "command": "test_location_service",
+      "category": "testing"
+    },
+    {
+      "id": "roamquest.test_ai",
+      "name": "Test AI Service",
+      "description": "Test the AI service and checklist generation",
+      "command": "test_ai_service",
+      "category": "testing"
+    },
+    {
+      "id": "roamquest.open_docs",
+      "name": "Open Documentation",
+      "description": "Open project documentation files",
+      "command": "open_docs",
+      "category": "docs"
+    },
+    {
+      "id": "roamquest.install_deps",
+      "name": "Install Flutter Dependencies",
+      "description": "Get Flutter packages and install dependencies",
+      "command": "flutter pub get",
+      "category": "flutter"
+    },
+    {
+      "id": "roamquest.upgrade_deps",
+      "name": "Upgrade Flutter Dependencies",
+      "description": "Update Flutter dependencies to their latest compatible versions",
+      "command": "flutter pub upgrade",
+      "category": "flutter"
+    },
+    {
+      "id": "roamquest.clean",
+      "name": "Clean Build Cache",
+      "description": "Clean Flutter build cache and regenerate files",
+      "command": "flutter clean",
+      "category": "flutter"
+    },
+    {
+      "id": "roamquest.doctor",
+      "name": "Flutter Doctor",
+      "description": "Check Flutter environment for issues and status",
+      "command": "flutter doctor -v",
+      "category": "flutter"
+    }
+  ],
+  "categories": [
+    {
+      "id": "flutter",
+      "name": "Flutter",
+      "description": "Flutter development commands"
+    },
+    {
+      "id": "navigation",
+      "name": "Navigation",
+      "description": "File navigation and search commands"
+    },
+    {
+      "id": "backend",
+      "name": "Backend",
+      "description": "Supabase and database operations"
+    },
+    {
+      "id": "testing",
+      "name": "Testing",
+      "description": "Testing utilities"
+    },
+    {
+      "id": "docs",
+      "name": "Documentation",
+      "description": "Documentation and help"
+    }
+  ]
+}

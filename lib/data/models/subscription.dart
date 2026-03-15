@@ -49,6 +49,9 @@ class Subscription {
   /// Check if subscription is monthly
   bool get isMonthly => productId.contains('monthly');
 
+  /// Check if subscription is quarterly
+  bool get isQuarterly => productId.contains('quarterly');
+
   /// Check if subscription is yearly
   bool get isYearly => productId.contains('yearly');
 

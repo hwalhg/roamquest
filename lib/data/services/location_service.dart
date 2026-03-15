@@ -5,6 +5,21 @@ import '../../core/utils/app_logger.dart';
 
 /// Service for location-related operations
 class LocationService {
+  // Debug mode flag - set to true to use mock data
+  static bool _debugMode = false; // Default to false for production
+
+  /// Enable/disable debug mode
+  /// When enabled, returns mock data instead of actual GPS
+  static setDebugMode(bool enabled) {
+    _debugMode = enabled;
+    AppLogger.info('LocationService debug mode: ${enabled ? "ENABLED" : "DISABLED"}');
+  }
+
+  /// Get debug mode status
+  static bool isDebugMode() {
+    return _debugMode;
+  }
+
   /// Check location permissions
   Future<LocationPermission> checkPermission() async {
     return await Geolocator.checkPermission();
@@ -48,25 +63,63 @@ class LocationService {
     }
 
     // Get position
-    return await Geolocator.getCurrentPosition(
-      desiredAccuracy: LocationAccuracy.high,
-    );
+    Position position;
+    if (_debugMode) {
+      // In debug mode, use a mock position
+      AppLogger.info('Using mock position for debugging');
+      position = Position(
+        latitude: 40.7128,
+        longitude: -74.0060,
+        timestamp: DateTime.now(),
+        accuracy: 0,
+        altitude: 0.0,
+        altitudeAccuracy: 0.0,
+        heading: 0.0,
+        headingAccuracy: 0.0,
+        speed: 0.0,
+        speedAccuracy: 0.0,
+      );
+    } else {
+      position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+    }
+
+    AppLogger.info('Got position: ${position.latitude}, ${position.longitude}');
+    return position;
   }
 
   /// Get current city
   Future<City> getCurrentCity() async {
     try {
       final position = await getCurrentPosition();
-      AppLogger.info('Got position: ${position.latitude}, ${position.longitude}');
+      AppLogger.info('Starting reverse geocoding...');
 
       // Reverse geocoding
-      final placemarks = await placemarkFromCoordinates(
-        position.latitude,
-        position.longitude,
-      );
+      List<Placemark> placemarks;
+      if (_debugMode) {
+        // In debug mode, skip geocoding and return mock city
+        AppLogger.info('Debug mode: Skipping geocoding, returning mock city');
+        return City(
+          name: 'San Francisco',
+          country: 'United States',
+          countryCode: 'US',
+          latitude: 37.7749,
+          longitude: -122.4194,
+        );
+      } else {
+        placemarks = await placemarkFromCoordinates(
+          position.latitude,
+          position.longitude,
+        );
+      }
+
+      AppLogger.info('Placemarks received: ${placemarks.length}');
 
       if (placemarks.isEmpty) {
-        throw LocationException('Could not determine city from location.');
+        throw LocationException(
+          'Could not find city from location. Please ensure GPS is enabled and try again.',
+        );
       }
 
       final placemark = placemarks.first;
@@ -97,7 +150,18 @@ class LocationService {
       rethrow;
     } catch (e) {
       AppLogger.error('Error getting current city: $e');
-      throw LocationException('Failed to get current city: $e');
+
+      // Provide more specific error message
+      String errorMessage = 'Failed to get current city';
+      if (e.toString().contains('NOT_FOUND')) {
+        errorMessage += ': GPS location unavailable. Please check:';
+        errorMessage += '\n1. Ensure Location Services are enabled';
+        errorMessage += '\n2. Set a custom location in the simulator (Features → Location → Custom Location)';
+      } else if (e.toString().contains('timed out')) {
+        errorMessage += ': Request timed out. Please check your internet connection.';
+      }
+
+      throw LocationException(errorMessage);
     }
   }
 
@@ -167,7 +231,7 @@ class LocationService {
       startLatitude,
       startLongitude,
       endLatitude,
-      endLongitude,
+      endLatitude,
     );
   }
 }

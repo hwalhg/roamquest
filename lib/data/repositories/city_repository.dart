@@ -7,7 +7,7 @@ import '../../core/utils/app_logger.dart';
 class CityRepository {
   final SupabaseClient _client = SupabaseConfig.client;
 
-  /// Get all active cities from database
+  /// Get all active cities (approved cities visible to users)
   Future<List<City>> getAllCities() async {
     try {
       AppLogger.info('Fetching cities from database');
@@ -42,7 +42,6 @@ class CityRepository {
           .from('cities')
           .select()
           .eq('id', id)
-          .eq('is_active', true)
           .maybeSingle();
 
       if (response == null) return null;
@@ -50,6 +49,76 @@ class CityRepository {
       return City.fromJson(response);
     } catch (e) {
       AppLogger.error('Failed to load city by ID', error: e);
+      return null;
+    }
+  }
+
+  /// Find city by name and country (regardless of is_active status)
+  /// 用于检查城市是否已存在于数据库中（包括未审核的）
+  Future<City?> findCityByNameAndCountry(String name, String country) async {
+    try {
+      final response = await _client
+          .from('cities')
+          .select()
+          .eq('name', name)
+          .eq('country', country)
+          .maybeSingle();
+
+      if (response == null) return null;
+
+      return City.fromJson(response);
+    } catch (e) {
+      AppLogger.error('Failed to find city by name and country', error: e);
+      return null;
+    }
+  }
+
+  /// Create a new city (unapproved by default: is_active=false)
+  /// Returns the created city with its ID
+  Future<City> createCity(City city) async {
+    try {
+      AppLogger.info('Creating new city: ${city.name}, ${city.country}');
+
+      final response = await _client
+          .from('cities')
+          .insert({
+            'name': city.name,
+            'country': city.country,
+            'country_code': city.countryCode,
+            'latitude': city.latitude,
+            'longitude': city.longitude,
+            'is_active': false, // New cities need admin approval
+            'sort_order': 0,
+          })
+          .select()
+          .single();
+
+      final createdCity = City.fromJson(response);
+      AppLogger.info('Created city with ID: ${createdCity.hashCode}');
+
+      return createdCity;
+    } catch (e) {
+      AppLogger.error('Failed to create city', error: e);
+      rethrow;
+    }
+  }
+
+  /// Get city by name and country (for use when user locates to a city)
+  /// Returns city regardless of is_active status, so checklist can be generated
+  Future<City?> getCityByNameAndCountry(String name, String country) async {
+    try {
+      final response = await _client
+          .from('cities')
+          .select()
+          .eq('name', name)
+          .eq('country', country)
+          .maybeSingle();
+
+      if (response == null) return null;
+
+      return City.fromJson(response);
+    } catch (e) {
+      AppLogger.error('Failed to get city by name and country', error: e);
       return null;
     }
   }

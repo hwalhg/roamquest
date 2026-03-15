@@ -19,7 +19,7 @@ class CityService {
     return _instance!;
   }
 
-  /// Get all active cities sorted by sort_order
+  /// Get all active and approved cities sorted by sort_order
   /// Uses cache if available and not expired
   Future<List<City>> getCities({bool forceRefresh = false}) async {
     // Return cached data if available and not expired
@@ -35,7 +35,7 @@ class CityService {
       AppLogger.info('Fetching cities from database');
       final cities = await _repository.getAllCities();
 
-      // Sort by sort_order
+      // Sort by name
       cities.sort((a, b) => a.name.compareTo(b.name));
 
       // Update cache
@@ -69,7 +69,7 @@ class CityService {
         .toList();
   }
 
-  /// Get city by name and country
+  /// Get city by name and country from approved cities cache
   Future<City?> getCityByName(String name, String country) async {
     final cities = await getCities();
     try {
@@ -79,6 +79,32 @@ class CityService {
     } catch (e) {
       return null;
     }
+  }
+
+  /// Find or create a city by name and country
+  /// 当用户定位到城市时调用此方法：
+  /// 1. 如果城市存在（无论 is_active 状态），返回该城市
+  /// 2. 如果城市不存在，创建新城市（is_active=false，需要审核）
+  Future<City> findOrCreateCity(String name, String country, String countryCode, double latitude, double longitude) async {
+    // First try to find existing city (regardless of is_active status)
+    final existingCity = await _repository.findCityByNameAndCountry(name, country);
+
+    if (existingCity != null) {
+      AppLogger.info('Found existing city: $name, $country');
+      return existingCity;
+    }
+
+    // Create new city if not found
+    AppLogger.info('Creating new city: $name, $country');
+    final newCity = City(
+      name: name,
+      country: country,
+      countryCode: countryCode,
+      latitude: latitude,
+      longitude: longitude,
+    );
+
+    return await _repository.createCity(newCity);
   }
 
   /// Clear cache (call after updating cities)

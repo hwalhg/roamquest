@@ -82,13 +82,4 @@ Output ONLY valid JSON in this exact format:
 Return as many items as are genuinely relevant for this city.
 ''';
   }
-
-  static String translateText(String text, String targetLanguage) {
-    return '''
-Translate the following text to ${targetLanguage == 'zh' ? 'Chinese' : 'English'}.
-Only return the translation, no explanation.
-
-Text: $text
-''';
-  }
 }

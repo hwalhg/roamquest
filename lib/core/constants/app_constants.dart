@@ -58,7 +58,7 @@ class SubscriptionProducts {
   static const String yearly = 'com.roamquest.subscription.yearly';
 
   /// All subscription product IDs
-  static List<String> get allIds => [monthly];
+  static List<String> get allIds => [monthly, quarterly, yearly];
 
   /// Subscription period display names
   static String getPeriodName(String productId) {

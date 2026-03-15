@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
-import '../../core/theme/app_theme.dart';
 import '../../core/widgets/widgets.dart';
 import '../../data/models/city.dart';
 import '../../data/models/checklist.dart';
 import '../../data/models/checklist_item.dart';
 import '../../data/services/location_service.dart';
+import '../../data/services/city_service.dart';
 import '../../data/services/ai_service.dart';
 import '../../data/repositories/checklist_repository.dart';
 import '../checklist/checklist_page.dart';
-import '../subscription/subscription_page.dart';
 import 'city_selection_bottom_sheet.dart';
 
 /// Home page - City discovery & checklist generation
@@ -23,6 +22,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   final LocationService _locationService = LocationService();
+  final CityService _cityService = CityService.instance;
   final AIService _aiService = AIService();
   final ChecklistRepository _checklistRepo = ChecklistRepository();
 
@@ -102,12 +102,12 @@ class _HomePageState extends State<HomePage> {
             language: 'en',
           );
         } catch (e) {
-          // Failed to save template, but continue with the checklist
-          print('Failed to save template: $e');
+          // Failed to save template, but continue with checklist
+          // ignore
         }
       }
 
-      // Create checklist with the items
+      // Create checklist with items
       final checklist = Checklist(
         id: 'checklist_${DateTime.now().millisecondsSinceEpoch}',
         city: city,
@@ -214,7 +214,7 @@ class _HomePageState extends State<HomePage> {
       return _buildLoadingState();
     }
 
-    // Always show the create button
+    // Always show the create button (but disabled when loading)
     return _buildCreateButton();
   }
 
@@ -243,8 +243,9 @@ class _HomePageState extends State<HomePage> {
         final buttonSize = (200.0).clamp(0.0, constraints.maxWidth * 0.6);
 
         return GestureDetector(
-          onTapDown: (_) => setState(() {}),
-          onTapUp: (_) {
+          // Disable button interactions when loading
+          onTapDown: _isLoading ? null : (_) => setState(() {}),
+          onTapUp: _isLoading ? null : (_) {
             setState(() {});
             _showCreateOptions();
           },
@@ -255,43 +256,60 @@ class _HomePageState extends State<HomePage> {
             builder: (context, value, child) {
               return Transform.scale(
                 scale: value,
-                child: Container(
-                  width: buttonSize,
-                  height: buttonSize,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.white.withOpacity(0.2),
-                    gradient: const LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: AppColors.sunsetGradient,
-                    ),
-                  ),
-                  child: Container(
-                    margin: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: const Color(0xFF81C784), // Popular green
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: Text(
-                            'Create Checklist',
-                            style: AppTextStyles.h3.copyWith(
-                              color: AppColors.primary,
-                              fontWeight: FontWeight.bold,
+                child: Stack(
+                  children: [
+                    // Base button container
+                    Container(
+                      width: buttonSize,
+                      height: buttonSize,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white.withOpacity(0.2),
+                        gradient: const LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: AppColors.sunsetGradient,
+                        ),
+                      ),
+                      child: Container(
+                        margin: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: const Color(0xFF81C784), // Popular green
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              child: Text(
+                                _isLoading ? 'Loading...' : 'Create Checklist',
+                                style: AppTextStyles.h3.copyWith(
+                                  color: _isLoading
+                                      ? AppColors.textOnDark.withValues(alpha: 0.7)
+                                      : AppColors.primary,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                textAlign: TextAlign.center,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
-                            textAlign: TextAlign.center,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
+                          ],
+                        ),
+                      ),
+                    ),
+                    // Semi-transparent overlay when loading
+                    if (_isLoading)
+                      Positioned.fill(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: AppColors.textOnDark.withValues(alpha: 0.3),
+                            shape: BoxShape.circle,
                           ),
                         ),
-                      ],
-                    ),
-                  ),
+                      ),
+                  ],
                 ),
               );
             },
@@ -324,14 +342,40 @@ class _HomePageState extends State<HomePage> {
 
   /// Detect current location and generate checklist
   Future<void> _detectMyLocation() async {
+    print('[Home] Detect My Location clicked');
+
     try {
-      final city = await _locationService.getCurrentCity();
+      // Get city from location service
+      print('[Home] Calling getCurrentCity...');
+      final locationCity = await _locationService.getCurrentCity();
+      print('[Home] Location detected: ${locationCity.name}, ${locationCity.country}');
+
+      // Find or create city in database (handles new cities automatically)
+      print('[Home] Checking if city exists in database...');
+      final city = await _cityService.findOrCreateCity(
+        locationCity.name,
+        locationCity.country,
+        locationCity.countryCode,
+        locationCity.latitude,
+        locationCity.longitude,
+      );
+      print('[Home] City ready: ${city.name}');
+
       if (mounted) {
         await _generateChecklist(city);
       }
     } catch (e) {
       // If location detection fails, silently close the sheet
       // User can try again or select from list
+      print('[Home] Location detection failed: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to detect location: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
     }
   }
 
@@ -372,10 +416,10 @@ class _HomePageState extends State<HomePage> {
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: AppColors.textOnDark.withOpacity(0.15),
+            color: AppColors.textOnDark.withValues(alpha: 0.15),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: AppColors.textOnDark.withOpacity(0.2),
+              color: AppColors.textOnDark.withValues(alpha: 0.2),
             ),
           ),
           child: Row(
@@ -384,7 +428,7 @@ class _HomePageState extends State<HomePage> {
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.2),
+                  color: AppColors.primary.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Center(
@@ -410,7 +454,7 @@ class _HomePageState extends State<HomePage> {
                     Text(
                       '${checklist.completedCount}/${checklist.items.length} Completed',
                       style: AppTextStyles.bodySmall.copyWith(
-                        color: AppColors.textOnDark.withOpacity(0.7),
+                        color: AppColors.textOnDark.withValues(alpha: 0.7),
                       ),
                     ),
                   ],
@@ -418,7 +462,7 @@ class _HomePageState extends State<HomePage> {
               ),
               Icon(
                 Icons.chevron_right,
-                color: AppColors.textOnDark.withOpacity(0.5),
+                color: AppColors.textOnDark.withValues(alpha: 0.5),
               ),
             ],
           ),
