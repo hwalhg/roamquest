@@ -199,6 +199,7 @@ class StorageService {
 
 
   /// Get attractions for a city by city_id
+  /// Returns attractions as ChecklistItem templates (attraction_id is set from attractions.id)
   Future<List<ChecklistItem>?> getAttractionsByCity({
     required int cityId,
     required String language,
@@ -219,9 +220,29 @@ class StorageService {
         return null;
       }
 
-      final items = response
-          .map<ChecklistItem>((itemData) => ChecklistItem.fromJson(itemData))
-          .toList();
+      // 手动将 attractions 数据转换为 ChecklistItem
+      // 注意：attractions 表的 id (SERIAL) 应该成为 checklist_item 的 attraction_id
+      final items = <ChecklistItem>[];
+      for (final itemData in response) {
+        final attractionId = itemData['id'] as int;
+        final checklistItem = ChecklistItem(
+          id: 'attraction_template_${attractionId}',
+          checklistId: '', // 占位符，保存到 checklist_items 时会设置
+          attractionId: attractionId, // 正确设置 attraction_id
+          title: itemData['title'] as String,
+          location: itemData['location'] as String,
+          category: itemData['category'] as String,
+          sortOrder: itemData['sort_order'] as int? ?? 0,
+          isCompleted: false,
+          latitude: itemData['latitude'] != null
+              ? (itemData['latitude'] as num).toDouble()
+              : null,
+          longitude: itemData['longitude'] != null
+              ? (itemData['longitude'] as num).toDouble()
+              : null,
+        );
+        items.add(checklistItem);
+      }
 
       AppLogger.info('Found ${items.length} attractions for city_id: $cityId');
       return items;
