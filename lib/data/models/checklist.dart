@@ -1,5 +1,6 @@
 import 'city.dart';
 import 'checklist_item.dart';
+import 'package:uuid/uuid.dart';
 
 /// Checklist model representing a user's list for a city
 /// Note: Items are stored in checklist_items table separately
@@ -63,8 +64,9 @@ class Checklist {
     required String language,
     required String userId,
   }) {
+    final checklistId = const Uuid().v4(); // 生成正确的 UUID 格式
     return Checklist(
-      id: 'checklist_${DateTime.now().millisecondsSinceEpoch}',
+      id: checklistId,
       cityId: city.id,
       city: city,
       userId: userId,
