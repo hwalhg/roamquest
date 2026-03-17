@@ -75,19 +75,6 @@ class AuthService {
       if (response.user != null) {
         await _localStorage.setUserId(response.user!.id);
         AppLogger.info('User ID set for data isolation: ${response.user!.id}');
-
-        // 创建 profile 记录
-        try {
-          await _client.from('profiles').insert({
-            'id': response.user!.id,
-            'user_id': response.user!.id,
-          });
-          AppLogger.info('Profile 记录已自动创建');
-        } catch (e) {
-          AppLogger.error('创建 profile 失败: $e');
-          // Profile 创建失败，不返回成功响应
-          throw Exception('Failed to create profile');
-        }
       }
 
       AppLogger.info('Sign up successful');
@@ -226,6 +213,7 @@ class AuthService {
         AppLogger.info('Profile 不存在，创建新记录');
         await _client.from('profiles').insert({
           'id': currentUserId!,
+          'user_id': currentUserId!,
           ...data,
         });
       } else {
