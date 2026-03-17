@@ -126,6 +126,8 @@ class _RoamQuestAppState extends State<RoamQuestApp> {
       // User is logged in - set user ID for data isolation
       _localStorage.setUserId(session.user.id).then((_) {
         AppLogger.info('User ID set for data isolation: ${session.user.id}');
+        // 确保用户的 profile 存在
+        _ensureProfileExists(session.user.id);
       }).catchError((e) {
         AppLogger.error('Failed to set user ID', error: e);
       });
@@ -136,6 +138,26 @@ class _RoamQuestAppState extends State<RoamQuestApp> {
       }).catchError((e) {
         AppLogger.error('Failed to clear user ID', error: e);
       });
+    }
+  }
+
+  /// 确保用户的 profile 记录存在，如果不存在则创建
+  Future<void> _ensureProfileExists(String userId) async {
+    try {
+      final profile = await _auth.getCurrentProfile();
+      if (profile == null) {
+        AppLogger.info('Profile 不存在，自动创建');
+        final success = await _auth.updateProfile({
+          'full_name': '',
+        });
+        if (success) {
+          AppLogger.info('Profile 已自动创建');
+        } else {
+          AppLogger.error('Profile 自动创建失败');
+        }
+      }
+    } catch (e) {
+      AppLogger.error('检查 profile 失败: $e');
     }
   }
 }

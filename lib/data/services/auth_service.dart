@@ -163,7 +163,12 @@ class AuthService {
   /// Get current user's profile
   Future<Profile?> getCurrentProfile() async {
     try {
-      if (currentUserId == null) return null;
+      if (currentUserId == null) {
+        AppLogger.error('getCurrentProfile: No user logged in');
+        return null;
+      }
+
+      AppLogger.info('getCurrentProfile: 查询 profile, userId: ${currentUserId!}');
 
       final response = await _client
           .from('profiles')
@@ -171,11 +176,15 @@ class AuthService {
           .eq('id', currentUserId!)
           .single();
 
-      if (response == null) return null;
+      if (response == null) {
+        AppLogger.info('getCurrentProfile: 未找到 profile');
+        return null;
+      }
 
+      AppLogger.info('getCurrentProfile: 找到 profile');
       return Profile.fromJson(response);
     } catch (e) {
-      AppLogger.error('Failed to get profile', error: e);
+      AppLogger.error('getCurrentProfile: 获取 profile 失败', error: e);
       return null;
     }
   }
@@ -202,33 +211,38 @@ class AuthService {
   Future<bool> updateProfile(Map<String, dynamic> data) async {
     try {
       if (currentUserId == null) {
+        AppLogger.error('updateProfile: No user logged in');
         throw Exception('No user logged in');
       }
+
+      AppLogger.info('updateProfile: 开始更新 profile, userId: ${currentUserId!}, data: $data');
 
       // 先检查 profile 是否存在
       final existingProfile = await getCurrentProfile();
 
       if (existingProfile == null) {
         // Profile 不存在，创建新记录
-        AppLogger.info('Profile 不存在，创建新记录');
+        AppLogger.info('updateProfile: Profile 不存在，创建新记录');
         await _client.from('profiles').insert({
           'id': currentUserId!,
           'user_id': currentUserId!,
           ...data,
         });
+        AppLogger.info('updateProfile: Profile 创建成功');
       } else {
         // Profile 存在，更新记录
-        AppLogger.info('Profile 存在，更新记录');
+        AppLogger.info('updateProfile: Profile 已存在，更新记录');
         await _client
             .from('profiles')
             .update(data)
             .eq('id', currentUserId!);
+        AppLogger.info('updateProfile: Profile 更新成功');
       }
 
-      AppLogger.info('Profile 更新成功');
+      AppLogger.info('updateProfile: 操作完成');
       return true;
     } catch (e) {
-      AppLogger.error('Failed to update profile', error: e);
+      AppLogger.error('updateProfile: 更新 profile 失败', error: e);
       return false;
     }
   }
