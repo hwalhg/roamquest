@@ -84,7 +84,9 @@ class AuthService {
           });
           AppLogger.info('Profile 记录已自动创建');
         } catch (e) {
-          AppLogger.error('创建 profile 失败，但不影响注册', error: e);
+          AppLogger.error('创建 profile 失败: $e');
+          // Profile 创建失败，不返回成功响应
+          throw Exception('Failed to create profile');
         }
       }
 
