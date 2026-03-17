@@ -1,9 +1,21 @@
 import 'dart:convert';
 import 'package:dio/dio.dart';
 import '../models/checklist.dart';
+import '../models/checklist_item.dart';
 import '../models/city.dart';
 import '../../core/constants/api_constants.dart';
 import '../../core/utils/app_logger.dart';
+
+/// Result of AI generation with items
+class AIGenerationResult {
+  final List<ChecklistItem> items;
+  final City city;
+
+  AIGenerationResult({
+    required this.items,
+    required this.city,
+  });
+}
 
 /// Service for AI-powered checklist generation
 class AIService {
@@ -15,7 +27,7 @@ class AIService {
   }
 
   /// Generate a checklist for a city
-  Future<Checklist> generateChecklist(
+  Future<AIGenerationResult> generateChecklist(
     City city,
     String language,
   ) async {
@@ -66,10 +78,16 @@ class AIService {
       // Validate items (no longer enforcing 20 items)
       final validatedItems = _validateItems(items);
 
-      return Checklist.fromAIResponse(
+      // Convert to ChecklistItem objects
+      final checklistItems = validatedItems
+          .asMap()
+          .entries
+          .map((entry) => ChecklistItem.fromAIJson(entry.value, entry.key))
+          .toList();
+
+      return AIGenerationResult(
+        items: checklistItems,
         city: city,
-        aiItems: validatedItems,
-        language: language,
       );
     } on DioException catch (e) {
       AppLogger.error('AI request failed', error: e);
@@ -128,7 +146,7 @@ class AIService {
   }
 
   /// Generate checklist with retry logic
-  Future<Checklist> generateChecklistWithRetry(
+  Future<AIGenerationResult> generateChecklistWithRetry(
     City city,
     String language, {
     int maxRetries = 3,

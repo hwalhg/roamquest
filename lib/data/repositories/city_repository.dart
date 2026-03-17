@@ -77,7 +77,8 @@ class CityRepository {
   /// Returns the created city with its ID
   Future<City> createCity(City city) async {
     try {
-      AppLogger.info('Creating new city: ${city.name}, ${city.country}');
+      AppLogger.info('创建新城市: ${city.name}, ${city.country}');
+      AppLogger.info('插入数据库的坐标 - 纬度: ${city.latitude}, 经度: ${city.longitude}');
 
       final response = await _client
           .from('cities')
@@ -87,7 +88,7 @@ class CityRepository {
             'country_code': city.countryCode,
             'latitude': city.latitude,
             'longitude': city.longitude,
-            'is_active': false, // New cities need admin approval
+            'is_active': false, // 新城市需要管理员审核
             'sort_order': 0,
           })
           .select()

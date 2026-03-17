@@ -85,7 +85,16 @@ class LocationService {
       );
     }
 
-    AppLogger.info('Got position: ${position.latitude}, ${position.longitude}');
+    AppLogger.info('获取GPS坐标 - 纬度: ${position.latitude}, 经度: ${position.longitude}');
+
+    // 验证坐标范围
+    if (position.latitude.abs() > 90) {
+      AppLogger.error('无效的纬度: ${position.latitude} (必须在 -90 到 90 之间)');
+    }
+    if (position.longitude.abs() > 180) {
+      AppLogger.error('无效的经度: ${position.longitude} (必须在 -180 到 180 之间)');
+    }
+
     return position;
   }
 
@@ -101,6 +110,7 @@ class LocationService {
         // In debug mode, skip geocoding and return mock city
         AppLogger.info('Debug mode: Skipping geocoding, returning mock city');
         return City(
+          id: 0, // Temporary ID for debug mode
           name: 'San Francisco',
           country: 'United States',
           countryCode: 'US',
@@ -138,6 +148,7 @@ class LocationService {
       AppLogger.info('Determined city: $cityName, $country');
 
       return City(
+        id: 0, // Temporary ID, will be replaced with actual ID from database
         name: cityName,
         country: country,
         countryCode: countryCode,
@@ -193,6 +204,7 @@ class LocationService {
           final countryCode = placemark.isoCountryCode ?? 'XX';
 
           cities.add(City(
+            id: 0, // Temporary ID, will be replaced by actual ID from database
             name: name,
             country: country,
             countryCode: countryCode,

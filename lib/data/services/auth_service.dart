@@ -205,12 +205,26 @@ class AuthService {
         throw Exception('No user logged in');
       }
 
-      await _client
-          .from('profiles')
-          .update(data)
-          .eq('id', currentUserId!);
+      // 先检查 profile 是否存在
+      final existingProfile = await getCurrentProfile();
 
-      AppLogger.info('Profile updated successfully');
+      if (existingProfile == null) {
+        // Profile 不存在，创建新记录
+        AppLogger.info('Profile 不存在，创建新记录');
+        await _client.from('profiles').insert({
+          'id': currentUserId!,
+          ...data,
+        });
+      } else {
+        // Profile 存在，更新记录
+        AppLogger.info('Profile 存在，更新记录');
+        await _client
+            .from('profiles')
+            .update(data)
+            .eq('id', currentUserId!);
+      }
+
+      AppLogger.info('Profile 更新成功');
       return true;
     } catch (e) {
       AppLogger.error('Failed to update profile', error: e);

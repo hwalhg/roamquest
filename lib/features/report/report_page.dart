@@ -11,6 +11,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/constants/app_constants.dart';
 import '../../data/models/checklist.dart';
 import '../../data/models/checklist_item.dart';
+import '../../data/repositories/checklist_repository.dart';
 
 /// Report page - Check-in Diary with Xiaohongshu-style share card
 class ReportPage extends StatefulWidget {
@@ -28,10 +29,27 @@ class ReportPage extends StatefulWidget {
 class _ReportPageState extends State<ReportPage> {
   Checklist get checklist => widget.checklist;
   final GlobalKey _shareCardKey = GlobalKey();
+  final ChecklistRepository _checklistRepo = ChecklistRepository();
 
   // TODO: Get real user nickname from auth service
   final String _userNickname = 'Lion';
   bool _isCapturing = false;
+  List<ChecklistItem> _items = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadItems();
+  }
+
+  Future<void> _loadItems() async {
+    final items = await _checklistRepo.loadChecklistItems(checklist.id);
+    if (mounted) {
+      setState(() {
+        _items = items;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -81,7 +99,7 @@ class _ReportPageState extends State<ReportPage> {
 
   /// Build diary list
   Widget _buildDiaryList() {
-    final completedItems = checklist.completedItems;
+    final completedItems = Checklist.getCompletedItems(_items);
 
     if (completedItems.isEmpty) {
       return _buildEmptyState();
@@ -175,7 +193,11 @@ class _ReportPageState extends State<ReportPage> {
 
   /// Build photo card
   Widget _buildPhotoCard(ChecklistItem item) {
-    final hasPhoto = item.photoUrl != null && item.photoUrl!.isNotEmpty;
+    final isValidNetworkUrl = item.photoUrl != null &&
+        item.photoUrl!.isNotEmpty &&
+        (item.photoUrl!.startsWith('http://') ||
+         item.photoUrl!.startsWith('https://'));
+    final hasPhoto = isValidNetworkUrl;
 
     return Container(
       width: double.infinity,
@@ -338,9 +360,26 @@ class ShareCardPreviewPage extends StatefulWidget {
 
 class _ShareCardPreviewPageState extends State<ShareCardPreviewPage> {
   final GlobalKey _cardKey = GlobalKey();
+  final ChecklistRepository _checklistRepo = ChecklistRepository();
   bool _isCapturing = false;
+  List<ChecklistItem> _items = [];
 
   Checklist get checklist => widget.checklist;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadItems();
+  }
+
+  Future<void> _loadItems() async {
+    final items = await _checklistRepo.loadChecklistItems(checklist.id);
+    if (mounted) {
+      setState(() {
+        _items = items;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -390,7 +429,7 @@ class _ShareCardPreviewPageState extends State<ShareCardPreviewPage> {
 
   /// Build simplified waterfall-style share card
   Widget _buildShareCard() {
-    final completedItems = checklist.completedItems;
+    final completedItems = Checklist.getCompletedItems(_items);
     final categoryColors = AppColors.primaryGradient;
 
     return Container(
@@ -472,7 +511,11 @@ class _ShareCardPreviewPageState extends State<ShareCardPreviewPage> {
 
   /// Build waterfall photo card
   Widget _buildWaterfallPhotoCard(ChecklistItem item, int index) {
-    final hasPhoto = item.photoUrl != null && item.photoUrl!.isNotEmpty;
+    final isValidNetworkUrl = item.photoUrl != null &&
+        item.photoUrl!.isNotEmpty &&
+        (item.photoUrl!.startsWith('http://') ||
+         item.photoUrl!.startsWith('https://'));
+    final hasPhoto = isValidNetworkUrl;
     final categoryEmoji = AppConstants.categoryIcons[item.category] ?? '📍';
 
     return Container(
@@ -709,7 +752,7 @@ class _ShareCardPreviewPageState extends State<ShareCardPreviewPage> {
         [XFile(file.path)],
         subject: 'My Journey in ${checklist.city.name}',
         text:
-            '${widget.userNickname} explored ${checklist.completedCount} amazing places in ${checklist.city.name}! 🌍\n\nDownload RoamQuest and start your own journey!',
+            '${widget.userNickname} explored ${Checklist.getCompletedCount(_items)} amazing places in ${checklist.city.name}! 🌍\n\nDownload RoamQuest and start your own journey!',
       );
     } catch (e) {
       _showError('Failed to share: $e');

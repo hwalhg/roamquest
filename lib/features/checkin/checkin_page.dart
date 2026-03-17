@@ -269,8 +269,11 @@ class _CheckinPageState extends State<CheckinPage> {
 
   Widget _buildPhotoPreview() {
     final hasExistingPhoto = _isEditMode && widget.item.photoUrl != null && widget.item.photoUrl!.isNotEmpty;
-    final displayImage = _imageFile != null ? _imageFile!.path : (hasExistingPhoto ? widget.item.photoUrl : null);
-    final isNetworkImage = _imageFile == null && hasExistingPhoto;
+    final isValidNetworkUrl = hasExistingPhoto &&
+        (widget.item.photoUrl!.startsWith('http://') ||
+         widget.item.photoUrl!.startsWith('https://'));
+    final displayImage = _imageFile != null ? _imageFile!.path : (isValidNetworkUrl ? widget.item.photoUrl : null);
+    final isNetworkImage = _imageFile == null && isValidNetworkUrl;
 
     return Container(
         decoration: BoxDecoration(
@@ -482,7 +485,7 @@ class _CheckinPageState extends State<CheckinPage> {
         photoUrl = await _repository.uploadPhoto(
           checklistId: widget.checklist.id,
           itemId: widget.item.id,
-          itemIndex: widget.item.order,
+          itemIndex: widget.item.sortOrder,
           photoFile: _imageFile!,
           latitude: latitude ?? widget.checklist.city.latitude,
           longitude: longitude ?? widget.checklist.city.longitude,

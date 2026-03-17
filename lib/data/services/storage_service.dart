@@ -13,44 +13,39 @@ import '../../core/utils/app_logger.dart';
 class StorageService {
   final SupabaseClient _client = SupabaseConfig.client;
 
-  /// Save a checklist
+  /// Save a checklist header (items are saved separately)
   Future<void> saveChecklist(Checklist checklist, {required String userId}) async {
     try {
-      AppLogger.info('Saving checklist: ${checklist.id} for user: $userId');
+      AppLogger.info('Saving checklist header: ${checklist.id} for user: $userId');
 
       await _client
           .from(ApiConstants.tableChecklists)
           .upsert({
             'id': checklist.id,
             'user_id': userId,
-            'city_name': checklist.city.name,
-            'country': checklist.city.country,
-            'country_code': checklist.city.countryCode,
-            'latitude': checklist.city.latitude,
-            'longitude': checklist.city.longitude,
+            'city_id': checklist.cityId,
             'language': checklist.language,
-            'items': checklist.items.map((item) => item.toJson()).toList(),
             'created_at': checklist.createdAt.toIso8601String(),
             'updated_at': DateTime.now().toIso8601String(),
           });
 
-      AppLogger.info('Checklist saved successfully');
+      AppLogger.info('Checklist header saved successfully');
     } catch (e) {
       AppLogger.error('Failed to save checklist', error: e);
       throw StorageException('Failed to save checklist: $e');
     }
   }
 
-  /// Load a checklist by ID
+  /// Load a checklist header by ID
   Future<Checklist?> loadChecklist(String id) async {
     try {
-      AppLogger.info('Loading checklist: $id');
+      AppLogger.info('Loading checklist header: $id');
 
       final response = await _client
           .from(ApiConstants.tableChecklists)
           .select()
           .eq('id', id)
-          .single();
+          .maybeSingle();
 
       if (response == null) {
         return null;
@@ -80,21 +75,97 @@ class StorageService {
     }
   }
 
+  /// Save checklist items (separate from header)
+  Future<void> saveChecklistItems(String checklistId, List<ChecklistItem> items) async {
+    try {
+      AppLogger.info('Saving ${items.length} items for checklist: $checklistId');
+
+      for (final item in items) {
+        await _client
+            .from(ApiConstants.tableChecklistItems)
+            .upsert({
+              'id': item.id,
+              'checklist_id': checklistId,
+              'attraction_id': item.attractionId,
+              'title': item.title,
+              'location': item.location,
+              'category': item.category,
+              'sort_order': item.sortOrder,
+              'is_completed': item.isCompleted,
+              'checkin_photo_url': item.photoUrl,
+              'checked_at': item.completedAt?.toIso8601String(),
+              'latitude': item.latitude,
+              'longitude': item.longitude,
+              'rating': item.rating,
+              'notes': item.notes,
+              'updated_at': DateTime.now().toIso8601String(),
+            });
+      }
+
+      AppLogger.info('Checklist items saved successfully');
+    } catch (e) {
+      AppLogger.error('Failed to save checklist items', error: e);
+      throw StorageException('Failed to save checklist items: $e');
+    }
+  }
+
+  /// Delete a checklist
+  Future<void> deleteChecklist(String id) async {
+    try {
+      // Delete checklist items first (due to foreign key)
+      await _client
+          .from(ApiConstants.tableChecklistItems)
+          .delete()
+          .eq('checklist_id', id);
+
+      // Then delete checklist header
+      await _client
+          .from(ApiConstants.tableChecklists)
+          .delete()
+          .eq('id', id);
+
+      AppLogger.info('Checklist deleted: $id');
+    } catch (e) {
+      AppLogger.error('Failed to delete checklist', error: e);
+      throw StorageException('Failed to delete checklist: $e');
+    }
+  }
+
+  /// Load checklist items for a specific checklist
+  Future<List<ChecklistItem>> loadChecklistItems(String checklistId) async {
+    try {
+      AppLogger.info('Loading items for checklist: $checklistId');
+
+      final response = await _client
+          .from(ApiConstants.tableChecklistItems)
+          .select()
+          .eq('checklist_id', checklistId)
+          .order('sort_order', ascending: true);
+
+      return response
+          .map<ChecklistItem>((itemData) => ChecklistItem.fromJson(itemData))
+          .toList();
+    } catch (e) {
+      AppLogger.error('Failed to load checklist items', error: e);
+      return [];
+    }
+  }
+
   /// Upload a photo (works on both web and mobile)
   Future<String> uploadPhoto({
     required String filePath,
-    required String checkinId,
+    required String checklistItemId,
     List<int>? fileBytes,
     String? fileName,
   }) async {
     try {
-      AppLogger.info('Uploading photo for checkin: $checkinId');
+      AppLogger.info('Uploading photo for checklist item: $checklistItemId');
 
       // Generate file name if not provided
       if (fileName == null) {
         final fileExtension = path.extension(filePath);
         final timestamp = DateTime.now().millisecondsSinceEpoch;
-        fileName = '$checkinId/$timestamp$fileExtension';
+        fileName = '$checklistItemId/$timestamp$fileExtension';
       }
 
       AppLogger.info('Uploading file: $fileName');
@@ -126,147 +197,87 @@ class StorageService {
     }
   }
 
-  /// Save checkin data
-  Future<void> saveCheckin({
-    required String checklistId,
-    required String itemId,
-    required int itemIndex,
-    required String photoUrl,
-    double? latitude,
-    double? longitude,
-    int? rating, // Stored as int 1-20, display as /2.0 for 0.5-10.0 scale
-    required String userId,
-  }) async {
-    try {
-      AppLogger.info('Saving checkin for item: $itemId, user: $userId');
 
-      final data = {
-        'checklist_id': checklistId,
-        'item_id': itemId,
-        'item_index': itemIndex,
-        'photo_url': photoUrl,
-        'latitude': latitude,
-        'longitude': longitude,
-        'user_id': userId,
-        'created_at': DateTime.now().toIso8601String(),
-      };
-
-      if (rating != null) {
-        data['rating'] = rating;
-      }
-
-      await _client.from('checkins').insert(data);
-
-      AppLogger.info('Checkin saved successfully');
-    } catch (e) {
-      AppLogger.error('Failed to save checkin', error: e);
-      throw StorageException('Failed to save checkin: $e');
-    }
-  }
-
-  /// Delete a checklist
-  Future<void> deleteChecklist(String id) async {
-    try {
-      await _client
-          .from(ApiConstants.tableChecklists)
-          .delete()
-          .eq('id', id);
-
-      AppLogger.info('Checklist deleted: $id');
-    } catch (e) {
-      AppLogger.error('Failed to delete checklist', error: e);
-      throw StorageException('Failed to delete checklist: $e');
-    }
-  }
-
-  /// Get checklist template for a city
-  Future<List<ChecklistItem>?> getChecklistTemplate({
-    required String cityName,
-    required String country,
+  /// Get attractions for a city by city_id
+  Future<List<ChecklistItem>?> getAttractionsByCity({
+    required int cityId,
     required String language,
   }) async {
     try {
-      AppLogger.info('Looking for checklist template: $cityName, $country, $language');
+      AppLogger.info('Looking for attractions for city_id: $cityId, language: $language');
 
       final response = await _client
-          .from('checklist_templates')
-          .select('items')
-          .eq('city_name', cityName)
-          .eq('country', country)
+          .from(ApiConstants.tableAttractions)
+          .select()
+          .eq('city_id', cityId)
           .eq('language', language)
           .eq('is_active', true)
-          .maybeSingle();
+          .order('sort_order', ascending: true);
 
-      if (response == null || response['items'] == null) {
-        AppLogger.info('No template found for $cityName, $country');
+      if (response == null || response.isEmpty) {
+        AppLogger.info('No attractions found for city_id: $cityId');
         return null;
       }
 
-      final itemsData = response['items'] as List;
-      final items = itemsData
-          .map((itemData) => ChecklistItem.fromJson(itemData as Map<String, dynamic>))
+      final items = response
+          .map<ChecklistItem>((itemData) => ChecklistItem.fromJson(itemData))
           .toList();
 
-      AppLogger.info('Found template with ${items.length} items');
+      AppLogger.info('Found ${items.length} attractions for city_id: $cityId');
       return items;
     } catch (e) {
-      AppLogger.error('Failed to get checklist template', error: e);
+      AppLogger.error('Failed to get attractions', error: e);
       return null;
     }
   }
 
-  /// Save checklist template (after AI generation)
-  Future<void> saveChecklistTemplate({
-    required City city,
+  /// Save attractions (after AI generation) - inserts each attraction as a separate row
+  Future<void> saveAttractions({
+    required int cityId,
     required List<ChecklistItem> items,
     required String language,
   }) async {
     try {
-      final id = '${city.name}_${city.country}_$language';
+      AppLogger.info('Saving ${items.length} attractions for city_id: $cityId');
 
-      AppLogger.info('Saving checklist template: $id');
+      // Insert each attraction as a separate row
+      for (int i = 0; i < items.length; i++) {
+        final item = items[i];
 
-      await _client
-          .from('checklist_templates')
-          .upsert({
-            'id': id,
-            'city_name': city.name,
-            'country': city.country,
-            'country_code': city.countryCode,
-            'language': language,
-            'items': items.map((item) => item.toJson()).toList(),
-            'is_active': true,
-            'updated_at': DateTime.now().toIso8601String(),
-          }, onConflict: 'ignore');
+        await _client
+            .from(ApiConstants.tableAttractions)
+            .insert({
+              'city_id': cityId,
+              'title': item.title,
+              'location': item.location,
+              'category': item.category,
+              'language': language,
+              'is_active': true,
+              'sort_order': i,
+            });
+      }
 
-      AppLogger.info('Checklist template saved successfully');
+      AppLogger.info('Attractions saved successfully');
     } catch (e) {
-      AppLogger.error('Failed to save checklist template', error: e);
-      throw StorageException('Failed to save checklist template: $e');
+      AppLogger.error('Failed to save attractions', error: e);
+      throw StorageException('Failed to save attractions: $e');
     }
   }
 
   /// Parse checklist from database response
   Checklist _parseChecklist(Map<String, dynamic> data) {
-    // Reconstruct City
-    final city = City(
-      name: data['city_name'] as String,
-      country: data['country'] as String,
-      countryCode: data['country_code'] as String,
-      latitude: (data['latitude'] as num).toDouble(),
-      longitude: (data['longitude'] as num).toDouble(),
-    );
-
-    // Reconstruct items
-    final itemsData = data['items'] as List;
-    final items = itemsData
-        .map((itemData) => ChecklistItem.fromJson(itemData as Map<String, dynamic>))
-        .toList();
-
     return Checklist(
       id: data['id'] as String,
-      city: city,
-      items: items,
+      cityId: data['city_id'] as int,
+      city: City(
+        id: data['city_id'] as int,
+        name: data['city_name'] as String,
+        country: data['country'] as String,
+        countryCode: data['country_code'] as String? ?? 'XX',
+        latitude: (data['latitude'] as num?)?.toDouble() ?? 0.0,
+        longitude: (data['longitude'] as num?)?.toDouble() ?? 0.0,
+      ),
+      userId: data['user_id'] as String,
       createdAt: DateTime.parse(data['created_at'] as String),
       language: data['language'] as String,
     );

@@ -12,7 +12,6 @@ import '../../l10n/app_localizations.dart';
 import '../checkin/checkin_page.dart';
 import '../report/report_page.dart';
 import '../subscription/city_subscription_page.dart';
-import 'add_checklist_item_page.dart';
 
 /// Checklist display page
 class ChecklistPage extends StatefulWidget {
@@ -36,6 +35,8 @@ class _ChecklistPageState extends State<ChecklistPage>
   final SubscriptionStatusService _subscriptionService = SubscriptionStatusService();
   bool _isCityUnlocked = false;
   Map<String, int>? _remainingFreeCheckIns;
+  List<ChecklistItem> _items = [];
+  bool _isLoadingItems = true;
 
   List<CategoryItem> _categories = [];
 
@@ -45,7 +46,19 @@ class _ChecklistPageState extends State<ChecklistPage>
     _checklist = widget.checklist;
     _tabController = TabController(length: 5, vsync: this); // 5 categories
     _tabController.addListener(_handleTabChange);
+    _loadItems();
     _checkSubscriptionStatus();
+  }
+
+  /// Load checklist items
+  Future<void> _loadItems() async {
+    final items = await _checklistRepo.loadChecklistItems(_checklist.id);
+    if (mounted) {
+      setState(() {
+        _items = items;
+        _isLoadingItems = false;
+      });
+    }
   }
 
   void _initCategories(AppLocalizations l10n) {
@@ -62,7 +75,7 @@ class _ChecklistPageState extends State<ChecklistPage>
     final isUnlocked = await _subscriptionService.isCityUnlocked(_checklist.city);
     final remaining = await _subscriptionService.getRemainingFreeCheckIns(
       _checklist.city,
-      _checklist.items,
+      _items,
     );
     if (mounted) {
       setState(() {
@@ -87,30 +100,30 @@ class _ChecklistPageState extends State<ChecklistPage>
     }
   }
 
-  void _updateChecklist(Checklist updated) {
+  void _updateChecklist(ChecklistItem updatedItem) async {
+    // Update item in the local list
     setState(() {
-      _checklist = updated;
+      _items = Checklist.updateItemInList(_items, updatedItem);
     });
-    // 保存更新后的清单
-    _checklistRepo.saveChecklist(updated).then((_) {
-      // Check if all items are completed
-      if (updated.completedCount >= updated.items.length) {
-        // Clear current checklist ID when all items are completed
-        _checklistRepo.clearCurrentChecklist().catchError((e) {
-          debugPrint('Failed to clear current checklist: $e');
-        });
-      }
-    }).catchError((e) {
-      // 静默失败，不影响用户体验
-      debugPrint('Failed to save checklist: $e');
-    });
+
+    // Save the updated items
+    await _checklistRepo.saveChecklistItems(_checklist.id, _items);
+
+    // Check if all items are completed
+    final completedCount = Checklist.getCompletedCount(_items);
+    if (completedCount >= _items.length) {
+      // Clear current checklist ID when all items are completed
+      _checklistRepo.clearCurrentChecklist().catchError((e) {
+        debugPrint('Failed to clear current checklist: $e');
+      });
+    }
   }
 
   List<ChecklistItem> get _filteredItems {
     if (_selectedCategory == 'all') {
-      return _checklist.items;
+      return _items;
     }
-    return _checklist.getItemsByCategory(_selectedCategory);
+    return Checklist.getItemsByCategory(_selectedCategory, _items);
   }
 
   @override
@@ -140,23 +153,14 @@ class _ChecklistPageState extends State<ChecklistPage>
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           // Share button (only show when there are completed items)
-          if (_checklist.completedCount > 0)
+          if (Checklist.getCompletedCount(_items) > 0)
             FloatingActionButton.extended(
               onPressed: () => _viewReport(),
               icon: const Icon(Icons.share),
-              label: Text('${l10n.get('share')} (${_checklist.completedCount})'),
+              label: Text('${l10n.get('share')} (${Checklist.getCompletedCount(_items)})'),
               heroTag: 'share',
               backgroundColor: AppColors.success,
             ),
-          if (_checklist.completedCount > 0) const SizedBox(height: 8),
-          // Add item button (always show)
-          FloatingActionButton.extended(
-            onPressed: () => _openAddItemPage(),
-            icon: const Icon(Icons.add),
-            label: const Text('添加'),
-            heroTag: 'add',
-            backgroundColor: AppColors.primary,
-          ),
         ],
       ),
     );
@@ -201,7 +205,7 @@ class _ChecklistPageState extends State<ChecklistPage>
                 style: AppTextStyles.h3,
               ),
               Text(
-                '${_checklist.completedCount}/${_checklist.items.length}',
+                '${Checklist.getCompletedCount(_items)}/${_items.length}',
                 style: AppTextStyles.h3.copyWith(
                   color: AppColors.primary,
                 ),
@@ -212,7 +216,7 @@ class _ChecklistPageState extends State<ChecklistPage>
           ClipRRect(
             borderRadius: BorderRadius.circular(AppSpacing.sm),
             child: LinearProgressIndicator(
-              value: _checklist.progress,
+              value: Checklist.getProgress(_items),
               backgroundColor: AppColors.surfaceVariant,
               valueColor: const AlwaysStoppedAnimation(AppColors.primary),
               minHeight: 8,
@@ -220,7 +224,7 @@ class _ChecklistPageState extends State<ChecklistPage>
           ),
           const SizedBox(height: AppSpacing.sm),
           Text(
-            '${l10n.get('completed')} ${_checklist.progressPercentage}%',
+            '${l10n.get('completed')} ${Checklist.getProgressPercentage(_items)}%',
             style: AppTextStyles.bodySmall.copyWith(
               color: AppColors.textSecondary,
             ),
@@ -445,7 +449,7 @@ class _ChecklistPageState extends State<ChecklistPage>
     // Check if user can check in (either unlocked or within free tier)
     final canCheckIn = await _subscriptionService.canCheckIn(
       _checklist.city,
-      _checklist.completedItems,
+      Checklist.getCompletedItems(_items),
       item, // Pass the item to check if it's within free tier
     );
 
@@ -464,7 +468,7 @@ class _ChecklistPageState extends State<ChecklistPage>
           checklist: _checklist,
           item: item,
           onCheckinComplete: (updatedItem) {
-            _updateChecklist(_checklist.updateItem(updatedItem));
+            _updateChecklist(updatedItem);
           },
         ),
       ),
@@ -556,27 +560,6 @@ class _ChecklistPageState extends State<ChecklistPage>
         builder: (_) => ReportPage(checklist: _checklist),
       ),
     );
-  }
-
-  void _openAddItemPage() async {
-    final result = await Navigator.push<ChecklistItem>(
-      context,
-      MaterialPageRoute(
-        builder: (_) => AddChecklistItemPage(
-          checklist: _checklist,
-        ),
-      ),
-    );
-
-    if (result != null) {
-      // Reload checklist to show the new item
-      final updatedChecklist = await _checklistRepo.getChecklistForCity(_checklist.city);
-      if (updatedChecklist != null) {
-        setState(() {
-          _checklist = updatedChecklist;
-        });
-      }
-    }
   }
 }
 

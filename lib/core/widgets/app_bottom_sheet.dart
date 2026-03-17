@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
 import '../theme/app_theme.dart';
-import 'app_loading_widget.dart';
 
 /// Custom bottom sheet with rounded corners
 class AppBottomSheet extends StatelessWidget {

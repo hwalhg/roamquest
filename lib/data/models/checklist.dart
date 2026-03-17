@@ -1,18 +1,21 @@
 import 'city.dart';
 import 'checklist_item.dart';
 
-/// Checklist model representing a city's must-do list
+/// Checklist model representing a user's list for a city
+/// Note: Items are stored in checklist_items table separately
 class Checklist {
   final String id;
-  final City city;
-  final List<ChecklistItem> items;
+  final int cityId; // Foreign key to cities table
+  final City city; // City object for convenience
+  final String userId; // User ID
   final DateTime createdAt;
   final String language;
 
   Checklist({
     required this.id,
+    required this.cityId,
     required this.city,
-    required this.items,
+    required this.userId,
     required this.createdAt,
     required this.language,
   });
@@ -21,10 +24,16 @@ class Checklist {
   factory Checklist.fromJson(Map<String, dynamic> json) {
     return Checklist(
       id: json['id'] as String,
-      city: City.fromJson(json['city'] as Map<String, dynamic>),
-      items: (json['items'] as List)
-          .map((item) => ChecklistItem.fromJson(item as Map<String, dynamic>))
-          .toList(),
+      cityId: json['city_id'] as int,
+      city: City(
+        id: json['city_id'] as int,
+        name: json['city_name'] as String,
+        country: json['country'] as String,
+        countryCode: json['country_code'] as String? ?? 'XX',
+        latitude: (json['latitude'] as num?)?.toDouble() ?? 0.0,
+        longitude: (json['longitude'] as num?)?.toDouble() ?? 0.0,
+      ),
+      userId: json['user_id'] as String,
       createdAt: DateTime.parse(json['created_at'] as String),
       language: json['language'] as String,
     );
@@ -34,10 +43,16 @@ class Checklist {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'city': city.toJson(),
-      'items': items.map((item) => item.toJson()).toList(),
-      'created_at': createdAt.toIso8601String(),
+      'city_id': cityId,
+      'user_id': userId,
+      'city_name': city.name,
+      'country': city.country,
+      'country_code': city.countryCode,
+      'latitude': city.latitude,
+      'longitude': city.longitude,
       'language': language,
+      'created_at': createdAt.toIso8601String(),
+      'updated_at': DateTime.now().toIso8601String(),
     };
   }
 
@@ -46,85 +61,73 @@ class Checklist {
     required City city,
     required List<Map<String, dynamic>> aiItems,
     required String language,
+    required String userId,
   }) {
-    final items = aiItems
-        .asMap()
-        .entries
-        .map((entry) => ChecklistItem.fromAIJson(entry.value, entry.key))
-        .toList();
-
     return Checklist(
       id: 'checklist_${DateTime.now().millisecondsSinceEpoch}',
+      cityId: city.id,
       city: city,
-      items: items,
+      userId: userId,
       createdAt: DateTime.now(),
       language: language,
     );
   }
 
-  /// Get completed items
-  List<ChecklistItem> get completedItems =>
-      items.where((item) => item.isCompleted).toList();
-
-  /// Get pending items
-  List<ChecklistItem> get pendingItems =>
-      items.where((item) => !item.isCompleted).toList();
-
-  /// Get items by category
-  List<ChecklistItem> getItemsByCategory(String category) =>
-      items.where((item) => item.category == category).toList();
-
-  /// Get completion count
-  int get completedCount => completedItems.length;
-
-  /// Get progress (0.0 to 1.0)
-  double get progress => items.isEmpty ? 0.0 : completedCount / items.length;
-
-  /// Get progress percentage
-  int get progressPercentage => (progress * 100).round();
-
-  /// Check if all items are completed
-  bool get isComplete => progress >= 1.0;
-
-  /// Check if can add more check-ins (free tier limit)
-  bool get canAddMoreCheckins => completedCount < 5;
-
-  /// Get items sorted by category
-  Map<String, List<ChecklistItem>> get itemsByCategory {
-    final result = <String, List<ChecklistItem>>{};
-    for (final item in items) {
-      result.putIfAbsent(item.category, () => []).add(item);
-    }
-    return result;
-  }
-
   /// Create copy with modified fields
   Checklist copyWith({
     String? id,
+    int? cityId,
     City? city,
-    List<ChecklistItem>? items,
+    String? userId,
     DateTime? createdAt,
     String? language,
   }) {
     return Checklist(
       id: id ?? this.id,
+      cityId: cityId ?? this.cityId,
       city: city ?? this.city,
-      items: items ?? this.items,
+      userId: userId ?? this.userId,
       createdAt: createdAt ?? this.createdAt,
       language: language ?? this.language,
     );
   }
 
-  /// Update item in checklist
-  Checklist updateItem(ChecklistItem updatedItem) {
-    return copyWith(
-      items: items
-          .map((item) => item.id == updatedItem.id ? updatedItem : item)
-          .toList(),
-    );
+  /// Get items by category (requires items to be provided)
+  static List<ChecklistItem> getItemsByCategory(String category, List<ChecklistItem> items) {
+    if (category == 'all') {
+      return items;
+    }
+    return items.where((item) => item.category == category).toList();
+  }
+
+  /// Get completed items (requires items to be provided)
+  static List<ChecklistItem> getCompletedItems(List<ChecklistItem> items) {
+    return items.where((item) => item.isCompleted).toList();
+  }
+
+  /// Get completed count (requires items to be provided)
+  static int getCompletedCount(List<ChecklistItem> items) {
+    return items.where((item) => item.isCompleted).length;
+  }
+
+  /// Get progress (0.0-1.0) (requires items to be provided)
+  static double getProgress(List<ChecklistItem> items) {
+    if (items.isEmpty) return 0.0;
+    final completedCount = getCompletedCount(items);
+    return completedCount / items.length;
+  }
+
+  /// Get progress percentage (0-100) (requires items to be provided)
+  static int getProgressPercentage(List<ChecklistItem> items) {
+    return (getProgress(items) * 100).round();
+  }
+
+  /// Update item in items list (requires items to be provided)
+  static List<ChecklistItem> updateItemInList(List<ChecklistItem> items, ChecklistItem updatedItem) {
+    return items.map((item) => item.id == updatedItem.id ? updatedItem : item).toList();
   }
 
   @override
   String toString() =>
-      'Checklist(id: $id, city: ${city.name}, completed: $completedCount/${items.length})';
+      'Checklist(id: $id, cityId: $cityId, userId: $userId)';
 }

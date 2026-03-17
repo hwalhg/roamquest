@@ -1,5 +1,6 @@
 /// City model representing a geographic location
 class City {
+  final int id; // Database ID
   final String name;
   final String country;
   final String countryCode;
@@ -9,6 +10,7 @@ class City {
   final double subscriptionPrice; // Price to unlock this city
 
   const City({
+    required this.id,
     required this.name,
     required this.country,
     required this.countryCode,
@@ -21,11 +23,12 @@ class City {
   /// Create City from JSON
   factory City.fromJson(Map<String, dynamic> json) {
     return City(
+      id: json['id'] as int,
       name: json['name'] as String,
       country: json['country'] as String,
-      countryCode: json['country_code'] as String,
-      latitude: (json['latitude'] as num).toDouble(),
-      longitude: (json['longitude'] as num).toDouble(),
+      countryCode: json['country_code'] as String? ?? 'XX',
+      latitude: (json['latitude'] as num?)?.toDouble() ?? 0.0,
+      longitude: (json['longitude'] as num?)?.toDouble() ?? 0.0,
       isFree: json['is_free'] as bool? ?? false,
       subscriptionPrice: (json['subscription_price'] as num?)?.toDouble() ?? 2.99,
     );
@@ -49,6 +52,7 @@ class City {
 
   /// Create copy with modified fields
   City copyWith({
+    int? id,
     String? name,
     String? country,
     String? countryCode,
@@ -58,6 +62,7 @@ class City {
     double? subscriptionPrice,
   }) {
     return City(
+      id: id ?? this.id,
       name: name ?? this.name,
       country: country ?? this.country,
       countryCode: countryCode ?? this.countryCode,
@@ -73,13 +78,14 @@ class City {
     if (identical(this, other)) return true;
 
     return other is City &&
+        other.id == id &&
         other.name == name &&
         other.country == country &&
         other.countryCode == countryCode;
   }
 
   @override
-  int get hashCode => name.hashCode ^ country.hashCode ^ countryCode.hashCode;
+  int get hashCode => id.hashCode ^ name.hashCode ^ country.hashCode ^ countryCode.hashCode;
 
   @override
   String toString() => displayName;

@@ -136,17 +136,22 @@ class ChecklistRepository {
       final allChecklists = await getAllChecklists();
 
       // Find incomplete checklists for this city
-      final incompleteChecklists = allChecklists.where((checklist) {
-        return checklist.city.name == city.name &&
-            checklist.city.country == city.country &&
-            checklist.completedCount < checklist.items.length;
-      }).toList();
+      for (final checklist in allChecklists) {
+        if (checklist.city.name != city.name ||
+            checklist.city.country != city.country) {
+          continue;
+        }
 
-      if (incompleteChecklists.isEmpty) return null;
+        // Load items for this checklist
+        final items = await loadChecklistItems(checklist.id);
+        final completedCount = Checklist.getCompletedCount(items);
 
-      // Return the most recent one
-      incompleteChecklists.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-      return incompleteChecklists.first;
+        if (completedCount < items.length) {
+          return checklist;
+        }
+      }
+
+      return null;
     } catch (e) {
       AppLogger.error('Failed to get incomplete checklist for city', error: e);
       return null;
@@ -163,11 +168,59 @@ class ChecklistRepository {
     }
   }
 
+  /// Load checklist items for a checklist
+  Future<List<ChecklistItem>> loadChecklistItems(String checklistId) async {
+    try {
+      // Try local first
+      var items = await _localStorage.loadChecklistItems(checklistId);
+      if (items.isNotEmpty) {
+        return items;
+      }
+
+      // Try remote
+      items = await _remoteStorage.loadChecklistItems(checklistId);
+      if (items.isNotEmpty) {
+        // Cache locally
+        await _localStorage.saveChecklistItems(checklistId, items);
+        return items;
+      }
+
+      return [];
+    } catch (e) {
+      AppLogger.error('Failed to load checklist items', error: e);
+      return [];
+    }
+  }
+
+  /// Save checklist items (local + remote)
+  Future<void> saveChecklistItems(String checklistId, List<ChecklistItem> items) async {
+    try {
+      // Save locally
+      await _localStorage.saveChecklistItems(checklistId, items);
+
+      // Get current user ID
+      final userId = _authService.currentUserId;
+      if (userId != null) {
+        // Save to remote (fire and forget)
+        _remoteStorage.saveChecklistItems(checklistId, items).catchError((e) {
+          AppLogger.warning('Failed to save checklist items to remote: $e');
+        });
+      }
+    } catch (e) {
+      AppLogger.error('Failed to save checklist items', error: e);
+      rethrow;
+    }
+  }
+
   /// Update checklist item (mark as completed)
   Future<void> updateItem(Checklist checklist, ChecklistItem updatedItem) async {
     try {
-      final updatedChecklist = checklist.updateItem(updatedItem);
-      await saveChecklist(updatedChecklist);
+      // Load current items
+      final currentItems = await loadChecklistItems(checklist.id);
+      // Update item in list
+      final updatedItems = Checklist.updateItemInList(currentItems, updatedItem);
+      // Save updated items
+      await saveChecklistItems(checklist.id, updatedItems);
     } catch (e) {
       AppLogger.error('Failed to update item', error: e);
       rethrow;
@@ -218,29 +271,30 @@ class ChecklistRepository {
       // Upload to remote storage
       final photoUrl = await _remoteStorage.uploadPhoto(
         filePath: filePath,
-        checkinId: itemId,
+        checklistItemId: itemId,
         fileBytes: fileBytes,
       );
 
       AppLogger.info('Photo uploaded successfully: $photoUrl');
 
-      // Get current user ID
-      final userId = _authService.currentUserId;
-      if (userId == null) {
-        throw Exception('User not authenticated');
-      }
+      // Load current items and update the specific item with photo and metadata
+      final currentItems = await loadChecklistItems(checklistId);
+      final updatedItems = currentItems.map((item) {
+        if (item.id == itemId) {
+          return item.copyWith(
+            photoUrl: photoUrl,
+            latitude: latitude,
+            longitude: longitude,
+            rating: rating,
+            isCompleted: true,
+            completedAt: DateTime.now(),
+          );
+        }
+        return item;
+      }).toList();
 
-      // Save check-in data
-      await _remoteStorage.saveCheckin(
-        checklistId: checklistId,
-        itemId: itemId,
-        itemIndex: itemIndex,
-        photoUrl: photoUrl,
-        latitude: latitude,
-        longitude: longitude,
-        rating: rating,
-        userId: userId,
-      );
+      // Save updated items
+      await saveChecklistItems(checklistId, updatedItems);
 
       return photoUrl;
     } catch (e) {
@@ -304,14 +358,12 @@ class ChecklistRepository {
 
   /// Get checklist template for a city
   Future<List<ChecklistItem>?> getChecklistTemplate({
-    required String cityName,
-    required String country,
+    required int cityId,
     required String language,
   }) async {
     try {
-      return await _remoteStorage.getChecklistTemplate(
-        cityName: cityName,
-        country: country,
+      return await _remoteStorage.getAttractionsByCity(
+        cityId: cityId,
         language: language,
       );
     } catch (e) {
@@ -322,13 +374,13 @@ class ChecklistRepository {
 
   /// Save checklist template (after AI generation)
   Future<void> saveChecklistTemplate({
-    required City city,
+    required int cityId,
     required List<ChecklistItem> items,
     required String language,
   }) async {
     try {
-      await _remoteStorage.saveChecklistTemplate(
-        city: city,
+      await _remoteStorage.saveAttractions(
+        cityId: cityId,
         items: items,
         language: language,
       );

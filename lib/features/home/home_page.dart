@@ -8,6 +8,7 @@ import '../../data/models/checklist_item.dart';
 import '../../data/services/location_service.dart';
 import '../../data/services/city_service.dart';
 import '../../data/services/ai_service.dart';
+import '../../data/services/auth_service.dart';
 import '../../data/repositories/checklist_repository.dart';
 import '../checklist/checklist_page.dart';
 import 'city_selection_bottom_sheet.dart';
@@ -25,6 +26,7 @@ class _HomePageState extends State<HomePage> {
   final CityService _cityService = CityService.instance;
   final AIService _aiService = AIService();
   final ChecklistRepository _checklistRepo = ChecklistRepository();
+  final AuthService _authService = AuthService();
 
   bool _isLoading = false;
   List<Checklist> _recentChecklists = [];
@@ -76,8 +78,7 @@ class _HomePageState extends State<HomePage> {
 
       // Check if there's a template for this city
       final templateItems = await _checklistRepo.getChecklistTemplate(
-        cityName: city.name,
-        country: city.country,
+        cityId: city.id,
         language: 'en',
       );
 
@@ -88,16 +89,16 @@ class _HomePageState extends State<HomePage> {
         items = templateItems;
       } else {
         // No template, generate with AI
-        final checklist = await _aiService.generateChecklistWithRetry(
+        final aiResult = await _aiService.generateChecklistWithRetry(
           city,
           'en', // Use English
         );
-        items = checklist.items;
+        items = aiResult.items;
 
         // Save as template for future use
         try {
           await _checklistRepo.saveChecklistTemplate(
-            city: city,
+            cityId: city.id,
             items: items,
             language: 'en',
           );
@@ -107,17 +108,22 @@ class _HomePageState extends State<HomePage> {
         }
       }
 
-      // Create checklist with items
+      // Create checklist (header only, items saved separately)
+      final userId = _authService.currentUserId ?? 'anonymous';
       final checklist = Checklist(
         id: 'checklist_${DateTime.now().millisecondsSinceEpoch}',
         city: city,
-        items: items,
+        cityId: city.id,
+        userId: userId,
         createdAt: DateTime.now(),
         language: 'en',
       );
 
-      // Save checklist to local and cloud
+      // Save checklist header to local and cloud
       await _checklistRepo.saveChecklist(checklist);
+
+      // Save checklist items separately
+      await _checklistRepo.saveChecklistItems(checklist.id, items);
 
       if (mounted) {
         Navigator.push(
@@ -343,6 +349,9 @@ class _HomePageState extends State<HomePage> {
   /// Detect current location and generate checklist
   Future<void> _detectMyLocation() async {
     print('[Home] Detect My Location clicked');
+    setState(() {
+      _isLoading = true;
+    });
 
     try {
       // Get city from location service
@@ -376,6 +385,12 @@ class _HomePageState extends State<HomePage> {
           ),
         );
       }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -408,7 +423,13 @@ class _HomePageState extends State<HomePage> {
 
   /// Single recent checklist card
   Widget _buildRecentChecklistCard(Checklist checklist) {
-    return Container(
+    return FutureBuilder<List<ChecklistItem>>(
+      future: _checklistRepo.loadChecklistItems(checklist.id),
+      builder: (context, snapshot) {
+        final items = snapshot.data ?? [];
+        final completedCount = Checklist.getCompletedCount(items);
+
+        return Container(
       margin: const EdgeInsets.only(bottom: 12),
       child: InkWell(
         onTap: () => _openChecklist(checklist),
@@ -452,7 +473,7 @@ class _HomePageState extends State<HomePage> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '${checklist.completedCount}/${checklist.items.length} Completed',
+                      '$completedCount/${items.length} Completed',
                       style: AppTextStyles.bodySmall.copyWith(
                         color: AppColors.textOnDark.withValues(alpha: 0.7),
                       ),
@@ -468,6 +489,8 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
       ),
+        );
+      },
     );
   }
 

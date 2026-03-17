@@ -2,11 +2,13 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/checklist.dart';
+import '../models/checklist_item.dart';
 import '../../core/utils/app_logger.dart';
 
 /// Local storage service for caching data (isolated by user)
 class LocalStorageService {
   static const String _keyChecklists = 'checklists';
+  static const String _keyChecklistItems = 'checklist_items';
   static const String _keyCurrentChecklistId = 'current_checklist_id';
   static const String _keyCheckinPhotos = 'checkin_photos';
   static const String _keyCurrentUserId = 'current_user_id';
@@ -239,5 +241,64 @@ class LocalStorageService {
   /// Get current user ID
   Future<String?> getUserId() async {
     return await _getCurrentUserId();
+  }
+
+  /// Save checklist items to local storage
+  Future<void> saveChecklistItems(String checklistId, List<ChecklistItem> items) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final key = await _getUserKey(_keyChecklistItems);
+      final itemsJson = prefs.getString(key) ?? '{}';
+      final allItems = json.decode(itemsJson) as Map<String, dynamic>;
+
+      allItems[checklistId] = items.map((item) => item.toJson()).toList();
+
+      await prefs.setString(key, json.encode(allItems));
+      AppLogger.info('Saved ${items.length} items for checklist: $checklistId');
+    } catch (e) {
+      AppLogger.error('Failed to save checklist items', error: e);
+    }
+  }
+
+  /// Load checklist items from local storage
+  Future<List<ChecklistItem>> loadChecklistItems(String checklistId) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final key = await _getUserKey(_keyChecklistItems);
+      final itemsJson = prefs.getString(key);
+
+      if (itemsJson == null) return [];
+
+      final allItems = json.decode(itemsJson) as Map<String, dynamic>;
+      final itemsList = allItems[checklistId];
+
+      if (itemsList == null) return [];
+
+      return (itemsList as List)
+          .map((json) => ChecklistItem.fromJson(json as Map<String, dynamic>))
+          .toList();
+    } catch (e) {
+      AppLogger.error('Failed to load checklist items', error: e);
+      return [];
+    }
+  }
+
+  /// Delete checklist items from local storage
+  Future<void> deleteChecklistItems(String checklistId) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final key = await _getUserKey(_keyChecklistItems);
+      final itemsJson = prefs.getString(key);
+
+      if (itemsJson == null) return;
+
+      final allItems = json.decode(itemsJson) as Map<String, dynamic>;
+      allItems.remove(checklistId);
+
+      await prefs.setString(key, json.encode(allItems));
+      AppLogger.info('Deleted items for checklist: $checklistId');
+    } catch (e) {
+      AppLogger.error('Failed to delete checklist items', error: e);
+    }
   }
 }

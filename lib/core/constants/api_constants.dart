@@ -24,8 +24,9 @@ class ApiConstants {
 
   // Supabase Tables
   static const String tableChecklists = 'checklists';
-  static const String tableCheckins = 'checkins';
+  static const String tableChecklistItems = 'checklist_items';
   static const String tableSubscriptions = 'subscriptions';
+  static const String tableAttractions = 'attractions';
 
   // Supabase Storage
   static const String storagePhotos = 'photos';
