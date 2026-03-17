@@ -66,10 +66,11 @@ class _HomePageState extends State<HomePage> {
       // Check if there's already a checklist for this city (user's local checklist)
       final existingChecklist = await _checklistRepo.getChecklistForCity(city);
 
-      AppLogger.info('用户清单查询结果: ${existingChecklist != null ? "找到清单" : "未找到清单"}');
+      AppLogger.info('用户清单查询结果: ${existingChecklist != null ? "找到清单 ${existingChecklist.id}" : "未找到清单"}');
 
       if (existingChecklist != null) {
         // Open existing checklist
+        AppLogger.info('打开已有清单: ${existingChecklist.id}');
         if (mounted) {
           Navigator.push(
             context,
@@ -97,11 +98,13 @@ class _HomePageState extends State<HomePage> {
         items = templateItems!;
       } else {
         // No template, generate with AI
+        AppLogger.info('使用 AI 生成景点 - 城市: ${city.name}');
         final aiResult = await _aiService.generateChecklistWithRetry(
           city,
           'en', // Use English
         );
         items = aiResult.items;
+        AppLogger.info('AI 生成完成 - ${items.length} 个景点');
 
         // Save as template for future use
         try {
@@ -110,9 +113,10 @@ class _HomePageState extends State<HomePage> {
             items: items,
             language: 'en',
           );
+          AppLogger.info('AI 生成的景点已保存到 attractions 表');
         } catch (e) {
           // Failed to save template, but continue with checklist
-          // ignore
+          AppLogger.error('保存 AI 生成的景点失败', error: e);
         }
       }
 
@@ -127,11 +131,17 @@ class _HomePageState extends State<HomePage> {
         language: 'en',
       );
 
+      AppLogger.info('创建 checklist - id: ${checklist.id}, userId: $userId, cityId: ${city.id}');
+
       // Save checklist header to local and cloud
       await _checklistRepo.saveChecklist(checklist);
 
+      AppLogger.info('保存 checklist 完成 - id: ${checklist.id}');
+
       // Save checklist items separately
       await _checklistRepo.saveChecklistItems(checklist.id, items);
+
+      AppLogger.info('保存 checklist items 完成 - checklistId: ${checklist.id}, 数量: ${items.length}');
 
       if (mounted) {
         Navigator.push(
