@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/widgets/widgets.dart';
+import '../../core/utils/app_logger.dart';
 import '../../data/models/city.dart';
 import '../../data/models/checklist.dart';
 import '../../data/models/checklist_item.dart';
@@ -59,9 +60,13 @@ class _HomePageState extends State<HomePage> {
       _isLoading = true;
     });
 
+    AppLogger.info('生成清单 - 城市名称: ${city.name}, 国家: ${city.country}, ID: ${city.id}');
+
     try {
       // Check if there's already a checklist for this city (user's local checklist)
       final existingChecklist = await _checklistRepo.getChecklistForCity(city);
+
+      AppLogger.info('用户清单查询结果: ${existingChecklist != null ? "找到清单" : "未找到清单"}');
 
       if (existingChecklist != null) {
         // Open existing checklist
@@ -77,16 +82,19 @@ class _HomePageState extends State<HomePage> {
       }
 
       // Check if there's a template for this city
+      AppLogger.info('查询景点模板 - cityId: ${city.id}, language: en');
       final templateItems = await _checklistRepo.getChecklistTemplate(
         cityId: city.id,
         language: 'en',
       );
 
+      AppLogger.info('景点模板查询结果: ${templateItems != null ? "找到 ${templateItems!.length} 个景点" : "未找到模板"}');
+
       List<ChecklistItem> items;
 
-      if (templateItems != null && templateItems.isNotEmpty) {
+      if (templateItems != null && templateItems!.isNotEmpty) {
         // Use template items
-        items = templateItems;
+        items = templateItems!;
       } else {
         // No template, generate with AI
         final aiResult = await _aiService.generateChecklistWithRetry(
