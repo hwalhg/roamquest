@@ -13,6 +13,7 @@ import '../../data/services/auth_service.dart';
 import '../../data/repositories/checklist_repository.dart';
 import '../checklist/checklist_page.dart';
 import 'city_selection_bottom_sheet.dart';
+import 'package:uuid/uuid.dart';
 
 /// Home page - City discovery & checklist generation
 class HomePage extends StatefulWidget {
@@ -122,8 +123,9 @@ class _HomePageState extends State<HomePage> {
 
       // Create checklist (header only, items saved separately)
       final userId = _authService.currentUserId ?? 'anonymous';
+      final checklistId = const Uuid().v4(); // 生成正确的 UUID 格式
       final checklist = Checklist(
-        id: 'checklist_${DateTime.now().millisecondsSinceEpoch}',
+        id: checklistId,
         city: city,
         cityId: city.id,
         userId: userId,
