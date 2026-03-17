@@ -24,10 +24,14 @@ class ChecklistRepository {
       // Get current user ID
       final userId = _authService.currentUserId;
       if (userId != null) {
-        // Save to remote (fire and forget)
-        _remoteStorage.saveChecklist(checklist, userId: userId).catchError((e) {
-          AppLogger.warning('Failed to save checklist to remote: $e');
-        });
+        // Save to remote (await for success before continuing)
+        try {
+          await _remoteStorage.saveChecklist(checklist, userId: userId);
+          AppLogger.info('Checklist saved to remote: ${checklist.id}');
+        } catch (e) {
+          AppLogger.error('Failed to save checklist to remote', error: e);
+          rethrow;
+        }
       }
 
       // Set as current
@@ -201,10 +205,14 @@ class ChecklistRepository {
       // Get current user ID
       final userId = _authService.currentUserId;
       if (userId != null) {
-        // Save to remote (fire and forget)
-        _remoteStorage.saveChecklistItems(checklistId, items).catchError((e) {
-          AppLogger.warning('Failed to save checklist items to remote: $e');
-        });
+        // Save to remote (await for success)
+        try {
+          await _remoteStorage.saveChecklistItems(checklistId, items);
+          AppLogger.info('Checklist items saved to remote: $checklistId (${items.length} items)');
+        } catch (e) {
+          AppLogger.error('Failed to save checklist items to remote', error: e);
+          rethrow;
+        }
       }
     } catch (e) {
       AppLogger.error('Failed to save checklist items', error: e);
