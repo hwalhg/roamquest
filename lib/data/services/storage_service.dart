@@ -16,9 +16,9 @@ class StorageService {
   /// Save a checklist header (items are saved separately)
   Future<void> saveChecklist(Checklist checklist, {required String userId}) async {
     try {
-      AppLogger.info('Saving checklist header: ${checklist.id} for user: $userId');
+      AppLogger.info('保存 checklist 开始 - id: ${checklist.id}, userId: $userId, cityId: ${checklist.cityId}');
 
-      await _client
+      final response = await _client
           .from(ApiConstants.tableChecklists)
           .upsert({
             'id': checklist.id,
@@ -29,9 +29,10 @@ class StorageService {
             'updated_at': DateTime.now().toIso8601String(),
           });
 
-      AppLogger.info('Checklist header saved successfully');
+      AppLogger.info('保存 checklist 完成 - id: ${checklist.id}, 响应: $response');
     } catch (e) {
-      AppLogger.error('Failed to save checklist', error: e);
+      AppLogger.error('保存 checklist 失败', error: e);
+      AppLogger.error('错误详情: ${e.toString()}');
       throw StorageException('Failed to save checklist: $e');
     }
   }
@@ -78,10 +79,11 @@ class StorageService {
   /// Save checklist items (separate from header)
   Future<void> saveChecklistItems(String checklistId, List<ChecklistItem> items) async {
     try {
-      AppLogger.info('Saving ${items.length} items for checklist: $checklistId');
+      AppLogger.info('保存 checklist items 开始 - checklistId: $checklistId, 数量: ${items.length}');
 
-      for (final item in items) {
-        await _client
+      for (int i = 0; i < items.length; i++) {
+        final item = items[i];
+        final response = await _client
             .from(ApiConstants.tableChecklistItems)
             .upsert({
               'id': item.id,
@@ -100,11 +102,18 @@ class StorageService {
               'notes': item.notes,
               'updated_at': DateTime.now().toIso8601String(),
             });
+
+        if (i == items.length - 1) {
+          AppLogger.info('保存 checklist items 完成 - checklistId: $checklistId, 总数: ${items.length}');
+        } else {
+          AppLogger.info('保存中 - checklistId: $checklistId, 进度: $i/${items.length}');
+        }
       }
 
-      AppLogger.info('Checklist items saved successfully');
+      AppLogger.info('Checklist items 保存成功 - checklistId: $checklistId');
     } catch (e) {
-      AppLogger.error('Failed to save checklist items', error: e);
+      AppLogger.error('保存 checklist items 失败', error: e);
+      AppLogger.error('错误详情: ${e.toString()}');
       throw StorageException('Failed to save checklist items: $e');
     }
   }
