@@ -123,7 +123,7 @@ class _HomePageState extends State<HomePage> {
 
       // Get app language
       final l10n = AppLocalizations.of(context)!;
-      final language = l10n.localeName ?? 'en';
+      final language = l10n.locale.languageCode;
 
       // Check if template already exists
       final template = await _checklistRepo.getChecklistTemplate(
