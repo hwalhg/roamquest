@@ -231,11 +231,13 @@ class StorageService {
 
       // 手动将 attractions 数据转换为 ChecklistItem
       // 注意：attractions 表的 id (SERIAL) 应该成为 checklist_item 的 attraction_id
+      // checklist_item 的 id 也需要是 UUID 格式
       final items = <ChecklistItem>[];
       for (final itemData in response) {
         final attractionId = itemData['id'] as int;
+        final itemId = const Uuid().v4(); // 生成正确的 UUID 作为 checklist_item 的 id
         final checklistItem = ChecklistItem(
-          id: 'attraction_template_${attractionId}',
+          id: itemId,
           checklistId: '', // 占位符，保存到 checklist_items 时会设置
           attractionId: attractionId, // 正确设置 attraction_id
           title: itemData['title'] as String,
