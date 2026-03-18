@@ -206,13 +206,16 @@ class ChecklistRepository {
       final userId = _authService.currentUserId;
       if (userId != null) {
         // Save to remote (await for success)
-        try {
-          await _remoteStorage.saveChecklistItems(checklistId, items);
-          AppLogger.info('Checklist items saved to remote: $checklistId (${items.length} items)');
-        } catch (e) {
-          AppLogger.error('Failed to save checklist items to remote', error: e);
-          rethrow;
+        // 重要：在保存前设置正确的 checklistId，防止 RLS 策略检查失败
+        for (final item in items) {
+          final itemWithChecklistId = item.copyWith(checklistId: checklistId);
+          await _remoteStorage.saveChecklistItems(checklistId, [itemWithChecklistId]);
         }
+
+        AppLogger.info('Checklist items saved to remote: $checklistId (${items.length} items)');
+      } else {
+        // 用户未登录，只保存本地
+        await _localStorage.saveChecklistItems(checklistId, items);
       }
     } catch (e) {
       AppLogger.error('Failed to save checklist items', error: e);
