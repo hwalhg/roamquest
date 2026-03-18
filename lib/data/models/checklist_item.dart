@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:uuid/uuid.dart';
 
 /// Checklist item model (stored in checklist_items table)
 /// Each item is linked to both a checklist and optionally an attraction template
@@ -86,8 +87,9 @@ class ChecklistItem extends Equatable {
 
   /// Create from AI-generated JSON (for new template attractions)
   factory ChecklistItem.fromAIJson(Map<String, dynamic> json, int order) {
+    final itemId = const Uuid().v4(); // 生成正确的 UUID
     return ChecklistItem(
-      id: 'item_${DateTime.now().millisecondsSinceEpoch}_$order',
+      id: itemId,
       checklistId: '', // Placeholder, will be set when saving to checklist
       attractionId: null, // No attraction ID for AI-generated items initially
       title: json['title'] as String,
@@ -104,14 +106,32 @@ class ChecklistItem extends Equatable {
     required Map<String, dynamic> attraction,
     required int sortOrder,
   }) {
+    final itemId = const Uuid().v4(); // 生成正确的 UUID
     return ChecklistItem(
-      id: 'checklist_item_${DateTime.now().millisecondsSinceEpoch}_${attractionId}',
+      id: itemId,
       checklistId: checklistId,
       attractionId: attractionId,
       title: attraction['title'] as String,
       location: attraction['location'] as String,
       category: attraction['category'] as String,
       sortOrder: sortOrder,
+    );
+  }
+
+  /// Mark as completed
+  ChecklistItem markCompleted({
+    required String photoUrl,
+    double? latitude,
+    double? longitude,
+    int? rating,
+  }) {
+    return copyWith(
+      isCompleted: true,
+      photoUrl: photoUrl,
+      completedAt: DateTime.now(),
+      latitude: latitude,
+      longitude: longitude,
+      rating: rating,
     );
   }
 
@@ -147,23 +167,6 @@ class ChecklistItem extends Equatable {
       longitude: longitude ?? this.longitude,
       rating: rating ?? this.rating,
       notes: notes ?? this.notes,
-    );
-  }
-
-  /// Mark as completed
-  ChecklistItem markCompleted({
-    required String photoUrl,
-    double? latitude,
-    double? longitude,
-    int? rating,
-  }) {
-    return copyWith(
-      isCompleted: true,
-      photoUrl: photoUrl,
-      completedAt: DateTime.now(),
-      latitude: latitude,
-      longitude: longitude,
-      rating: rating,
     );
   }
 
