@@ -18,7 +18,7 @@ class CityRepository {
           .eq('is_active', true)
           .order('sort_order', ascending: true);
 
-      if (response == null) {
+      if (response.isEmpty) {
         AppLogger.warning('No cities found in database');
         return [];
       }

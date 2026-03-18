@@ -80,7 +80,7 @@ class _LoginPageState extends State<LoginPage> {
       width: 100,
       height: 100,
       decoration: BoxDecoration(
-        color: AppColors.textOnDark.withOpacity(0.2),
+        color: AppColors.textOnDark.withValues(alpha:0.2),
         shape: BoxShape.circle,
       ),
       child: const Icon(
@@ -105,7 +105,7 @@ class _LoginPageState extends State<LoginPage> {
         Text(
           l10n.appSlogan,
           style: AppTextStyles.bodyMedium.copyWith(
-            color: AppColors.textOnDark.withOpacity(0.9),
+            color: AppColors.textOnDark.withValues(alpha:0.9),
           ),
         ),
       ],
@@ -125,9 +125,9 @@ class _LoginPageState extends State<LoginPage> {
           decoration: InputDecoration(
             labelText: l10n.email,
             filled: true,
-            fillColor: AppColors.textOnDark.withOpacity(0.15),
+            fillColor: AppColors.textOnDark.withValues(alpha:0.15),
             labelStyle: AppTextStyles.bodyMedium.copyWith(
-              color: AppColors.textOnDark.withOpacity(0.8),
+              color: AppColors.textOnDark.withValues(alpha:0.8),
             ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppBorderRadius.lg),
@@ -142,7 +142,7 @@ class _LoginPageState extends State<LoginPage> {
               borderSide: const BorderSide(color: AppColors.primary, width: 2),
             ),
             hintStyle: AppTextStyles.bodyMedium.copyWith(
-              color: AppColors.textOnDark.withOpacity(0.6),
+              color: AppColors.textOnDark.withValues(alpha:0.6),
             ),
           ),
         ),
@@ -157,9 +157,9 @@ class _LoginPageState extends State<LoginPage> {
           decoration: InputDecoration(
             labelText: l10n.passwordMin,
             filled: true,
-            fillColor: AppColors.textOnDark.withOpacity(0.15),
+            fillColor: AppColors.textOnDark.withValues(alpha:0.15),
             labelStyle: AppTextStyles.bodyMedium.copyWith(
-              color: AppColors.textOnDark.withOpacity(0.8),
+              color: AppColors.textOnDark.withValues(alpha:0.8),
             ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppBorderRadius.lg),
@@ -174,7 +174,7 @@ class _LoginPageState extends State<LoginPage> {
               borderSide: const BorderSide(color: AppColors.primary, width: 2),
             ),
             hintStyle: AppTextStyles.bodyMedium.copyWith(
-              color: AppColors.textOnDark.withOpacity(0.6),
+              color: AppColors.textOnDark.withValues(alpha:0.6),
             ),
           ),
         ),
@@ -190,7 +190,7 @@ class _LoginPageState extends State<LoginPage> {
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.textOnDark,
               foregroundColor: AppColors.primary,
-              disabledBackgroundColor: AppColors.textOnDark.withOpacity(0.5),
+              disabledBackgroundColor: AppColors.textOnDark.withValues(alpha:0.5),
             ),
             child: _isLoading
                 ? const SizedBox(
@@ -213,7 +213,7 @@ class _LoginPageState extends State<LoginPage> {
           children: [
             Expanded(
               child: Divider(
-                color: AppColors.textOnDark.withOpacity(0.3),
+                color: AppColors.textOnDark.withValues(alpha:0.3),
                 thickness: 1,
               ),
             ),
@@ -222,13 +222,13 @@ class _LoginPageState extends State<LoginPage> {
               child: Text(
                 'OR',
                 style: AppTextStyles.bodySmall.copyWith(
-                  color: AppColors.textOnDark.withOpacity(0.7),
+                  color: AppColors.textOnDark.withValues(alpha:0.7),
                 ),
               ),
             ),
             Expanded(
               child: Divider(
-                color: AppColors.textOnDark.withOpacity(0.3),
+                color: AppColors.textOnDark.withValues(alpha:0.3),
                 thickness: 1,
               ),
             ),
@@ -245,10 +245,10 @@ class _LoginPageState extends State<LoginPage> {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        color: AppColors.error.withOpacity(0.2),
+        color: AppColors.error.withValues(alpha:0.2),
         borderRadius: BorderRadius.circular(AppBorderRadius.md),
         border: Border.all(
-          color: AppColors.error.withOpacity(0.5),
+          color: AppColors.error.withValues(alpha:0.5),
         ),
       ),
       child: Row(
@@ -279,7 +279,7 @@ class _LoginPageState extends State<LoginPage> {
         Text(
           _isLogin ? l10n.dontHaveAccount : l10n.alreadyHaveAccount,
           style: AppTextStyles.bodyMedium.copyWith(
-            color: AppColors.textOnDark.withOpacity(0.8),
+            color: AppColors.textOnDark.withValues(alpha:0.8),
           ),
         ),
         GestureDetector(
@@ -306,7 +306,7 @@ class _LoginPageState extends State<LoginPage> {
     return Text(
       l10n.get('termsOfService'),
       style: AppTextStyles.caption.copyWith(
-        color: AppColors.textOnDark.withOpacity(0.7),
+        color: AppColors.textOnDark.withValues(alpha:0.7),
       ),
       textAlign: TextAlign.center,
     );
@@ -330,13 +330,13 @@ class _LoginPageState extends State<LoginPage> {
               if (states.contains(WidgetState.selected)) {
                 return AppColors.textOnDark;
               }
-              return AppColors.textOnDark.withOpacity(0.3);
+              return AppColors.textOnDark.withValues(alpha:0.3);
             }),
             checkColor: AppColors.primary,
             side: BorderSide(
               color: _agreedToTerms
                   ? AppColors.textOnDark
-                  : AppColors.textOnDark.withOpacity(0.5),
+                  : AppColors.textOnDark.withValues(alpha:0.5),
               width: 2,
             ),
           ),
@@ -563,14 +563,6 @@ class _LoginPageState extends State<LoginPage> {
         });
         return;
       }
-
-      // Perform Sign in with Apple
-      final credential = await SignInWithApple.getAppleIDCredential(
-        scopes: [
-          AppleIDAuthorizationScopes.email,
-          AppleIDAuthorizationScopes.fullName,
-        ],
-      );
 
       // Send credential to Supabase
       await _auth.signInWithApple();

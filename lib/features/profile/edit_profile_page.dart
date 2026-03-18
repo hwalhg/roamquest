@@ -241,7 +241,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                                 width: 100,
                                 height: 100,
                                 decoration: BoxDecoration(
-                                  color: AppColors.textOnDark.withOpacity(0.2),
+                                  color: AppColors.textOnDark.withValues(alpha:0.2),
                                   shape: BoxShape.circle,
                                 ),
                                 child: Stack(
@@ -304,10 +304,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
                           decoration: InputDecoration(
                             labelText: 'Email',
                             labelStyle: AppTextStyles.bodyMedium.copyWith(
-                              color: AppColors.textOnDark.withOpacity(0.7),
+                              color: AppColors.textOnDark.withValues(alpha:0.7),
                             ),
                             filled: true,
-                            fillColor: AppColors.textOnDark.withOpacity(0.1),
+                            fillColor: AppColors.textOnDark.withValues(alpha:0.1),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                               borderSide: BorderSide.none,
@@ -318,7 +318,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                             ),
                           ),
                           style: AppTextStyles.bodyMedium.copyWith(
-                            color: AppColors.textOnDark.withOpacity(0.5),
+                            color: AppColors.textOnDark.withValues(alpha:0.5),
                           ),
                         ),
 
@@ -330,11 +330,11 @@ class _EditProfilePageState extends State<EditProfilePage> {
                           decoration: InputDecoration(
                             labelText: 'Nickname',
                             labelStyle: AppTextStyles.bodyMedium.copyWith(
-                              color: AppColors.textOnDark.withOpacity(0.7),
+                              color: AppColors.textOnDark.withValues(alpha:0.7),
                             ),
                             hintText: 'Enter your nickname',
                             filled: true,
-                            fillColor: AppColors.textOnDark.withOpacity(0.15),
+                            fillColor: AppColors.textOnDark.withValues(alpha:0.15),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                               borderSide: BorderSide.none,
@@ -369,7 +369,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                           Container(
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: AppColors.error.withOpacity(0.2),
+                              color: AppColors.error.withValues(alpha:0.2),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Row(
@@ -404,7 +404,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                               backgroundColor: AppColors.textOnDark,
                               foregroundColor: AppColors.primary,
                               disabledBackgroundColor:
-                                  AppColors.textOnDark.withOpacity(0.5),
+                                  AppColors.textOnDark.withValues(alpha:0.5),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),

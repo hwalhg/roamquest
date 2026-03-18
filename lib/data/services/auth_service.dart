@@ -176,7 +176,7 @@ class AuthService {
           .eq('id', currentUserId!)
           .single();
 
-      if (response == null) {
+      if (response.isEmpty) {
         AppLogger.info('getCurrentProfile: 未找到 profile');
         return null;
       }
@@ -198,7 +198,7 @@ class AuthService {
           .eq('id', userId)
           .single();
 
-      if (response == null) return null;
+      if (response.isEmpty) return null;
 
       return Profile.fromJson(response);
     } catch (e) {

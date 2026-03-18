@@ -147,7 +147,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
             Container(
               padding: const EdgeInsets.all(AppSpacing.md),
               decoration: BoxDecoration(
-                color: AppColors.success.withOpacity(0.1),
+                color: AppColors.success.withValues(alpha:0.1),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
@@ -273,7 +273,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
         Container(
           padding: const EdgeInsets.all(AppSpacing.lg),
           decoration: BoxDecoration(
-            color: AppColors.textOnDark.withOpacity(0.2),
+            color: AppColors.textOnDark.withValues(alpha:0.2),
             shape: BoxShape.circle,
           ),
           child: const Icon(
@@ -293,7 +293,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
         Text(
           '解锁无限城市探索',
           style: AppTextStyles.bodyMedium.copyWith(
-            color: AppColors.textOnDark.withOpacity(0.9),
+            color: AppColors.textOnDark.withValues(alpha:0.9),
           ),
         ),
       ],
@@ -316,10 +316,10 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
         : 'Lifetime';
 
     final bgColor = isExpired
-        ? AppColors.error.withOpacity(0.1)
+        ? AppColors.error.withValues(alpha:0.1)
         : isExpiringSoon
-            ? AppColors.warning.withOpacity(0.1)
-            : AppColors.success.withOpacity(0.1);
+            ? AppColors.warning.withValues(alpha:0.1)
+            : AppColors.success.withValues(alpha:0.1);
 
     final icon = isExpired
         ? Icons.error_outline
@@ -363,7 +363,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                   Text(
                     'Expires: $expiryText',
                     style: AppTextStyles.bodySmall.copyWith(
-                      color: AppColors.textOnDark.withOpacity(0.8),
+                      color: AppColors.textOnDark.withValues(alpha:0.8),
                     ),
                   ),
                 ],
@@ -384,7 +384,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
           return Container(
             padding: const EdgeInsets.all(AppSpacing.lg),
             decoration: BoxDecoration(
-              color: AppColors.textOnDark.withOpacity(0.15),
+              color: AppColors.textOnDark.withValues(alpha:0.15),
               borderRadius: BorderRadius.circular(AppBorderRadius.lg),
             ),
             child: Column(
@@ -405,7 +405,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                 Text(
                   '请在iOS或Android设备上使用订阅功能',
                   style: AppTextStyles.bodyMedium.copyWith(
-                    color: AppColors.textOnDark.withOpacity(0.8),
+                    color: AppColors.textOnDark.withValues(alpha:0.8),
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -481,7 +481,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
       child: Container(
         padding: const EdgeInsets.all(AppSpacing.lg),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.textOnDark : AppColors.textOnDark.withOpacity(0.2),
+          color: isSelected ? AppColors.textOnDark : AppColors.textOnDark.withValues(alpha:0.2),
           borderRadius: BorderRadius.circular(AppBorderRadius.lg),
           border: Border.all(
             color: isSelected ? AppColors.primary : Colors.transparent,
@@ -490,7 +490,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: AppColors.primary.withOpacity(0.3),
+                    color: AppColors.primary.withValues(alpha:0.3),
                     blurRadius: 12,
                   ),
                 ]
@@ -523,8 +523,8 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                   product.description,
                   style: AppTextStyles.bodySmall.copyWith(
                     color: isSelected
-                        ? AppColors.textOnDark.withOpacity(0.8)
-                        : AppColors.textOnDark.withOpacity(0.7),
+                        ? AppColors.textOnDark.withValues(alpha:0.8)
+                        : AppColors.textOnDark.withValues(alpha:0.7),
                   ),
                 ),
                 const SizedBox(height: AppSpacing.sm),
@@ -608,7 +608,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
-        color: AppColors.textOnDark.withOpacity(0.15),
+        color: AppColors.textOnDark.withValues(alpha:0.15),
         borderRadius: BorderRadius.circular(AppBorderRadius.lg),
       ),
       child: Column(
@@ -653,7 +653,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
         Container(
           padding: const EdgeInsets.all(AppSpacing.sm),
           decoration: BoxDecoration(
-            color: AppColors.primary.withOpacity(0.2),
+            color: AppColors.primary.withValues(alpha:0.2),
             shape: BoxShape.circle,
           ),
           child: Icon(
@@ -678,7 +678,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
               Text(
                 description,
                 style: AppTextStyles.bodySmall.copyWith(
-                  color: AppColors.textOnDark.withOpacity(0.8),
+                  color: AppColors.textOnDark.withValues(alpha:0.8),
                 ),
                 overflow: TextOverflow.ellipsis,
                 maxLines: 2,
@@ -701,7 +701,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.textOnDark,
           foregroundColor: AppColors.primary,
-          disabledBackgroundColor: AppColors.textOnDark.withOpacity(0.5),
+          disabledBackgroundColor: AppColors.textOnDark.withValues(alpha:0.5),
         ),
         child: _isPurchasing
             ? const SizedBox(
@@ -738,7 +738,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
         Text.rich(
           TextSpan(
             style: AppTextStyles.caption.copyWith(
-              color: AppColors.textOnDark.withOpacity(0.7),
+              color: AppColors.textOnDark.withValues(alpha:0.7),
             ),
             children: [
               const TextSpan(text: '订阅即表示您同意我们的'),
@@ -780,7 +780,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
         Text.rich(
           TextSpan(
             style: AppTextStyles.caption.copyWith(
-              color: AppColors.textOnDark.withOpacity(0.6),
+              color: AppColors.textOnDark.withValues(alpha:0.6),
             ),
             children: [
               const TextSpan(text: '订阅将自动续订，除非在到期前至少24小时取消。订阅期间可解锁所有城市。'),

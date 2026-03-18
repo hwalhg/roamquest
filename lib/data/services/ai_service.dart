@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'package:dio/dio.dart';
-import '../models/checklist.dart';
 import '../models/checklist_item.dart';
 import '../models/city.dart';
 import '../../core/constants/api_constants.dart';

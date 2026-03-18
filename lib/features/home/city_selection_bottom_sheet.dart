@@ -249,7 +249,7 @@ class _CitySelectionBottomSheetState extends State<CitySelectionBottomSheet> {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.1),
+                color: AppColors.primary.withValues(alpha:0.1),
                 borderRadius: BorderRadius.circular(AppBorderRadius.sm),
               ),
               child: Center(
@@ -297,7 +297,7 @@ class _CitySelectionBottomSheetState extends State<CitySelectionBottomSheet> {
     return Container(
       width: 32,
       decoration: BoxDecoration(
-        color: AppColors.surfaceVariant.withOpacity(0.5),
+        color: AppColors.surfaceVariant.withValues(alpha:0.5),
         borderRadius: const BorderRadius.horizontal(
           left: Radius.circular(AppBorderRadius.sm),
         ),

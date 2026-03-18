@@ -131,7 +131,7 @@ class _CitySubscriptionPageState extends State<CitySubscriptionPage> {
         Container(
           padding: const EdgeInsets.all(AppSpacing.lg),
           decoration: BoxDecoration(
-            color: AppColors.textOnDark.withOpacity(0.2),
+            color: AppColors.textOnDark.withValues(alpha:0.2),
             shape: BoxShape.circle,
           ),
           child: const Icon(
@@ -151,7 +151,7 @@ class _CitySubscriptionPageState extends State<CitySubscriptionPage> {
         Text(
           'Subscribe to unlock all cities including ${widget.city.name}',
           style: AppTextStyles.bodyMedium.copyWith(
-            color: AppColors.textOnDark.withOpacity(0.9),
+            color: AppColors.textOnDark.withValues(alpha:0.9),
           ),
           textAlign: TextAlign.center,
         ),
@@ -163,7 +163,7 @@ class _CitySubscriptionPageState extends State<CitySubscriptionPage> {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.xl),
       decoration: BoxDecoration(
-        color: AppColors.textOnDark.withOpacity(0.2),
+        color: AppColors.textOnDark.withValues(alpha:0.2),
         borderRadius: BorderRadius.circular(AppBorderRadius.lg),
         border: Border.all(
           color: AppColors.primary,
@@ -196,7 +196,7 @@ class _CitySubscriptionPageState extends State<CitySubscriptionPage> {
           Text(
             'Choose Monthly, Quarterly, or Yearly',
             style: AppTextStyles.bodySmall.copyWith(
-              color: AppColors.textOnDark.withOpacity(0.8),
+              color: AppColors.textOnDark.withValues(alpha:0.8),
             ),
           ),
         ],
@@ -208,7 +208,7 @@ class _CitySubscriptionPageState extends State<CitySubscriptionPage> {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
-        color: AppColors.textOnDark.withOpacity(0.15),
+        color: AppColors.textOnDark.withValues(alpha:0.15),
         borderRadius: BorderRadius.circular(AppBorderRadius.lg),
       ),
       child: Column(
@@ -265,7 +265,7 @@ class _CitySubscriptionPageState extends State<CitySubscriptionPage> {
         Container(
           padding: const EdgeInsets.all(AppSpacing.sm),
           decoration: BoxDecoration(
-            color: AppColors.primary.withOpacity(0.2),
+            color: AppColors.primary.withValues(alpha:0.2),
             shape: BoxShape.circle,
           ),
           child: Icon(
@@ -290,7 +290,7 @@ class _CitySubscriptionPageState extends State<CitySubscriptionPage> {
               Text(
                 description,
                 style: AppTextStyles.bodySmall.copyWith(
-                  color: AppColors.textOnDark.withOpacity(0.8),
+                  color: AppColors.textOnDark.withValues(alpha:0.8),
                 ),
                 overflow: TextOverflow.ellipsis,
                 maxLines: 2,
@@ -330,7 +330,7 @@ class _CitySubscriptionPageState extends State<CitySubscriptionPage> {
             Container(
               padding: const EdgeInsets.all(32),
               decoration: BoxDecoration(
-                color: AppColors.success.withOpacity(0.1),
+                color: AppColors.success.withValues(alpha:0.1),
                 shape: BoxShape.circle,
               ),
               child: const Icon(

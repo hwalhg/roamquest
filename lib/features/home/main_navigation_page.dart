@@ -43,13 +43,13 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
           color: AppColors.textOnDark,
           border: Border(
             top: BorderSide(
-              color: AppColors.textOnDark.withOpacity(0.2),
+              color: AppColors.textOnDark.withValues(alpha:0.2),
               width: 1,
             ),
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha:0.05),
               blurRadius: 4,
               offset: const Offset(0, -2),
             ),
@@ -190,7 +190,7 @@ class _ProfilePageState extends State<ProfilePage> {
             width: 100,
             height: 100,
             decoration: BoxDecoration(
-              color: AppColors.textOnDark.withOpacity(0.2),
+              color: AppColors.textOnDark.withValues(alpha:0.2),
               shape: BoxShape.circle,
             ),
             child: Stack(
@@ -280,7 +280,7 @@ class _ProfilePageState extends State<ProfilePage> {
         Text(
           label,
           style: AppTextStyles.bodySmall.copyWith(
-            color: AppColors.textOnDark.withOpacity(0.8),
+            color: AppColors.textOnDark.withValues(alpha:0.8),
           ),
         ),
       ],
@@ -290,7 +290,7 @@ class _ProfilePageState extends State<ProfilePage> {
   Widget _buildMenuItems() {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.textOnDark.withOpacity(0.15),
+        color: AppColors.textOnDark.withValues(alpha:0.15),
         borderRadius: BorderRadius.circular(AppBorderRadius.lg),
       ),
       child: Column(

@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:path/path.dart' as path;
+import 'package:uuid/uuid.dart';
 import '../models/checklist.dart';
 import '../models/checklist_item.dart';
 import '../models/city.dart';
@@ -83,7 +84,7 @@ class StorageService {
 
       for (int i = 0; i < items.length; i++) {
         final item = items[i];
-        final response = await _client
+        await _client
             .from(ApiConstants.tableChecklistItems)
             .upsert({
               'id': item.id,
@@ -224,7 +225,7 @@ class StorageService {
           .eq('is_active', true)
           .order('sort_order', ascending: true);
 
-      if (response == null || response.isEmpty) {
+      if (response.isEmpty) {
         AppLogger.info('No attractions found for city_id: $cityId');
         return null;
       }

@@ -36,7 +36,6 @@ class _ChecklistPageState extends State<ChecklistPage>
   bool _isCityUnlocked = false;
   Map<String, int>? _remainingFreeCheckIns;
   List<ChecklistItem> _items = [];
-  bool _isLoadingItems = true;
 
   List<CategoryItem> _categories = [];
 
@@ -56,7 +55,6 @@ class _ChecklistPageState extends State<ChecklistPage>
     if (mounted) {
       setState(() {
         _items = items;
-        _isLoadingItems = false;
       });
     }
   }
@@ -363,7 +361,7 @@ class _ChecklistPageState extends State<ChecklistPage>
       width: 48,
       height: 48,
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha:0.1),
         borderRadius: BorderRadius.circular(AppBorderRadius.md),
       ),
       child: Center(
@@ -394,7 +392,7 @@ class _ChecklistPageState extends State<ChecklistPage>
       return Container(
         padding: const EdgeInsets.all(AppSpacing.sm),
         decoration: BoxDecoration(
-          color: AppColors.success.withOpacity(0.1),
+          color: AppColors.success.withValues(alpha:0.1),
           shape: BoxShape.circle,
         ),
         child: const Icon(
@@ -411,7 +409,7 @@ class _ChecklistPageState extends State<ChecklistPage>
           vertical: AppSpacing.xs,
         ),
         decoration: BoxDecoration(
-          color: AppColors.primary.withOpacity(0.1),
+          color: AppColors.primary.withValues(alpha:0.1),
           borderRadius: BorderRadius.circular(AppBorderRadius.sm),
         ),
         child: Text(

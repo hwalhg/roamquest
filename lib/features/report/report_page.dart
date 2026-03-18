@@ -207,7 +207,7 @@ class _ReportPageState extends State<ReportPage> {
         borderRadius: BorderRadius.circular(AppBorderRadius.md),
         boxShadow: [
           BoxShadow(
-            color: AppColors.shadow.withOpacity(0.1),
+            color: AppColors.shadow.withValues(alpha:0.1),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -277,7 +277,7 @@ class _ReportPageState extends State<ReportPage> {
   /// Build placeholder when no photo
   Widget _buildPlaceholder(ChecklistItem item) {
     return Container(
-      color: AppColors.getCategoryColor(item.category).withOpacity(0.1),
+      color: AppColors.getCategoryColor(item.category).withValues(alpha:0.1),
       child: Center(
         child: Text(
           AppConstants.categoryIcons[item.category] ?? '📍',
@@ -295,7 +295,7 @@ class _ReportPageState extends State<ReportPage> {
         color: AppColors.surface,
         boxShadow: [
           BoxShadow(
-            color: AppColors.shadow.withOpacity(0.1),
+            color: AppColors.shadow.withValues(alpha:0.1),
             blurRadius: 8,
             offset: const Offset(0, -2),
           ),
@@ -440,7 +440,7 @@ class _ShareCardPreviewPageState extends State<ShareCardPreviewPage> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha:0.1),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -480,7 +480,7 @@ class _ShareCardPreviewPageState extends State<ShareCardPreviewPage> {
                 Text(
                   '${checklist.createdAt.month}/${checklist.createdAt.day}/${checklist.createdAt.year}',
                   style: AppTextStyles.bodyMedium.copyWith(
-                    color: AppColors.textOnDark.withOpacity(0.7),
+                    color: AppColors.textOnDark.withValues(alpha: 0.7),
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -525,7 +525,7 @@ class _ShareCardPreviewPageState extends State<ShareCardPreviewPage> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withValues(alpha:0.06),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -541,7 +541,7 @@ class _ShareCardPreviewPageState extends State<ShareCardPreviewPage> {
               width: double.infinity,
               height: 280,
               decoration: BoxDecoration(
-                color: AppColors.getCategoryColor(item.category).withOpacity(0.15),
+                color: AppColors.getCategoryColor(item.category).withValues(alpha:0.15),
               ),
               child: hasPhoto
                   ? Image.network(
@@ -645,7 +645,7 @@ class _ShareCardPreviewPageState extends State<ShareCardPreviewPage> {
                     vertical: 6,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.getCategoryColor(item.category).withOpacity(0.15),
+                    color: AppColors.getCategoryColor(item.category).withValues(alpha:0.15),
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Row(

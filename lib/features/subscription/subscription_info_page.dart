@@ -75,7 +75,7 @@ class SubscriptionInfoPage extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(AppSpacing.lg),
           decoration: BoxDecoration(
-            color: AppColors.textOnDark.withOpacity(0.2),
+            color: AppColors.textOnDark.withValues(alpha:0.2),
             shape: BoxShape.circle,
           ),
           child: const Icon(
@@ -95,7 +95,7 @@ class SubscriptionInfoPage extends StatelessWidget {
         Text(
           l10n.appSlogan,
           style: AppTextStyles.bodyMedium.copyWith(
-            color: AppColors.textOnDark.withOpacity(0.9),
+            color: AppColors.textOnDark.withValues(alpha:0.9),
           ),
         ),
       ],
@@ -106,10 +106,10 @@ class SubscriptionInfoPage extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
-        color: AppColors.textOnDark.withOpacity(0.15),
+        color: AppColors.textOnDark.withValues(alpha:0.15),
         borderRadius: BorderRadius.circular(AppBorderRadius.lg),
         border: Border.all(
-          color: AppColors.textOnDark.withOpacity(0.2),
+          color: AppColors.textOnDark.withValues(alpha:0.2),
         ),
       ),
       child: Column(
@@ -120,7 +120,7 @@ class SubscriptionInfoPage extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(AppSpacing.sm),
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.2),
+                  color: AppColors.primary.withValues(alpha:0.2),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
@@ -162,10 +162,10 @@ class SubscriptionInfoPage extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
-        color: AppColors.success.withOpacity(0.1),
+        color: AppColors.success.withValues(alpha:0.1),
         borderRadius: BorderRadius.circular(AppBorderRadius.lg),
         border: Border.all(
-          color: AppColors.success.withOpacity(0.5),
+          color: AppColors.success.withValues(alpha:0.5),
           width: 2,
         ),
       ),
@@ -177,7 +177,7 @@ class SubscriptionInfoPage extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(AppSpacing.sm),
                 decoration: BoxDecoration(
-                  color: AppColors.success.withOpacity(0.2),
+                  color: AppColors.success.withValues(alpha:0.2),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
@@ -219,10 +219,10 @@ class SubscriptionInfoPage extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
-        color: AppColors.textOnDark.withOpacity(0.15),
+        color: AppColors.textOnDark.withValues(alpha:0.15),
         borderRadius: BorderRadius.circular(AppBorderRadius.lg),
         border: Border.all(
-          color: AppColors.textOnDark.withOpacity(0.2),
+          color: AppColors.textOnDark.withValues(alpha:0.2),
         ),
       ),
       child: Column(
@@ -233,7 +233,7 @@ class SubscriptionInfoPage extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(AppSpacing.sm),
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.2),
+                  color: AppColors.primary.withValues(alpha:0.2),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
@@ -300,7 +300,7 @@ class SubscriptionInfoPage extends StatelessWidget {
               Text(
                 description,
                 style: AppTextStyles.bodySmall.copyWith(
-                  color: AppColors.textOnDark.withOpacity(0.8),
+                  color: AppColors.textOnDark.withValues(alpha:0.8),
                 ),
               ),
             ],
@@ -350,7 +350,7 @@ class SubscriptionInfoPage extends StatelessWidget {
               Text(
                 description,
                 style: AppTextStyles.bodySmall.copyWith(
-                  color: AppColors.textOnDark.withOpacity(0.8),
+                  color: AppColors.textOnDark.withValues(alpha:0.8),
                 ),
               ),
             ],

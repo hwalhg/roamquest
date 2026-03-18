@@ -1,7 +1,5 @@
 import 'dart:io';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
@@ -108,7 +106,7 @@ class _CheckinPageState extends State<CheckinPage> {
               color: AppColors.surface,
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.shadow.withOpacity(0.1),
+                  color: AppColors.shadow.withValues(alpha:0.1),
                   blurRadius: 4,
                   offset: const Offset(0, -2),
                 ),
@@ -134,7 +132,7 @@ class _CheckinPageState extends State<CheckinPage> {
                 padding: const EdgeInsets.all(AppSpacing.sm),
                 decoration: BoxDecoration(
                   color: AppColors.getCategoryColor(widget.item.category)
-                      .withOpacity(0.1),
+                      .withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(AppBorderRadius.sm),
                 ),
                 child: Text(
@@ -300,7 +298,7 @@ class _CheckinPageState extends State<CheckinPage> {
                                 width: double.infinity,
                                 height: double.infinity,
                                 decoration: BoxDecoration(
-                                  color: AppColors.primary.withOpacity(0.2),
+                                  color: AppColors.primary.withValues(alpha:0.2),
                                 ),
                                 child: const Center(
                                   child: Column(

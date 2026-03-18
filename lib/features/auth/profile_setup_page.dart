@@ -3,8 +3,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/theme/app_theme.dart';
-import '../../core/constants/app_constants.dart';
-import '../../data/models/profile.dart';
 import '../../data/services/auth_service.dart';
 
 /// Profile setup page for username entry
@@ -95,7 +93,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
         width: 100,
         height: 100,
         decoration: BoxDecoration(
-          color: AppColors.textOnDark.withOpacity(0.2),
+          color: AppColors.textOnDark.withValues(alpha:0.2),
           shape: BoxShape.circle,
         ),
         child: avatarUrl != null
@@ -139,7 +137,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
         Text(
           'Let\'s set up your profile',
           style: AppTextStyles.bodyMedium.copyWith(
-            color: AppColors.textOnDark.withOpacity(0.9),
+            color: AppColors.textOnDark.withValues(alpha:0.9),
           ),
         ),
       ],
@@ -159,9 +157,9 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
           decoration: InputDecoration(
             labelText: 'Display Name',
             filled: true,
-            fillColor: AppColors.textOnDark.withOpacity(0.15),
+            fillColor: AppColors.textOnDark.withValues(alpha:0.15),
             labelStyle: AppTextStyles.bodyMedium.copyWith(
-              color: AppColors.textOnDark.withOpacity(0.8),
+              color: AppColors.textOnDark.withValues(alpha:0.8),
             ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppBorderRadius.lg),
@@ -189,9 +187,9 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
           decoration: InputDecoration(
             labelText: 'Username (optional)',
             filled: true,
-            fillColor: AppColors.textOnDark.withOpacity(0.15),
+            fillColor: AppColors.textOnDark.withValues(alpha:0.15),
             labelStyle: AppTextStyles.bodyMedium.copyWith(
-              color: AppColors.textOnDark.withOpacity(0.8),
+              color: AppColors.textOnDark.withValues(alpha:0.8),
             ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppBorderRadius.lg),
@@ -241,7 +239,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
         Text(
           'Choose a unique username so others can find you',
           style: AppTextStyles.bodySmall.copyWith(
-            color: AppColors.textOnDark.withOpacity(0.7),
+            color: AppColors.textOnDark.withValues(alpha:0.7),
           ),
         ),
       ],
@@ -252,10 +250,10 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        color: AppColors.error.withOpacity(0.2),
+        color: AppColors.error.withValues(alpha:0.2),
         borderRadius: BorderRadius.circular(AppBorderRadius.md),
         border: Border.all(
-          color: AppColors.error.withOpacity(0.5),
+          color: AppColors.error.withValues(alpha:0.5),
         ),
       ),
       child: Row(
@@ -288,7 +286,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.textOnDark,
           foregroundColor: AppColors.primary,
-          disabledBackgroundColor: AppColors.textOnDark.withOpacity(0.5),
+          disabledBackgroundColor: AppColors.textOnDark.withValues(alpha:0.5),
         ),
         child: _isLoading
             ? const SizedBox(
@@ -313,7 +311,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
       child: Text(
         'Skip for now',
         style: AppTextStyles.bodyMedium.copyWith(
-          color: AppColors.textOnDark.withOpacity(0.8),
+          color: AppColors.textOnDark.withValues(alpha:0.8),
         ),
       ),
     );

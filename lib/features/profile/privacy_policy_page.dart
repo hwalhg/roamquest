@@ -39,7 +39,7 @@ class PrivacyPolicyPage extends StatelessWidget {
                 Text(
                   'Last updated: January 2025',
                   style: AppTextStyles.bodySmall.copyWith(
-                    color: AppColors.textOnDark.withOpacity(0.7),
+                    color: AppColors.textOnDark.withValues(alpha:0.7),
                   ),
                 ),
                 const SizedBox(height: 32),
@@ -192,7 +192,7 @@ Website: www.roamquest.app
         Text(
           content,
           style: AppTextStyles.bodyMedium.copyWith(
-            color: AppColors.textOnDark.withOpacity(0.9),
+            color: AppColors.textOnDark.withValues(alpha:0.9),
             height: 1.6,
           ),
         ),
