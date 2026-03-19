@@ -17,7 +17,6 @@ import '../../data/services/auth_service.dart';
 import '../../l10n/app_localizations.dart';
 import 'city_selection_bottom_sheet.dart';
 import '../checklist/checklist_page.dart';
-import '../subscription/city_subscription_page.dart';
 
 /// Home page - Main entry for city exploration
 class HomePage extends StatefulWidget {
@@ -35,7 +34,6 @@ class _HomePageState extends State<HomePage> {
   final AIService _aiService = AIService();
 
   List<Checklist> _recentChecklists = [];
-  bool _isLoading = true;
   bool _isGenerating = false;
   String? _error;
 
@@ -56,7 +54,6 @@ class _HomePageState extends State<HomePage> {
       if (mounted) {
         setState(() {
           _recentChecklists = recentChecklists;
-          _isLoading = false;
         });
       }
     } catch (e) {
@@ -64,7 +61,6 @@ class _HomePageState extends State<HomePage> {
       if (mounted) {
         setState(() {
           _error = 'Failed to load checklists';
-          _isLoading = false;
         });
       }
     }
@@ -120,6 +116,30 @@ class _HomePageState extends State<HomePage> {
   Future<void> _generateChecklistForCity(City city) async {
     try {
       AppLogger.info('开始为城市生成清单: ${city.name}');
+
+      // 先检查该城市是否已有未完成的 checklist
+      final existingChecklist = await _checklistRepo.getIncompleteChecklistForCity(city);
+
+      if (existingChecklist != null) {
+        // 有未完成的清单，直接打开
+        AppLogger.info('找到未完成的清单，直接打开 - id: ${existingChecklist.id}');
+        if (mounted) {
+          setState(() {
+            _isGenerating = false;
+          });
+
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => ChecklistPage(checklist: existingChecklist),
+            ),
+          );
+        }
+        return;
+      }
+
+      // 没有未完成的清单，创建新的
+      AppLogger.info('没有未完成的清单，创建新清单');
 
       // Get app language
       final l10n = AppLocalizations.of(context)!;
@@ -315,9 +335,10 @@ class _HomePageState extends State<HomePage> {
               ),
               const SizedBox(width: 16),
               // App title and slogan
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                   Text(
                     l10n.get('appName') ?? 'RoamQuest',
                     style: AppTextStyles.h4.copyWith(
@@ -336,6 +357,7 @@ class _HomePageState extends State<HomePage> {
                     ),
                   ),
                 ],
+              ),
               ),
             ],
           ),
@@ -358,7 +380,7 @@ class _HomePageState extends State<HomePage> {
     return SingleChildScrollView(
       child: Column(
         children: [
-          const SizedBox(height: 32),
+          const SizedBox(height: 120),
 
           // Centered circular design element
           Center(
@@ -497,7 +519,8 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
         ),
-      );
+      ),
+    );
   }
 
   /// Build loading state
@@ -567,11 +590,9 @@ class _HomePageState extends State<HomePage> {
           const SizedBox(height: AppSpacing.sm),
 
           // Recent list
-          if (_recentChecklists.isEmpty) {
-            _buildEmptyState(l10n);
-          } else {
-            _buildRecentList(l10n);
-          },
+          (_recentChecklists.isEmpty)
+              ? _buildEmptyState(l10n)
+              : _buildRecentList(l10n),
         ],
       ),
     );
@@ -632,68 +653,73 @@ class _HomePageState extends State<HomePage> {
         child: InkWell(
           onTap: () => _openChecklist(checklist),
           borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-          child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.md),
-            child: Row(
+          child: _buildChecklistCardContent(checklist),
+        ),
+      ),
+    );
+  }
+
+  /// Build checklist card content
+  Widget _buildChecklistCardContent(Checklist checklist) {
+    return Padding(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      child: Row(
+        children: [
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  AppColors.primary.withValues(alpha: 0.15),
+                  AppColors.primary.withValues(alpha: 0.05),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(AppBorderRadius.md),
+            ),
+            child: Center(
+              child: Text(
+                _getCityEmoji(checklist.city.name),
+                style: const TextStyle(fontSize: 24),
+              ),
+            ),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        AppColors.primary.withValues(alpha: 0.15),
-                        AppColors.primary.withValues(alpha: 0.05),
-                      ],
-                    ),
-                    borderRadius: BorderRadius.circular(AppBorderRadius.md),
-                  ),
-                  child: Center(
-                    child: Text(
-                      _getCityEmoji(checklist.city.name),
-                      style: const TextStyle(fontSize: 24),
-                    ),
+                Text(
+                  checklist.city.name,
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
-                const SizedBox(width: AppSpacing.md),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        checklist.city.name,
-                        style: AppTextStyles.bodyMedium.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
+                const SizedBox(height: AppSpacing.xs),
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.calendar_today,
+                      size: 14,
+                      color: AppColors.textTertiary,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      _formatDate(checklist.createdAt),
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: AppColors.textSecondary,
                       ),
-                      const SizedBox(height: AppSpacing.xs),
-                      Row(
-                        children: [
-                          const Icon(
-                            Icons.calendar_today,
-                            size: 14,
-                            color: AppColors.textTertiary,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            _formatDate(checklist.createdAt),
-                            style: AppTextStyles.bodySmall.copyWith(
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                const Icon(
-                  Icons.chevron_right,
-                  color: AppColors.textSecondary,
+                    ),
+                  ],
                 ),
               ],
             ),
           ),
-        ),
+          const Icon(
+            Icons.chevron_right,
+            color: AppColors.textSecondary,
+          ),
+        ],
       ),
     );
   }

@@ -1,6 +1,7 @@
 /// User profile model
 class Profile {
   final String id;
+  final String userId; // User ID associated with this profile
   final String? username;
   final String? fullName;
   final String? avatarUrl;
@@ -10,6 +11,7 @@ class Profile {
 
   Profile({
     required this.id,
+    required this.userId,
     this.username,
     this.fullName,
     this.avatarUrl,
@@ -22,6 +24,7 @@ class Profile {
   factory Profile.fromJson(Map<String, dynamic> json) {
     return Profile(
       id: json['id'] as String,
+      userId: json['user_id'] as String,
       username: json['username'] as String?,
       fullName: json['full_name'] as String?,
       avatarUrl: json['avatar_url'] as String?,
@@ -35,6 +38,7 @@ class Profile {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
+      'user_id': userId,
       'username': username,
       'full_name': fullName,
       'avatar_url': avatarUrl,
@@ -47,6 +51,7 @@ class Profile {
   /// Create a copy with updated fields
   Profile copyWith({
     String? id,
+    String? userId,
     String? username,
     String? fullName,
     String? avatarUrl,
@@ -56,6 +61,7 @@ class Profile {
   }) {
     return Profile(
       id: id ?? this.id,
+      userId: userId ?? this.userId,
       username: username ?? this.username,
       fullName: fullName ?? this.fullName,
       avatarUrl: avatarUrl ?? this.avatarUrl,

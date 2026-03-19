@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/theme/app_theme.dart';
-import '../../core/constants/app_constants.dart';
 import '../../data/services/auth_service.dart';
 import 'home_page.dart';
 import '../profile/edit_profile_page.dart';
@@ -21,7 +19,6 @@ class MainNavigationPage extends StatefulWidget {
 }
 
 class _MainNavigationPageState extends State<MainNavigationPage> {
-  final AuthService _auth = AuthService();
   int _currentIndex = 0;
 
   final List<Widget> _pages = [
@@ -249,38 +246,6 @@ class _ProfilePageState extends State<ProfilePage> {
           _profileData?['full_name'] ?? _profileData?['username'] ?? user?.email ?? 'Guest',
           style: AppTextStyles.h4.copyWith(
             color: AppColors.textOnDark,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildStats() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: [
-        _buildStatItem('0', 'Cities'),
-        _buildStatItem('0', 'Check-ins'),
-        _buildStatItem('0', 'Photos'),
-      ],
-    );
-  }
-
-  Widget _buildStatItem(String value, String label) {
-    return Column(
-      children: [
-        Text(
-          value,
-          style: AppTextStyles.h3.copyWith(
-            color: AppColors.textOnDark,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: AppTextStyles.bodySmall.copyWith(
-            color: AppColors.textOnDark.withValues(alpha:0.8),
           ),
         ),
       ],

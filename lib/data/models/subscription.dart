@@ -1,6 +1,7 @@
 /// Subscription model
 class Subscription {
   final String id;
+  final String userId; // User ID associated with this subscription
   final String productId; // monthly or yearly
   final DateTime startDate;
   final DateTime? endDate;
@@ -10,6 +11,7 @@ class Subscription {
 
   Subscription({
     required this.id,
+    required this.userId,
     required this.productId,
     required this.startDate,
     this.endDate,
@@ -22,6 +24,7 @@ class Subscription {
   factory Subscription.fromJson(Map<String, dynamic> json) {
     return Subscription(
       id: json['id'] as String,
+      userId: json['user_id'] as String,
       productId: json['product_id'] as String,
       startDate: DateTime.parse(json['start_date'] as String),
       endDate: json['end_date'] != null
@@ -37,6 +40,7 @@ class Subscription {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
+      'user_id': userId,
       'product_id': productId,
       'start_date': startDate.toIso8601String(),
       'end_date': endDate?.toIso8601String(),
@@ -73,6 +77,7 @@ class Subscription {
   /// Create copy with modified fields
   Subscription copyWith({
     String? id,
+    String? userId,
     String? productId,
     DateTime? startDate,
     DateTime? endDate,
@@ -82,6 +87,7 @@ class Subscription {
   }) {
     return Subscription(
       id: id ?? this.id,
+      userId: userId ?? this.userId,
       productId: productId ?? this.productId,
       startDate: startDate ?? this.startDate,
       endDate: endDate ?? this.endDate,

@@ -260,7 +260,7 @@ class AppLocalizations {
       'downloadShareDesc': '保存报告并与朋友分享',
       'monthly': '月付',
       'yearly': '年付',
-      'save': '节省',
+      'savings': '节省',
       'subscribeNow': '立即订阅',
       'restorePurchase': '恢复购买',
       'termsOfService': '订阅即表示您同意我们的服务条款和隐私政策。',

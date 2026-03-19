@@ -254,6 +254,7 @@ class SubscriptionRepository {
 
       return Subscription(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
+        userId: 'user', // Placeholder - actual userId should come from auth service
         productId: productId,
         startDate: DateTime.parse(startDateStr),
         endDate: endDateStr != null ? DateTime.parse(endDateStr) : null,
@@ -282,11 +283,6 @@ class SubscriptionRepository {
     status.dispose();
     products.dispose();
   }
-}
-
-/// Extension for SubscriptionProducts
-extension SubscriptionProductsExtension on SubscriptionProducts {
-  static List<String> get allIds => SubscriptionProducts.allIds;
 }
 
 /// Subscription status enum

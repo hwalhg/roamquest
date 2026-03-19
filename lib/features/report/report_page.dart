@@ -2,7 +2,6 @@ import 'dart:io';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../core/theme/app_colors.dart';
@@ -28,12 +27,11 @@ class ReportPage extends StatefulWidget {
 
 class _ReportPageState extends State<ReportPage> {
   Checklist get checklist => widget.checklist;
-  final GlobalKey _shareCardKey = GlobalKey();
   final ChecklistRepository _checklistRepo = ChecklistRepository();
 
   // TODO: Get real user nickname from auth service
   final String _userNickname = 'Lion';
-  bool _isCapturing = false;
+  final bool _isCapturing = false;
   List<ChecklistItem> _items = [];
 
   @override
@@ -78,21 +76,6 @@ class _ReportPageState extends State<ReportPage> {
           ),
           _buildShareButton(),
         ],
-      ),
-    );
-  }
-
-  /// Build header with title only (back button moved to bottom)
-  Widget _buildHeader() {
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      color: AppColors.surface,
-      child: Center(
-        child: Text(
-          'Check-in Diary',
-          style: AppTextStyles.h3,
-          textAlign: TextAlign.center,
-        ),
       ),
     );
   }

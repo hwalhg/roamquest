@@ -1,5 +1,5 @@
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:shimmer/shimmer.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/theme/app_theme.dart';
@@ -36,6 +36,7 @@ class _ChecklistPageState extends State<ChecklistPage>
   bool _isCityUnlocked = false;
   Map<String, int>? _remainingFreeCheckIns;
   List<ChecklistItem> _items = [];
+  bool _isLoadingItems = true;
 
   List<CategoryItem> _categories = [];
 
@@ -55,6 +56,7 @@ class _ChecklistPageState extends State<ChecklistPage>
     if (mounted) {
       setState(() {
         _items = items;
+        _isLoadingItems = false;
       });
     }
   }
@@ -266,6 +268,21 @@ class _ChecklistPageState extends State<ChecklistPage>
   }
 
   Widget _buildItemsList(AppLocalizations l10n) {
+    if (_isLoadingItems) {
+      // Show shimmer loading state
+      return SliverPadding(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        sliver: SliverList(
+          delegate: SliverChildBuilderDelegate(
+            (context, index) {
+              return _buildShimmerItemCard();
+            },
+            childCount: 5, // Show 5 shimmer cards
+          ),
+        ),
+      );
+    }
+
     return SliverPadding(
       padding: const EdgeInsets.all(AppSpacing.md),
       sliver: SliverList(
@@ -426,6 +443,70 @@ class _ChecklistPageState extends State<ChecklistPage>
         color: AppColors.textTertiary,
       );
     }
+  }
+
+  /// Build shimmer loading card
+  Widget _buildShimmerItemCard() {
+    return Shimmer.fromColors(
+      baseColor: AppColors.surfaceVariant,
+      highlightColor: AppColors.surfaceVariant.withValues(alpha: 0.5),
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: AppSpacing.md),
+        child: Card(
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            child: Row(
+              children: [
+                // Shimmer icon placeholder
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceVariant,
+                    borderRadius: BorderRadius.circular(AppBorderRadius.md),
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.md),
+                // Shimmer text placeholders
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        width: double.infinity,
+                        height: 16,
+                        decoration: BoxDecoration(
+                          color: AppColors.surfaceVariant,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.xs),
+                      Container(
+                        width: 200,
+                        height: 14,
+                        decoration: BoxDecoration(
+                          color: AppColors.surfaceVariant,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // Shimmer badge placeholder
+                Container(
+                  width: 32,
+                  height: 32,
+                  decoration: const BoxDecoration(
+                    color: AppColors.surfaceVariant,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   /// Check if this item still has free check-in remaining based on category

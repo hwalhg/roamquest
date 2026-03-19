@@ -8,6 +8,8 @@ class City {
   final double longitude;
   final bool isFree; // Whether this city is free to unlock
   final double subscriptionPrice; // Price to unlock this city
+  final bool isActive; // Whether this city is active/visible to users
+  final int sortOrder; // Sort order for city list display
 
   const City({
     required this.id,
@@ -18,6 +20,8 @@ class City {
     required this.longitude,
     this.isFree = false,
     this.subscriptionPrice = 2.99,
+    this.isActive = false,
+    this.sortOrder = 0,
   });
 
   /// Create City from JSON
@@ -31,6 +35,8 @@ class City {
       longitude: (json['longitude'] as num?)?.toDouble() ?? 0.0,
       isFree: json['is_free'] as bool? ?? false,
       subscriptionPrice: (json['subscription_price'] as num?)?.toDouble() ?? 2.99,
+      isActive: json['is_active'] as bool? ?? false,
+      sortOrder: json['sort_order'] as int? ?? 0,
     );
   }
 
@@ -60,6 +66,8 @@ class City {
     double? longitude,
     bool? isFree,
     double? subscriptionPrice,
+    bool? isActive,
+    int? sortOrder,
   }) {
     return City(
       id: id ?? this.id,
@@ -70,6 +78,8 @@ class City {
       longitude: longitude ?? this.longitude,
       isFree: isFree ?? this.isFree,
       subscriptionPrice: subscriptionPrice ?? this.subscriptionPrice,
+      isActive: isActive ?? this.isActive,
+      sortOrder: sortOrder ?? this.sortOrder,
     );
   }
 
