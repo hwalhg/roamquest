@@ -13,6 +13,7 @@ import '../../data/services/auth_service.dart';
 import '../../l10n/app_localizations.dart';
 import 'city_selection_bottom_sheet.dart';
 import '../checklist/checklist_page.dart';
+import 'city_selection_dialog.dart' as selection;
 
 /// Home page - Main entry for city exploration
 class HomePage extends StatefulWidget {
@@ -189,12 +190,18 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  /// Show city selection
+  /// Show city selection dialog
   void _showCitySelection() {
-    CitySelectionBottomSheet.show(
+    selection.CitySelectionBottomSheet.show(
       context: context,
-      onCitySelected: (city) {
-        _generateChecklistForCity(city);
+      onDetectLocation: _detectLocation,
+      onSelectFromList: () {
+        CitySelectionBottomSheet.show(
+          context: context,
+          onCitySelected: (city) {
+            _generateChecklistForCity(city);
+          },
+        );
       },
     );
   }

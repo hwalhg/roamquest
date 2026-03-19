@@ -1,12 +1,14 @@
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import '../models/city.dart';
 import '../../core/utils/app_logger.dart';
 
 /// Service for location-related operations
 class LocationService {
   // Debug mode flag - set to true to use mock data
-  static bool _debugMode = false; // Default to false for production
+  // Automatically enabled on Web platform due to location API limitations
+  static bool _debugMode = kIsWeb; // Enable debug mode on Web
 
   /// Enable/disable debug mode
   /// When enabled, returns mock data instead of actual GPS
