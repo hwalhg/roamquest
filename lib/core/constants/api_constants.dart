@@ -55,10 +55,11 @@ class PromptTemplates {
     return '''
 You are a local travel expert. Generate a list of must-do things in $city, $country.
 
-Include the following categories:
+Include following categories:
 - Famous landmarks/attractions
 - Local food/dishes to try
 - Cultural experiences
+- Hidden gems/secret spots (lesser-known, authentic local places)
 
 Requirements:
 - Generate as many items as appropriate for the city (not all cities have the same number of attractions)
@@ -76,7 +77,8 @@ Output ONLY valid JSON in this exact format:
   "items": [
     {"title": "Visit the Eiffel Tower", "location": "Eiffel Tower", "category": "landmark"},
     {"title": "Try authentic croissants", "location": "Du Pain et des Idées", "category": "food"},
-    {"title": "Take a Seine river cruise", "location": "Seine River", "category": "experience"}
+    {"title": "Take a Seine river cruise", "location": "Seine River", "category": "experience"},
+    {"title": "Explore covered passages", "location": "Passages couverts", "category": "hidden"}
   ]
 }
 

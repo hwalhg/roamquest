@@ -15,6 +15,7 @@ class AppConstants {
     'landmark', // 著名景点
     'food',     // 特色美食
     'experience', // 文化体验
+    'hidden',    // 隐藏宝藏
   ];
 
   // Category Colors (for UI)
@@ -22,6 +23,7 @@ class AppConstants {
     'landmark': '#FF6B6B',
     'food': '#4ECDC4',
     'experience': '#45B7D1',
+    'hidden': '#96CEB4',
   };
 
   // Category Icons (emoji for simplicity)
@@ -29,6 +31,7 @@ class AppConstants {
     'landmark': '🏛️',
     'food': '🍜',
     'experience': '🎭',
+    'hidden': '💎',
   };
 
   // Storage Keys
