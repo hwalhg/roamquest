@@ -5,13 +5,12 @@ import '../../data/services/city_service.dart';
 
 /// City selection bottom sheet
 /// Shows a scrollable list of supported cities fetched from database
-class CitySelectionBottomSheet extends StatefulWidget {
-  final Function(City) onCitySelected;
-
-  const CitySelectionBottomSheet({
-    super.key,
+class CitySelectionBottomSheet {
+  CitySelectionBottomSheet({
     required this.onCitySelected,
   });
+
+  final Function(City) onCitySelected;
 
   /// Show the city selection as a full-screen modal
   static Future<void> show({
