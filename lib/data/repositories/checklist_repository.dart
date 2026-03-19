@@ -134,30 +134,29 @@ class ChecklistRepository {
     }
   }
 
-  /// Get incomplete checklist for a city
+  /// Get checklist for a city (returns most recent, regardless of completion status)
+  /// 复用已有清单：即使所有项目完成，仍然返回已存在的 checklist
   Future<Checklist?> getIncompleteChecklistForCity(City city) async {
     try {
       final allChecklists = await getAllChecklists();
 
-      // Find incomplete checklists for this city
-      for (final checklist in allChecklists) {
-        if (checklist.city.name != city.name ||
-            checklist.city.country != city.country) {
-          continue;
-        }
+      // Find all checklists for this city
+      final cityChecklists = allChecklists.where((checklist) {
+        return checklist.city.name == city.name &&
+            checklist.city.country == city.country;
+      }).toList();
 
-        // Load items for this checklist
-        final items = await loadChecklistItems(checklist.id);
-        final completedCount = Checklist.getCompletedCount(items);
-
-        if (completedCount < items.length) {
-          return checklist;
-        }
+      // Return most recent checklist if exists
+      if (cityChecklists.isNotEmpty) {
+        cityChecklists.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+        AppLogger.info('Found existing checklist for city: ${city.name} (${cityChecklists.first.id})');
+        return cityChecklists.first;
       }
 
+      // No checklist exists, return null
       return null;
     } catch (e) {
-      AppLogger.error('Failed to get incomplete checklist for city', error: e);
+      AppLogger.error('Failed to get checklist for city', error: e);
       return null;
     }
   }

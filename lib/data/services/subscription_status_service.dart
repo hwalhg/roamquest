@@ -11,7 +11,8 @@ class SubscriptionStatusService {
   final SupabaseClient _client = SupabaseConfig.client;
   final AuthService _authService = AuthService();
 
-  /// Check if a city is unlocked for the current user
+  /// Check if a city is unlocked for current user
+  /// 用户已有该城市的 checklist 就表示已解锁
   Future<bool> isCityUnlocked(City city) async {
     final userId = _authService.currentUserId;
     if (userId == null) return false;
@@ -20,56 +21,59 @@ class SubscriptionStatusService {
     if (city.isFree) return true;
 
     try {
+      // 检查用户是否已有该城市的 checklist
       final response = await _client
-          .from('user_cities')
+          .from('checklists')
           .select()
           .eq('user_id', userId)
-          .eq('city_name', city.name)
-          .eq('country', city.country)
+          .eq('city_id', city.id)
           .maybeSingle();
 
       return response != null;
     } catch (e) {
+      AppLogger.error('Error checking city unlock status', error: e);
       return false;
     }
   }
 
-  /// Unlock a city for the current user
+  /// Unlock a city for current user
+  /// 创建 checklist 时即自动解锁，无需单独操作
   Future<bool> unlockCity(City city) async {
-    final userId = _authService.currentUserId;
-    if (userId == null) {
-      throw Exception('User not authenticated');
-    }
-
-    try {
-      await _client.from('user_cities').insert({
-        'user_id': userId,
-        'city_name': city.name,
-        'country': city.country,
-      });
-
-      return true;
-    } catch (e) {
-      AppLogger.error('Error unlocking city', error: e);
-      return false;
-    }
+    // 创建 checklist 时已经自动"解锁"城市了
+    // 不需要单独的解锁操作
+    return true;
   }
 
-  /// Get list of unlocked cities for the current user
+  /// Get list of unlocked cities for current user
+  /// 从用户的 checklists 中获取所有已解锁的城市
   Future<List<String>> getUnlockedCityNames() async {
     final userId = _authService.currentUserId;
     if (userId == null) return [];
 
     try {
       final response = await _client
-          .from('user_cities')
-          .select('city_name')
+          .from('checklists')
+          .select('city_id')
           .eq('user_id', userId);
 
-      return (response as List)
-          .map((row) => row['city_name'] as String)
+      // 需要关联 cities 表获取城市名
+      final cityIds = (response as List)
+          .map((row) => row['city_id'] as int)
+          .toSet();
+
+      if (cityIds.isEmpty) return [];
+
+      // 从 cities 表获取城市名
+      final citiesResponse = await _client
+          .from('cities')
+          .select('name')
+          .inFilter('id', cityIds.toList());
+
+      return (citiesResponse as List)
+          .map((city) => city['name'] as String)
           .toList();
     } catch (e) {
+      AppLogger.error('Error getting unlocked cities', error: e);
       return [];
     }
   }
