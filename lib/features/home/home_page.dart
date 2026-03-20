@@ -10,6 +10,7 @@ import '../../data/services/ai_service.dart';
 import '../../data/services/location_service.dart';
 import '../../data/services/city_service.dart';
 import '../../data/services/auth_service.dart';
+import '../../data/services/subscription_status_service.dart';
 import '../../l10n/app_localizations.dart';
 import 'city_selection_bottom_sheet.dart';
 import '../checklist/checklist_page.dart';
@@ -29,8 +30,41 @@ class _HomePageState extends State<HomePage> {
   final LocationService _locationService = LocationService();
   final AuthService _authService = AuthService();
   final AIService _aiService = AIService();
+  final SubscriptionStatusService _subscriptionStatus = SubscriptionStatusService();
 
   bool _isGenerating = false;
+  List<City> _unlockedCities = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUnlockedCities();
+  }
+
+  /// Load unlocked cities from user's checklists
+  Future<void> _loadUnlockedCities() async {
+    final userId = _authService.currentUserId;
+    if (userId == null) return;
+
+    try {
+      // Get all checklists for this user
+      final allChecklists = await _checklistRepo.getAllChecklists();
+
+      // Extract unique cities from checklists
+      final uniqueCities = <City>{};
+      for (final checklist in allChecklists) {
+        uniqueCities.add(checklist.city);
+      }
+
+      setState(() {
+        _unlockedCities = uniqueCities.toList();
+      });
+
+      AppLogger.info('Loaded ${_unlockedCities.length} unlocked cities from checklists');
+    } catch (e) {
+      AppLogger.error('Failed to load unlocked cities', error: e);
+    }
+  }
 
   /// Auto-detect location and generate checklist
   Future<void> _detectLocation() async {
@@ -84,8 +118,18 @@ class _HomePageState extends State<HomePage> {
       final existingChecklist = await _checklistRepo.getIncompleteChecklistForCity(city);
 
       if (existingChecklist != null) {
-        // 有未完成的清单，直接打开
-        AppLogger.info('找到未完成的清单，直接打开 - id: ${existingChecklist.id}');
+        // 有该城市的清单，检查是否有 items
+        AppLogger.info('找到已存在的清单，检查 items - id: ${existingChecklist.id}');
+
+        // Load items for this checklist
+        final items = await _checklistRepo.loadChecklistItems(existingChecklist.id);
+
+        if (items.isEmpty) {
+          // Items 为空，需要创建 items
+          AppLogger.info('清单为空，创建 items');
+          await _createChecklistItems(existingChecklist, city);
+        }
+
         if (mounted) {
           setState(() {
             _isGenerating = false;
@@ -101,41 +145,12 @@ class _HomePageState extends State<HomePage> {
         return;
       }
 
-      // 没有未完成的清单，创建新的
-      AppLogger.info('没有未完成的清单，创建新清单');
+      // 没有该城市的清单，创建新的
+      AppLogger.info('没有该城市的清单，创建新清单');
 
       // Get app language
       final l10n = AppLocalizations.of(context)!;
       final language = l10n.locale.languageCode;
-
-      // Check if template already exists
-      final template = await _checklistRepo.getChecklistTemplate(
-        cityId: city.id,
-        language: language,
-      );
-
-      List<ChecklistItem> items;
-
-      if (template != null && template.isNotEmpty) {
-        // Use existing template
-        AppLogger.info('使用已存在的模板，${template.length} 个项目');
-        items = template;
-      } else {
-        // Generate with AI
-        AppLogger.info('调用 AI 生成新清单');
-        final result = await _aiService.generateChecklistWithRetry(
-          city,
-          language,
-        );
-        items = result.items;
-
-        // Save as template for future use
-        await _checklistRepo.saveChecklistTemplate(
-          cityId: city.id,
-          items: items,
-          language: language,
-        );
-      }
 
       // Get current user ID
       final userId = _authService.currentUserId ?? 'anonymous';
@@ -154,9 +169,8 @@ class _HomePageState extends State<HomePage> {
       await _checklistRepo.saveChecklist(checklist);
       AppLogger.info('保存 checklist 完成 - id: ${checklist.id}');
 
-      // Save checklist items separately
-      await _checklistRepo.saveChecklistItems(checklist.id, items);
-      AppLogger.info('保存 checklist items 完成 - checklistId: ${checklist.id}, 数量: ${items.length}');
+      // Create checklist items
+      await _createChecklistItems(checklist, city);
 
       // Navigate to checklist page
       if (mounted) {
@@ -302,6 +316,41 @@ class _HomePageState extends State<HomePage> {
                         ),
                       ),
                     ),
+                    const SizedBox(height: 40),
+                    // Unlocked cities list
+                    if (_unlockedCities.isNotEmpty)
+                      Container(
+                        height: 150,
+                        width: 300,
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Your Cities',
+                              style: const TextStyle(
+                                color: Color(0xFF2D3436),
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            Expanded(
+                              child: ListView.builder(
+                                itemCount: _unlockedCities.length,
+                                itemBuilder: (context, index) {
+                                  final city = _unlockedCities[index];
+                                  return _buildCityChip(city);
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                   ],
                 ),
               ),
@@ -331,5 +380,88 @@ class _HomePageState extends State<HomePage> {
         ),
       ),
     );
+  }
+
+  /// Build city chip widget
+  Widget _buildCityChip(City city) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Image.network(
+              'https://flagcdn.com/w40/${city.countryCode.toLowerCase()}.png',
+              width: 32,
+              height: 24,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return Container(
+                  width: 32,
+                  height: 24,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.location_city,
+                    size: 16,
+                    color: Colors.white,
+                  ),
+                );
+              },
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            city.name,
+            style: const TextStyle(
+              color: Color(0xFF2D3436),
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Create checklist items for a checklist
+  Future<void> _createChecklistItems(Checklist checklist, City city) async {
+    final l10n = AppLocalizations.of(context)!;
+    final language = checklist.language;
+
+    // Check if template already exists
+    final template = await _checklistRepo.getChecklistTemplate(
+      cityId: city.id,
+      language: language,
+    );
+
+    List<ChecklistItem> items;
+
+    if (template != null && template.isNotEmpty) {
+      // Use existing template
+      AppLogger.info('使用已存在的模板，${template.length} 个项目');
+      items = template;
+    } else {
+      // Generate with AI
+      AppLogger.info('调用 AI 生成新清单');
+      final result = await _aiService.generateChecklistWithRetry(
+        city,
+        language,
+      );
+      items = result.items;
+
+      // Save as template for future use
+      await _checklistRepo.saveChecklistTemplate(
+        cityId: city.id,
+        items: items,
+        language: language,
+      );
+    }
+
+    // Save checklist items
+    await _checklistRepo.saveChecklistItems(checklist.id, items);
+    AppLogger.info('保存 checklist items 完成 - checklistId: ${checklist.id}, 数量: ${items.length}');
   }
 }
