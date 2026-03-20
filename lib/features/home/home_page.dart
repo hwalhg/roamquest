@@ -338,147 +338,30 @@ class _HomePageState extends State<HomePage> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 40),
-                    // Unlocked cities section - Horizontal scrolling design
+                    const SizedBox(height: 50),
+                    // Unlocked cities list - Simple design
                     if (_unlockedCities.isNotEmpty)
                       Column(
                         children: [
-                          // Header section
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                'Unlocked Cities',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 17,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: 0.2),
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color: Colors.white.withValues(alpha: 0.3),
-                                    width: 1,
-                                  ),
-                                ),
-                                child: Text(
-                                  '${_unlockedCities.length}',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          // Horizontal city chips list
-                          Container(
-                            height: 80,
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color: Colors.white.withValues(alpha: 0.2),
-                                width: 1,
-                              ),
-                            ),
-                            child: Row(
-                              children: [
-                                // Show first 5 cities as chips, then scrollable
-                                Expanded(
-                                  child: ListView.separated(
-                                    scrollDirection: Axis.horizontal,
-                                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                                    itemCount: _unlockedCities.length,
-                                    separatorBuilder: (context, index) => const SizedBox(width: 8),
-                                    itemBuilder: (context, index) {
-                                      final city = _unlockedCities[index];
-                                      return _buildAnimatedCityChip(city, index);
-                                    },
-                                  ),
-                                ),
-                                // See all button (only if more than 5 cities)
-                                if (_unlockedCities.length > 5)
-                                  Container(
-                                    margin: const EdgeInsets.only(right: 8),
-                                    child: Material(
-                                      color: Colors.transparent,
-                                      child: InkWell(
-                                        onTap: _showAllCities,
-                                        borderRadius: BorderRadius.circular(12),
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                          decoration: BoxDecoration(
-                                            color: Colors.white.withValues(alpha: 0.15),
-                                            borderRadius: BorderRadius.circular(12),
-                                            border: Border.all(
-                                              color: Colors.white.withValues(alpha: 0.3),
-                                              width: 1,
-                                            ),
-                                          ),
-                                          child: Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              Text(
-                                                'All',
-                                                style: const TextStyle(
-                                                  color: Colors.white,
-                                                  fontSize: 13,
-                                                  fontWeight: FontWeight.w600,
-                                                ),
-                                              ),
-                                              const SizedBox(width: 4),
-                                              const Icon(
-                                                Icons.chevron_right,
-                                                color: Colors.white,
-                                                size: 16,
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                              ],
+                          // Title with count
+                          Text(
+                            'Unlocked Cities (${_unlockedCities.length})',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
                             ),
                           ),
                           const SizedBox(height: 12),
-                          // View all button (inline with the chips)
-                          if (_unlockedCities.length > 5)
-                            TextButton(
-                              onPressed: _showAllCities,
-                              style: TextButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                minimumSize: Size.zero,
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Text(
-                                    'View all',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w500,
-                                      decoration: TextDecoration.underline,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    '(${_unlockedCities.length - 5} more)',
-                                    style: const TextStyle(
-                                      color: Colors.white.withValues(alpha: 0.7),
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
+                          // Cities list - simple text chips
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            alignment: WrapAlignment.center,
+                            children: _unlockedCities.map((city) {
+                              return _buildSimpleCityChip(city);
+                            }).toList(),
+                          ),
                         ],
                       ),
                   ],
@@ -512,95 +395,86 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  /// Build animated city chip widget with staggered entrance
-  Widget _buildAnimatedCityChip(City city, int index) {
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0.0, end: 1.0),
-      duration: Duration(milliseconds: 400 + (index * 80)),
-      curve: Curves.easeOut,
-      builder: (context, value, child) {
-        return Transform.translate(
-          offset: Offset(20 * (1 - value), 0),
-          child: Opacity(
-            opacity: value.clamp(0.0, 1.0),
-            child: _buildCityChip(city),
-          ),
-        );
-      },
-    );
-  }
-
-  /// Build city chip widget - Simplified design
-  Widget _buildCityChip(City city) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
+  /// Build simple city chip - minimal design with click to navigate
+  Widget _buildSimpleCityChip(City city) {
+    return GestureDetector(
+      onTap: () => _navigateToCityChecklist(city),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
           color: Colors.white.withValues(alpha: 0.15),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: Colors.white.withValues(alpha: 0.25),
-            width: 1,
-          ),
+          borderRadius: BorderRadius.circular(20),
         ),
         child: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            // Flag
+            // Small flag
             ClipRRect(
-              borderRadius: BorderRadius.circular(6),
+              borderRadius: BorderRadius.circular(3),
               child: Image.network(
-                'https://flagcdn.com/w40/${city.countryCode.toLowerCase()}.png',
-                width: 32,
-                height: 22,
+                'https://flagcdn.com/w20/${city.countryCode.toLowerCase()}.png',
+                width: 20,
+                height: 15,
                 fit: BoxFit.cover,
                 errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    width: 32,
-                    height: 22,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: const Icon(
-                      Icons.location_city,
-                      size: 14,
-                      color: Colors.white,
-                    ),
-                  );
+                  return const SizedBox.shrink();
                 },
               ),
             ),
-            const SizedBox(width: 10),
-            // City name and country
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    city.name,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  Text(
-                    city.country,
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.7),
-                      fontSize: 11,
-                      fontWeight: FontWeight.w400,
-                    ),
-                  ),
-                ],
+            const SizedBox(width: 6),
+            // City name only
+            Text(
+              city.name,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
               ),
             ),
           ],
         ),
       ),
     );
+  }
+
+  /// Navigate to city checklist
+  Future<void> _navigateToCityChecklist(City city) async {
+    try {
+      AppLogger.info('点击城市芯片，导航到: ${city.name}');
+
+      // 查找该城市的 checklist
+      final checklist = await _checklistRepo.getIncompleteChecklistForCity(city);
+
+      if (checklist != null) {
+        // 找到 checklist，检查是否有 items
+        final items = await _checklistRepo.loadChecklistItems(checklist.id);
+
+        if (items.isEmpty) {
+          // Items 为空，创建 items
+          AppLogger.info('清单为空，创建 items');
+          await _createChecklistItems(checklist, city);
+        }
+
+        if (mounted) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => ChecklistPage(checklist: checklist),
+            ),
+          );
+        }
+      } else {
+        // 没有找到 checklist，提示用户
+        if (mounted) {
+          _showErrorDialog('No checklist found for ${city.name}. Please create a new one.');
+        }
+      }
+    } catch (e) {
+      AppLogger.error('导航到城市清单失败', error: e);
+      if (mounted) {
+        _showErrorDialog('Failed to open checklist. Please try again.');
+      }
+    }
   }
 
   /// Create checklist items for a checklist
