@@ -44,15 +44,22 @@ class _HomePageState extends State<HomePage> {
   /// Load unlocked cities from user's checklists
   Future<void> _loadUnlockedCities() async {
     final userId = _authService.currentUserId;
-    if (userId == null) return;
+    if (userId == null) {
+      AppLogger.warning('User ID is null, cannot load unlocked cities');
+      return;
+    }
 
     try {
+      AppLogger.info('开始加载用户的解锁城市，userId: $userId');
+
       // Get all checklists for this user
       final allChecklists = await _checklistRepo.getAllChecklists();
+      AppLogger.info('从数据库获取到 ${allChecklists.length} 个 checklists');
 
       // Extract unique cities from checklists
       final uniqueCities = <City>{};
       for (final checklist in allChecklists) {
+        AppLogger.info('Checklist: ${checklist.id}, 城市: ${checklist.city.name}');
         uniqueCities.add(checklist.city);
       }
 
@@ -60,9 +67,9 @@ class _HomePageState extends State<HomePage> {
         _unlockedCities = uniqueCities.toList();
       });
 
-      AppLogger.info('Loaded ${_unlockedCities.length} unlocked cities from checklists');
-    } catch (e) {
-      AppLogger.error('Failed to load unlocked cities', error: e);
+      AppLogger.info('成功加载 ${_unlockedCities.length} 个解锁城市: ${_unlockedCities.map((c) => c.name).join(', ')}');
+    } catch (e, stackTrace) {
+      AppLogger.error('加载解锁城市失败', error: e, stackTrace: stackTrace);
     }
   }
 
@@ -317,34 +324,65 @@ class _HomePageState extends State<HomePage> {
                       ),
                     ),
                     const SizedBox(height: 40),
-                    // Unlocked cities list
+                    // Unlocked cities list - Transparent design
                     if (_unlockedCities.isNotEmpty)
                       Container(
-                        height: 150,
+                        height: 160,
                         width: 300,
-                        padding: const EdgeInsets.all(16),
+                        padding: const EdgeInsets.all(18),
                         decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(16),
+                          color: Colors.white.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.25),
+                            width: 1.5,
+                          ),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              'Your Cities',
-                              style: const TextStyle(
-                                color: Color(0xFF2D3436),
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
+                            // Header row - title left, count right
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  'Unlocked Cities',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 17,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.2),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: Colors.white.withValues(alpha: 0.3),
+                                      width: 1,
+                                    ),
+                                  ),
+                                  child: Text(
+                                    '${_unlockedCities.length}',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                             const SizedBox(height: 12),
+                            // Cities list
                             Expanded(
                               child: ListView.builder(
+                                padding: EdgeInsets.zero,
                                 itemCount: _unlockedCities.length,
                                 itemBuilder: (context, index) {
                                   final city = _unlockedCities[index];
-                                  return _buildCityChip(city);
+                                  return _buildAnimatedCityChip(city, index);
                                 },
                               ),
                             ),
@@ -382,46 +420,93 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  /// Build city chip widget
+  /// Build animated city chip widget with staggered entrance
+  Widget _buildAnimatedCityChip(City city, int index) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: Duration(milliseconds: 400 + (index * 80)),
+      curve: Curves.easeOut,
+      builder: (context, value, child) {
+        return Transform.translate(
+          offset: Offset(20 * (1 - value), 0),
+          child: Opacity(
+            opacity: value.clamp(0.0, 1.0),
+            child: _buildCityChip(city),
+          ),
+        );
+      },
+    );
+  }
+
+  /// Build city chip widget - Simplified design
   Widget _buildCityChip(City city) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Row(
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: Image.network(
-              'https://flagcdn.com/w40/${city.countryCode.toLowerCase()}.png',
-              width: 32,
-              height: 24,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) {
-                return Container(
-                  width: 32,
-                  height: 24,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Icon(
-                    Icons.location_city,
-                    size: 16,
-                    color: Colors.white,
-                  ),
-                );
-              },
-            ),
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.15),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: Colors.white.withValues(alpha: 0.25),
+            width: 1,
           ),
-          const SizedBox(width: 8),
-          Text(
-            city.name,
-            style: const TextStyle(
-              color: Color(0xFF2D3436),
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
+        ),
+        child: Row(
+          children: [
+            // Flag
+            ClipRRect(
+              borderRadius: BorderRadius.circular(6),
+              child: Image.network(
+                'https://flagcdn.com/w40/${city.countryCode.toLowerCase()}.png',
+                width: 32,
+                height: 22,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    width: 32,
+                    height: 22,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: const Icon(
+                      Icons.location_city,
+                      size: 14,
+                      color: Colors.white,
+                    ),
+                  );
+                },
+              ),
             ),
-          ),
-        ],
+            const SizedBox(width: 10),
+            // City name and country
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    city.name,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  Text(
+                    city.country,
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.7),
+                      fontSize: 11,
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

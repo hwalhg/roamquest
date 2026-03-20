@@ -65,7 +65,7 @@ class StorageService {
     try {
       final response = await _client
           .from(ApiConstants.tableChecklists)
-          .select()
+          .select('*, cities(*)')
           .eq('user_id', userId)
           .order('created_at', ascending: false)
           .limit(limit);
@@ -299,20 +299,41 @@ class StorageService {
 
   /// Parse checklist from database response
   Checklist _parseChecklist(Map<String, dynamic> data) {
+    // Parse city from joined data or from embedded city object
+    final cityData = data['cities'] as Map<String, dynamic>?;
+    final cityId = data['city_id'] as int;
+
+    City city;
+    if (cityData != null && cityData.isNotEmpty) {
+      // Use joined city data
+      city = City(
+        id: cityData['id'] as int,
+        name: cityData['name'] as String,
+        country: cityData['country'] as String,
+        countryCode: cityData['country_code'] as String? ?? 'XX',
+        latitude: (cityData['latitude'] as num?)?.toDouble() ?? 0.0,
+        longitude: (cityData['longitude'] as num?)?.toDouble() ?? 0.0,
+      );
+    } else {
+      // Fallback: create minimal city object with city_id
+      AppLogger.warning('No city data found for checklist ${data['id']}, using city_id: $cityId');
+      city = City(
+        id: cityId,
+        name: 'Unknown City',
+        country: 'Unknown',
+        countryCode: 'XX',
+        latitude: 0.0,
+        longitude: 0.0,
+      );
+    }
+
     return Checklist(
       id: data['id'] as String,
-      cityId: data['city_id'] as int,
-      city: City(
-        id: data['city_id'] as int,
-        name: data['city_name'] as String,
-        country: data['country'] as String,
-        countryCode: data['country_code'] as String? ?? 'XX',
-        latitude: (data['latitude'] as num?)?.toDouble() ?? 0.0,
-        longitude: (data['longitude'] as num?)?.toDouble() ?? 0.0,
-      ),
+      cityId: cityId,
+      city: city,
       userId: data['user_id'] as String,
       createdAt: DateTime.parse(data['created_at'] as String),
-      language: data['language'] as String,
+      language: data['language'] as String? ?? 'en',
     );
   }
 }
