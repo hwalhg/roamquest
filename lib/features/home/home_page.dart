@@ -227,6 +227,21 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  /// Show all unlocked cities page
+  void _showAllCities() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => UnlockedCitiesPage(
+          cities: _unlockedCities,
+          onCitySelected: (city) {
+            _generateChecklistForCity(city);
+          },
+        ),
+      ),
+    );
+  }
+
   /// Show error dialog
   void _showErrorDialog(String message) {
     showDialog(
@@ -324,70 +339,147 @@ class _HomePageState extends State<HomePage> {
                       ),
                     ),
                     const SizedBox(height: 40),
-                    // Unlocked cities list - Transparent design
+                    // Unlocked cities section - Horizontal scrolling design
                     if (_unlockedCities.isNotEmpty)
-                      Container(
-                        height: 160,
-                        width: 300,
-                        padding: const EdgeInsets.all(18),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.25),
-                            width: 1.5,
-                          ),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Header row - title left, count right
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  'Unlocked Cities',
+                      Column(
+                        children: [
+                          // Header section
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'Unlocked Cities',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.2),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: Colors.white.withValues(alpha: 0.3),
+                                    width: 1,
+                                  ),
+                                ),
+                                child: Text(
+                                  '${_unlockedCities.length}',
                                   style: const TextStyle(
                                     color: Colors.white,
-                                    fontSize: 17,
+                                    fontSize: 14,
                                     fontWeight: FontWeight.w700,
                                   ),
                                 ),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withValues(alpha: 0.2),
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(
-                                      color: Colors.white.withValues(alpha: 0.3),
-                                      width: 1,
-                                    ),
-                                  ),
-                                  child: Text(
-                                    '${_unlockedCities.length}',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 12),
-                            // Cities list
-                            Expanded(
-                              child: ListView.builder(
-                                padding: EdgeInsets.zero,
-                                itemCount: _unlockedCities.length,
-                                itemBuilder: (context, index) {
-                                  final city = _unlockedCities[index];
-                                  return _buildAnimatedCityChip(city, index);
-                                },
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          // Horizontal city chips list
+                          Container(
+                            height: 80,
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: Colors.white.withValues(alpha: 0.2),
+                                width: 1,
                               ),
                             ),
-                          ],
-                        ),
+                            child: Row(
+                              children: [
+                                // Show first 5 cities as chips, then scrollable
+                                Expanded(
+                                  child: ListView.separated(
+                                    scrollDirection: Axis.horizontal,
+                                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                                    itemCount: _unlockedCities.length,
+                                    separatorBuilder: (context, index) => const SizedBox(width: 8),
+                                    itemBuilder: (context, index) {
+                                      final city = _unlockedCities[index];
+                                      return _buildAnimatedCityChip(city, index);
+                                    },
+                                  ),
+                                ),
+                                // See all button (only if more than 5 cities)
+                                if (_unlockedCities.length > 5)
+                                  Container(
+                                    margin: const EdgeInsets.only(right: 8),
+                                    child: Material(
+                                      color: Colors.transparent,
+                                      child: InkWell(
+                                        onTap: _showAllCities,
+                                        borderRadius: BorderRadius.circular(12),
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                          decoration: BoxDecoration(
+                                            color: Colors.white.withValues(alpha: 0.15),
+                                            borderRadius: BorderRadius.circular(12),
+                                            border: Border.all(
+                                              color: Colors.white.withValues(alpha: 0.3),
+                                              width: 1,
+                                            ),
+                                          ),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Text(
+                                                'All',
+                                                style: const TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 13,
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                              ),
+                                              const SizedBox(width: 4),
+                                              const Icon(
+                                                Icons.chevron_right,
+                                                color: Colors.white,
+                                                size: 16,
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          // View all button (inline with the chips)
+                          if (_unlockedCities.length > 5)
+                            TextButton(
+                              onPressed: _showAllCities,
+                              style: TextButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                minimumSize: Size.zero,
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Text(
+                                    'View all',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500,
+                                      decoration: TextDecoration.underline,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    '(${_unlockedCities.length - 5} more)',
+                                    style: const TextStyle(
+                                      color: Colors.white.withValues(alpha: 0.7),
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                        ],
                       ),
                   ],
                 ),
