@@ -1,4 +1,6 @@
 import 'dart:io';
+import 'dart:typed_data';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../core/theme/app_colors.dart';
@@ -35,6 +37,7 @@ class _CheckinPageState extends State<CheckinPage> {
   final LocationService _locationService = LocationService();
   final GlobalKey _starsKey = GlobalKey();
   XFile? _imageFile;
+  Uint8List? _imageBytes;
   bool _isUploading = false;
   double? _displayRating; // Display rating (0.5-10.0 scale)
 
@@ -335,12 +338,19 @@ class _CheckinPageState extends State<CheckinPage> {
                               );
                             },
                           )
-                        : Image.file(
-                            File(_imageFile!.path),
-                            width: double.infinity,
-                            height: double.infinity,
-                            fit: BoxFit.cover,
-                          ),
+                        : kIsWeb
+                            ? Image.memory(
+                                _imageBytes!,
+                                width: double.infinity,
+                                height: double.infinity,
+                                fit: BoxFit.cover,
+                              )
+                            : Image.file(
+                                File(_imageFile!.path),
+                                width: double.infinity,
+                                height: double.infinity,
+                                fit: BoxFit.cover,
+                              ),
                   ),
                   Positioned(
                     top: AppSpacing.sm,
@@ -349,6 +359,7 @@ class _CheckinPageState extends State<CheckinPage> {
                       onPressed: () {
                         setState(() {
                           _imageFile = null;
+                          _imageBytes = null;
                         });
                       },
                       icon: const Icon(Icons.close),
@@ -445,8 +456,15 @@ class _CheckinPageState extends State<CheckinPage> {
       );
 
       if (pickedFile != null) {
+        // Read image bytes for Web platform
+        Uint8List? imageBytes;
+        if (kIsWeb) {
+          imageBytes = await pickedFile.readAsBytes();
+        }
+
         setState(() {
           _imageFile = pickedFile;
+          _imageBytes = imageBytes;
         });
       }
     } catch (e) {
