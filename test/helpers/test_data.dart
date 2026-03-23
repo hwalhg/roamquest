@@ -243,6 +243,8 @@ class TestFixtures {
     String name = 'San Francisco',
     String country = 'United States',
     String countryCode = 'US',
+    bool isFree = false,
+    bool isActive = true,
   }) {
     return City(
       id: id ?? 1,
@@ -251,7 +253,8 @@ class TestFixtures {
       countryCode: countryCode,
       latitude: 37.7749,
       longitude: -122.4194,
-      isActive: true,
+      isFree: isFree,
+      isActive: isActive,
     );
   }
 
