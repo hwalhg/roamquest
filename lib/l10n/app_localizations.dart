@@ -87,6 +87,7 @@ class AppLocalizations {
       'upgradePremium': 'Upgrade Premium',
       'unlockUnlimited': 'Unlock unlimited city exploration',
       'premiumFeatures': 'Premium Features',
+      'restorePurchaseCompleted': 'Purchase restored',
 
       // Terms & Privacy
       'agreeToTerms': 'I agree to the Terms of Service and Privacy Policy',
@@ -102,8 +103,10 @@ class AppLocalizations {
       'save': 'Save',
       'subscribeNow': 'Subscribe Now',
       'restorePurchase': 'Restore Purchase',
-      'termsOfService': 'By subscribing, you agree to our Terms of Service and Privacy Policy.',
-      'autoRenew': 'Subscription will auto-renew unless cancelled at least 24h before expiration.',
+      'termsOfService': 'By subscribing, you agree to our',
+      'termsAndPrivacy': 'Terms of Service and Privacy Policy',
+      'autoRenew': 'Subscription will auto-renew unless cancelled at least 24h before expiration. All cities are unlocked during subscription.',
+      'howToCancel': 'How to cancel subscription?',
       'webNotSupported': 'Web platform does not support subscriptions',
       'webNotSupportedDesc': 'Please use iOS or Android device for subscription',
       'paymentFailed': 'Payment failed',
@@ -248,6 +251,7 @@ class AppLocalizations {
       'upgradePremium': '升级高级版',
       'unlockUnlimited': '解锁无限城市探索',
       'premiumFeatures': '高级版功能',
+      'restorePurchaseCompleted': '购买已恢复',
 
       // Terms & Privacy
       'agreeToTerms': '我同意服务条款和隐私政策',
@@ -263,8 +267,10 @@ class AppLocalizations {
       'savings': '节省',
       'subscribeNow': '立即订阅',
       'restorePurchase': '恢复购买',
-      'termsOfService': '订阅即表示您同意我们的服务条款和隐私政策。',
-      'autoRenew': '订阅将自动续订，除非在到期前至少24小时取消。',
+      'termsOfService': '订阅即表示您同意我们的',
+      'termsAndPrivacy': '服务条款和隐私政策',
+      'autoRenew': '订阅将自动续订，除非在到期前至少24小时取消。订阅期间可解锁所有城市。',
+      'howToCancel': '如何取消订阅？',
       'webNotSupported': 'Web平台暂不支持订阅',
       'webNotSupportedDesc': '请在iOS或Android设备上使用订阅功能',
       'paymentFailed': '支付失败',
@@ -391,6 +397,13 @@ class AppLocalizations {
   String get upgradePremium => get('upgradePremium');
   String get unlockUnlimited => get('unlockUnlimited');
   String get startExploring => get('startExploring');
+  String get premiumFeatures => get('premiumFeatures');
+  String get ok => get('ok');
+  String get subscribeNow => get('subscribeNow');
+  String get restorePurchase => get('restorePurchase');
+  String get paymentFailed => get('paymentFailed');
+  String get welcomePremium => get('welcomePremium');
+  String get unlimitedCity => get('unlimitedCity');
 
   // Subscription Info Page
   String get freeTier => get('freeTier');

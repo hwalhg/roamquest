@@ -9,6 +9,7 @@ import '../../core/theme/app_text_styles.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/models/subscription.dart';
 import '../../data/repositories/subscription_repository.dart';
+import '../../l10n/app_localizations.dart';
 
 /// Subscription page for premium upgrade
 class SubscriptionPage extends StatefulWidget {
@@ -123,15 +124,17 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
   }
 
   Future<void> _restorePurchase() async {
+    final l10n = AppLocalizations.of(context)!;
     await _subscriptionRepo.restorePurchases();
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('购买已恢复')),
+        SnackBar(content: Text(l10n.get('restorePurchaseCompleted'))),
       );
     }
   }
 
   void _showSuccessDialog() {
+    final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -156,12 +159,12 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
             ),
             const SizedBox(height: AppSpacing.lg),
             Text(
-              '欢迎升级Premium！',
+              l10n.get('welcomePremium'),
               style: AppTextStyles.h3,
             ),
             const SizedBox(height: AppSpacing.sm),
             Text(
-              '您现在可以无限打卡',
+              l10n.get('unlimitedCity'),
               style: AppTextStyles.bodyMedium.copyWith(
                 color: AppColors.textSecondary,
               ),
@@ -176,7 +179,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                   // Navigate to home page
                   Navigator.of(context).popUntil((route) => route.isFirst);
                 },
-                child: const Text('开始探索'),
+                child: Text(l10n.get('startExploring')),
               ),
             ),
           ],
@@ -186,17 +189,16 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
   }
 
   void _showErrorDialog() {
+    final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('购买失败'),
-        content: const Text(
-          '无法完成购买，请重试。',
-        ),
+        title: Text(l10n.get('paymentFailed')),
+        content: Text(l10n.get('paymentFailedDesc')),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('确定'),
+            child: Text(l10n.get('ok')),
           ),
         ],
       ),
@@ -205,6 +207,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
@@ -222,19 +225,19 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                 child: ListView(
                   padding: const EdgeInsets.all(AppSpacing.lg),
                   children: [
-                    _buildHeader(),
+                    _buildHeader(l10n),
                     const SizedBox(height: AppSpacing.md),
                     _buildSubscriptionStatus(),
                     const SizedBox(height: AppSpacing.xl),
-                    _buildSubscriptionPlans(),
+                    _buildSubscriptionPlans(l10n),
                     const SizedBox(height: AppSpacing.xl),
-                    _buildFeatures(),
+                    _buildFeatures(l10n),
                     const SizedBox(height: AppSpacing.xl),
-                    _buildPurchaseButton(),
+                    _buildPurchaseButton(l10n),
                     const SizedBox(height: AppSpacing.md),
-                    _buildRestoreButton(),
+                    _buildRestoreButton(l10n),
                     const SizedBox(height: AppSpacing.xl),
-                    _buildTerms(),
+                    _buildTerms(l10n),
                   ],
                 ),
               ),
@@ -265,7 +268,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(AppLocalizations l10n) {
     return Column(
       children: [
         Container(
@@ -282,14 +285,14 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
         ),
         const SizedBox(height: AppSpacing.lg),
         Text(
-          '升级Premium',
+          l10n.get('upgradePremium'),
           style: AppTextStyles.h1.copyWith(
             color: AppColors.textOnDark,
           ),
         ),
         const SizedBox(height: AppSpacing.sm),
         Text(
-          '解锁无限城市探索',
+          l10n.get('unlockUnlimited'),
           style: AppTextStyles.bodyMedium.copyWith(
             color: AppColors.textOnDark.withValues(alpha:0.9),
           ),
@@ -373,7 +376,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
     );
   }
 
-  Widget _buildSubscriptionPlans() {
+  Widget _buildSubscriptionPlans(AppLocalizations l10n) {
     return ValueListenableBuilder(
       valueListenable: _subscriptionRepo.status,
       builder: (context, status, _) {
@@ -394,14 +397,14 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                 ),
                 const SizedBox(height: AppSpacing.md),
                 Text(
-                  'Web平台暂不支持订阅',
+                  l10n.get('webNotSupported'),
                   style: AppTextStyles.h4.copyWith(
                     color: AppColors.textOnDark,
                   ),
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 Text(
-                  '请在iOS或Android设备上使用订阅功能',
+                  l10n.get('webNotSupportedDesc'),
                   style: AppTextStyles.bodyMedium.copyWith(
                     color: AppColors.textOnDark.withValues(alpha:0.8),
                   ),
@@ -602,7 +605,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
     );
   }
 
-  Widget _buildFeatures() {
+  Widget _buildFeatures(AppLocalizations l10n) {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
@@ -613,7 +616,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Premium功能',
+            l10n.get('premiumFeatures'),
             style: AppTextStyles.h4.copyWith(
               color: AppColors.textOnDark,
             ),
@@ -621,20 +624,20 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
           const SizedBox(height: AppSpacing.md),
           _buildFeatureItem(
             icon: Icons.all_inclusive,
-            title: '无限打卡',
-            description: '完成每个城市的全部20个体验',
+            title: l10n.get('unlimitedCheckin'),
+            description: l10n.get('unlimitedCheckinDesc'),
           ),
           const SizedBox(height: AppSpacing.md),
           _buildFeatureItem(
             icon: Icons.assessment,
-            title: '完整探险报告',
-            description: '包含所有回忆的精美报告',
+            title: l10n.get('fullReport'),
+            description: l10n.get('fullReportDesc'),
           ),
           const SizedBox(height: AppSpacing.md),
           _buildFeatureItem(
             icon: Icons.cloud_download,
-            title: '下载与分享',
-            description: '保存报告并与朋友分享',
+            title: l10n.get('downloadShare'),
+            description: l10n.get('downloadShareDesc'),
           ),
         ],
       ),
@@ -688,7 +691,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
     );
   }
 
-  Widget _buildPurchaseButton() {
+  Widget _buildPurchaseButton(AppLocalizations l10n) {
     return SizedBox(
       width: double.infinity,
       height: 56,
@@ -710,19 +713,19 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                   color: AppColors.primary,
                 ),
               )
-            : const Text(
-                '立即订阅',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+            : Text(
+                l10n.get('subscribeNow'),
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
               ),
       ),
     );
   }
 
-  Widget _buildRestoreButton() {
+  Widget _buildRestoreButton(AppLocalizations l10n) {
     return TextButton(
       onPressed: _restorePurchase,
       child: Text(
-        '恢复购买',
+        l10n.get('restorePurchase'),
         style: AppTextStyles.bodyMedium.copyWith(
           color: AppColors.textOnDark,
         ),
@@ -730,7 +733,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
     );
   }
 
-  Widget _buildTerms() {
+  Widget _buildTerms(AppLocalizations l10n) {
     return Column(
       children: [
         Text.rich(
@@ -739,14 +742,14 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
               color: AppColors.textOnDark.withValues(alpha:0.7),
             ),
             children: [
-              const TextSpan(text: '订阅即表示您同意我们的'),
+              TextSpan(text: l10n.get('termsOfService') + ' '),
               WidgetSpan(
                 alignment: PlaceholderAlignment.middle,
                 child: InkWell(
                   onTap: () => _openUrl('https://roamquest.xyz/terms'),
-                  child: const Text(
-                    '服务条款',
-                    style: TextStyle(
+                  child: Text(
+                    l10n.get('termsAndPrivacy'),
+                    style: const TextStyle(
                       color: AppColors.textOnDark,
                       decoration: TextDecoration.underline,
                       decorationColor: AppColors.textOnDark,
@@ -754,22 +757,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                   ),
                 ),
               ),
-              const TextSpan(text: '和'),
-              WidgetSpan(
-                alignment: PlaceholderAlignment.middle,
-                child: InkWell(
-                  onTap: () => _openUrl('https://roamquest.xyz/privacy'),
-                  child: const Text(
-                    '隐私政策',
-                    style: TextStyle(
-                      color: AppColors.textOnDark,
-                      decoration: TextDecoration.underline,
-                      decorationColor: AppColors.textOnDark,
-                    ),
-                  ),
-                ),
-              ),
-              const TextSpan(text: '。'),
+              const TextSpan(text: '.'),
             ],
           ),
           textAlign: TextAlign.center,
@@ -781,14 +769,14 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
               color: AppColors.textOnDark.withValues(alpha:0.6),
             ),
             children: [
-              const TextSpan(text: '订阅将自动续订，除非在到期前至少24小时取消。订阅期间可解锁所有城市。'),
+              TextSpan(text: l10n.get('autoRenew')),
               WidgetSpan(
                 alignment: PlaceholderAlignment.middle,
                 child: InkWell(
                   onTap: () => _openUrl('https://support.apple.com/HT202039'),
-                  child: const Text(
-                    '\n\n如何取消订阅？',
-                    style: TextStyle(
+                  child: Text(
+                    '\n\n' + l10n.get('howToCancel'),
+                    style: const TextStyle(
                       color: AppColors.textOnDark,
                       decoration: TextDecoration.underline,
                       decorationColor: AppColors.textOnDark,

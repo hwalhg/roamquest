@@ -80,6 +80,10 @@ class _RoamQuestAppState extends State<RoamQuestApp> {
         Locale('zh'), // Chinese
       ],
       locale: const Locale('en'), // Default to English
+      localeResolutionCallback: (locale, supportedLocales) {
+        // Always use English for overseas app
+        return const Locale('en');
+      },
       home: StreamBuilder<AuthState>(
         stream: _auth.authStateChanges,
         builder: (context, snapshot) {
