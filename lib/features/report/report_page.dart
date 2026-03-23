@@ -1,8 +1,11 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'dart:ui' as ui;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:universal_html/html.dart' as html;
 
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
@@ -722,21 +725,35 @@ class _ShareCardPreviewPageState extends State<ShareCardPreviewPage> {
         return;
       }
 
-      // Save to temp directory
-      final tempDir = Directory.systemTemp;
-      final timestamp = DateTime.now().millisecondsSinceEpoch;
-      final file = await File('${tempDir.path}/roamquest_$timestamp.png')
-          .writeAsBytes(byteData.buffer.asUint8List());
+      final pngBytes = byteData.buffer.asUint8List();
 
-      _showSuccess('Image created! Sharing...');
+      if (kIsWeb) {
+        // Web platform: download the image
+        final blob = html.Blob([pngBytes]);
+        final url = html.Url.createObjectUrlFromBlob(blob);
+        final anchor = html.AnchorElement()
+          ..href = url
+          ..download = 'roamquest_${checklist.city.name}_${DateTime.now().millisecondsSinceEpoch}.png'
+          ..click();
+        html.Url.revokeObjectUrl(url);
+        _showSuccess('Image downloaded!');
+      } else {
+        // Mobile platform: save to temp directory and share
+        final tempDir = Directory.systemTemp;
+        final timestamp = DateTime.now().millisecondsSinceEpoch;
+        final file = await File('${tempDir.path}/roamquest_$timestamp.png')
+            .writeAsBytes(pngBytes);
 
-      // Share the image
-      await Share.shareXFiles(
-        [XFile(file.path)],
-        subject: 'My Journey in ${checklist.city.name}',
-        text:
-            '${widget.userNickname} explored ${Checklist.getCompletedCount(_items)} amazing places in ${checklist.city.name}! 🌍\n\nDownload RoamQuest and start your own journey!',
-      );
+        _showSuccess('Image created! Sharing...');
+
+        // Share the image
+        await Share.shareXFiles(
+          [XFile(file.path)],
+          subject: 'My Journey in ${checklist.city.name}',
+          text:
+              '${widget.userNickname} explored ${Checklist.getCompletedCount(_items)} amazing places in ${checklist.city.name}! 🌍\n\nDownload RoamQuest and start your own journey!',
+        );
+      }
     } catch (e) {
       _showError('Failed to share: $e');
     } finally {
