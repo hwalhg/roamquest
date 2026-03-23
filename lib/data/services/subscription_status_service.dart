@@ -11,6 +11,50 @@ class SubscriptionStatusService {
   final SupabaseClient _client = SupabaseConfig.client;
   final AuthService _authService = AuthService();
 
+  /// Check if user has premium subscription (unlimited access)
+  /// Queries from database to check if user has an active, non-expired subscription
+  Future<bool> hasPremiumSubscription() async {
+    final userId = _authService.currentUserId;
+    if (userId == null) return false;
+
+    try {
+      final response = await _client
+          .from('subscriptions')
+          .select()
+          .eq('user_id', userId)
+          .eq('is_active', true)
+          .gt('end_date', DateTime.now().toIso8601String())
+          .maybeSingle();
+
+      final hasActiveSubscription = response != null;
+      AppLogger.info('Premium subscription check: $hasActiveSubscription for user $userId');
+      return hasActiveSubscription;
+    } catch (e) {
+      AppLogger.error('Error checking premium subscription from database', error: e);
+      return false;
+    }
+  }
+
+  /// Check if user has a checklist for the city
+  Future<bool> hasChecklistForCity(City city) async {
+    final userId = _authService.currentUserId;
+    if (userId == null) return false;
+
+    try {
+      final response = await _client
+          .from('checklists')
+          .select()
+          .eq('user_id', userId)
+          .eq('city_id', city.id)
+          .maybeSingle();
+
+      return response != null;
+    } catch (e) {
+      AppLogger.error('Error checking city checklist', error: e);
+      return false;
+    }
+  }
+
   /// Check if a city is unlocked for current user
   /// 用户已有该城市的 checklist 就表示已解锁
   Future<bool> isCityUnlocked(City city) async {
@@ -78,19 +122,31 @@ class SubscriptionStatusService {
     }
   }
 
-  /// Check if user can check in to an item (free tier limitation)
+  /// Check if user can check in to an item
   /// Returns true if:
-  /// - City is unlocked, OR
-  /// - Not yet reached free tier limits (1 per category: landmark, food, experience)
+  /// - The item is free (isFree = true), OR
+  /// - Premium user with checklist for the city, OR
+  /// - Not yet reached free tier limits (1 per category: landmark, food, experience, hidden)
   Future<bool> canCheckIn(
     City city,
     List<ChecklistItem> completedItems,
     ChecklistItem? itemToCheck,
   ) async {
-    // If city is unlocked, no restrictions
-    if (await isCityUnlocked(city)) return true;
+    // Free items: always allowed
+    if (itemToCheck != null && itemToCheck.isFree) {
+      AppLogger.info('Free item detected: ${itemToCheck.title}');
+      return true;
+    }
 
-    // Count by category for remaining free tier
+    // Premium users with checklist: unlimited access
+    if (await hasPremiumSubscription()) {
+      // Premium users must have a checklist for the city
+      if (await hasChecklistForCity(city)) {
+        return true;
+      }
+    }
+
+    // Free tier: count by category (1 per category)
     final landmarkCount = completedItems
         .where((item) => item.category == 'landmark' && item.isCompleted)
         .length;
@@ -103,10 +159,15 @@ class SubscriptionStatusService {
         .where((item) => item.category == 'experience' && item.isCompleted)
         .length;
 
+    final hiddenCount = completedItems
+        .where((item) => item.category == 'hidden' && item.isCompleted)
+        .length;
+
     // Free tier limits: 1 per category
     if (landmarkCount >= 1) return false;
     if (foodCount >= 1) return false;
     if (experienceCount >= 1) return false;
+    if (hiddenCount >= 1) return false;
 
     return true;
   }
@@ -116,10 +177,12 @@ class SubscriptionStatusService {
     City city,
     List<ChecklistItem> completedItems,
   ) async {
-    if (await isCityUnlocked(city)) {
-      return {'landmark': 999, 'food': 999, 'experience': 999};
+    // Premium users with checklist: unlimited
+    if (await hasPremiumSubscription() && await hasChecklistForCity(city)) {
+      return {'landmark': 999, 'food': 999, 'experience': 999, 'hidden': 999};
     }
 
+    // Free tier: count remaining
     final landmarkCount = completedItems
         .where((item) => item.category == 'landmark' && item.isCompleted)
         .length;
@@ -132,10 +195,15 @@ class SubscriptionStatusService {
         .where((item) => item.category == 'experience' && item.isCompleted)
         .length;
 
+    final hiddenCount = completedItems
+        .where((item) => item.category == 'hidden' && item.isCompleted)
+        .length;
+
     return {
       'landmark': 1 - landmarkCount,
       'food': 1 - foodCount,
       'experience': 1 - experienceCount,
+      'hidden': 1 - hiddenCount,
     };
   }
 }

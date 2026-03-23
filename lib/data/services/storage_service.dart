@@ -95,6 +95,7 @@ class StorageService {
               'category': item.category,
               'sort_order': item.sortOrder,
               'is_completed': item.isCompleted,
+              'is_free': item.isFree,
               'checkin_photo_url': item.photoUrl,
               'checked_at': item.completedAt?.toIso8601String(),
               'latitude': item.latitude,
@@ -246,6 +247,7 @@ class StorageService {
           category: itemData['category'] as String,
           sortOrder: itemData['sort_order'] as int? ?? 0,
           isCompleted: false,
+          isFree: itemData['is_free'] as bool? ?? false,
           latitude: itemData['latitude'] != null
               ? (itemData['latitude'] as num).toDouble()
               : null,
@@ -286,6 +288,7 @@ class StorageService {
               'category': item.category,
               'language': language,
               'is_active': true,
+              'is_free': item.isFree,
               'sort_order': i,
             });
       }

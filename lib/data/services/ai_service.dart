@@ -84,8 +84,11 @@ class AIService {
           .map((entry) => ChecklistItem.fromAIJson(entry.value, entry.key))
           .toList();
 
+      // Mark first 2 items of each category as free
+      final itemsWithFreeStatus = _markFreeItems(checklistItems);
+
       return AIGenerationResult(
-        items: checklistItems,
+        items: itemsWithFreeStatus,
         city: city,
       );
     } on DioException catch (e) {
@@ -142,6 +145,24 @@ class AIService {
 
     // Return all valid items (no longer enforcing 20 items)
     return result;
+  }
+
+  /// Mark first N items of each category as free
+  /// This allows users to try some content before subscribing
+  List<ChecklistItem> _markFreeItems(List<ChecklistItem> items) {
+    const freeItemsPerCategory = 2;
+
+    // Group items by category and track count
+    final categoryCount = <String, int>{};
+
+    return items.map((item) {
+      final count = categoryCount[item.category] ?? 0;
+      categoryCount[item.category] = count + 1;
+
+      // Mark as free if it's within the free limit for this category
+      final isFree = count < freeItemsPerCategory;
+      return item.copyWith(isFree: isFree);
+    }).toList();
   }
 
   /// Generate checklist with retry logic

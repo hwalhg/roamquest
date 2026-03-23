@@ -227,21 +227,6 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  /// Show all unlocked cities page
-  void _showAllCities() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => UnlockedCitiesPage(
-          cities: _unlockedCities,
-          onCitySelected: (city) {
-            _generateChecklistForCity(city);
-          },
-        ),
-      ),
-    );
-  }
-
   /// Show error dialog
   void _showErrorDialog(String message) {
     showDialog(

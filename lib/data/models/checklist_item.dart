@@ -12,6 +12,7 @@ class ChecklistItem extends Equatable {
   final String category; // landmark, food, experience, hidden
   final int sortOrder; // Renamed from 'order' to 'sort_order'
   final bool isCompleted;
+  final bool isFree; // Whether this item is free for all users
   final String? photoUrl;
   final DateTime? completedAt;
   final double? latitude;
@@ -28,6 +29,7 @@ class ChecklistItem extends Equatable {
     required this.category,
     required this.sortOrder,
     this.isCompleted = false,
+    this.isFree = false,
     this.photoUrl,
     this.completedAt,
     this.latitude,
@@ -47,6 +49,7 @@ class ChecklistItem extends Equatable {
       category: json['category'] as String,
       sortOrder: json['sort_order'] as int,
       isCompleted: json['is_completed'] as bool? ?? false,
+      isFree: json['is_free'] as bool? ?? false,
       photoUrl: json['checkin_photo_url'] as String?,
       completedAt: json['checked_at'] != null
           ? DateTime.parse(json['checked_at'] as String)
@@ -73,6 +76,7 @@ class ChecklistItem extends Equatable {
       'category': category,
       'sort_order': sortOrder,
       'is_completed': isCompleted,
+      'is_free': isFree,
       'checkin_photo_url': photoUrl,
       'checked_at': completedAt?.toIso8601String(),
       'latitude': latitude,
@@ -115,6 +119,7 @@ class ChecklistItem extends Equatable {
       location: attraction['location'] as String,
       category: attraction['category'] as String,
       sortOrder: sortOrder,
+      isFree: attraction['is_free'] as bool? ?? false,
     );
   }
 
@@ -145,6 +150,7 @@ class ChecklistItem extends Equatable {
     String? category,
     int? sortOrder,
     bool? isCompleted,
+    bool? isFree,
     String? photoUrl,
     DateTime? completedAt,
     double? latitude,
@@ -161,6 +167,7 @@ class ChecklistItem extends Equatable {
       category: category ?? this.category,
       sortOrder: sortOrder ?? this.sortOrder,
       isCompleted: isCompleted ?? this.isCompleted,
+      isFree: isFree ?? this.isFree,
       photoUrl: photoUrl ?? this.photoUrl,
       completedAt: completedAt ?? this.completedAt,
       latitude: latitude ?? this.latitude,
@@ -183,6 +190,7 @@ class ChecklistItem extends Equatable {
         category,
         sortOrder,
         isCompleted,
+        isFree,
         photoUrl,
         completedAt,
         latitude,

@@ -404,6 +404,30 @@ class _ChecklistPageState extends State<ChecklistPage>
           size: 20,
         ),
       );
+    } else if (item.isFree) {
+      // Free item - show FREE badge
+      return Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.sm,
+          vertical: AppSpacing.xs,
+        ),
+        decoration: BoxDecoration(
+          color: AppColors.success.withValues(alpha: 0.15),
+          borderRadius: BorderRadius.circular(AppBorderRadius.sm),
+          border: Border.all(
+            color: AppColors.success.withValues(alpha: 0.3),
+            width: 1,
+          ),
+        ),
+        child: Text(
+          'FREE',
+          style: AppTextStyles.caption.copyWith(
+            color: AppColors.success,
+            fontWeight: FontWeight.w700,
+            fontSize: 11,
+          ),
+        ),
+      );
     } else if (_isCityUnlocked) {
       // City is unlocked - show unlock icon
       return Container(
@@ -438,6 +462,7 @@ class _ChecklistPageState extends State<ChecklistPage>
         ),
       );
     } else {
+      // Locked item - show lock icon
       return Icon(
         Icons.lock_outline,
         color: AppColors.textTertiary,
