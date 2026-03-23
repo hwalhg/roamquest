@@ -125,8 +125,7 @@ class SubscriptionStatusService {
   /// Check if user can check in to an item
   /// Returns true if:
   /// - The item is free (isFree = true), OR
-  /// - Premium user with checklist for the city, OR
-  /// - Not yet reached free tier limits (1 per category: landmark, food, experience, hidden)
+  /// - Premium user with valid subscription (active and not expired)
   Future<bool> canCheckIn(
     City city,
     List<ChecklistItem> completedItems,
@@ -138,38 +137,15 @@ class SubscriptionStatusService {
       return true;
     }
 
-    // Premium users with checklist: unlimited access
+    // Premium users with valid subscription: unlimited access
     if (await hasPremiumSubscription()) {
-      // Premium users must have a checklist for the city
-      if (await hasChecklistForCity(city)) {
-        return true;
-      }
+      AppLogger.info('Premium subscription detected, allowing check-in');
+      return true;
     }
 
-    // Free tier: count by category (1 per category)
-    final landmarkCount = completedItems
-        .where((item) => item.category == 'landmark' && item.isCompleted)
-        .length;
-
-    final foodCount = completedItems
-        .where((item) => item.category == 'food' && item.isCompleted)
-        .length;
-
-    final experienceCount = completedItems
-        .where((item) => item.category == 'experience' && item.isCompleted)
-        .length;
-
-    final hiddenCount = completedItems
-        .where((item) => item.category == 'hidden' && item.isCompleted)
-        .length;
-
-    // Free tier limits: 1 per category
-    if (landmarkCount >= 1) return false;
-    if (foodCount >= 1) return false;
-    if (experienceCount >= 1) return false;
-    if (hiddenCount >= 1) return false;
-
-    return true;
+    // No valid subscription: deny access
+    AppLogger.info('No valid subscription, denying check-in');
+    return false;
   }
 
   /// Get remaining free check-ins for each category

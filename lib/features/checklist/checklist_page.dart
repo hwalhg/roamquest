@@ -34,6 +34,7 @@ class _ChecklistPageState extends State<ChecklistPage>
   final ChecklistRepository _checklistRepo = ChecklistRepository();
   final SubscriptionStatusService _subscriptionService = SubscriptionStatusService();
   bool _isCityUnlocked = false;
+  bool _hasPremiumSubscription = false;
   Map<String, int>? _remainingFreeCheckIns;
   List<ChecklistItem> _items = [];
   bool _isLoadingItems = true;
@@ -73,6 +74,7 @@ class _ChecklistPageState extends State<ChecklistPage>
 
   Future<void> _checkSubscriptionStatus() async {
     final isUnlocked = await _subscriptionService.isCityUnlocked(_checklist.city);
+    final hasPremium = await _subscriptionService.hasPremiumSubscription();
     final remaining = await _subscriptionService.getRemainingFreeCheckIns(
       _checklist.city,
       _items,
@@ -80,6 +82,7 @@ class _ChecklistPageState extends State<ChecklistPage>
     if (mounted) {
       setState(() {
         _isCityUnlocked = isUnlocked;
+        _hasPremiumSubscription = hasPremium;
         _remainingFreeCheckIns = remaining;
       });
     }
@@ -428,8 +431,8 @@ class _ChecklistPageState extends State<ChecklistPage>
           ),
         ),
       );
-    } else if (_isCityUnlocked) {
-      // City is unlocked - show unlock icon
+    } else if (_hasPremiumSubscription) {
+      // Premium user - show unlock icon
       return Container(
         padding: const EdgeInsets.all(AppSpacing.sm),
         decoration: BoxDecoration(
@@ -440,25 +443,6 @@ class _ChecklistPageState extends State<ChecklistPage>
           Icons.lock_open,
           color: AppColors.success,
           size: 20,
-        ),
-      );
-    } else if (_hasFreeCheckInRemaining(item)) {
-      // Check if this category has remaining free check-ins
-      return Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.sm,
-          vertical: AppSpacing.xs,
-        ),
-        decoration: BoxDecoration(
-          color: AppColors.primary.withValues(alpha:0.1),
-          borderRadius: BorderRadius.circular(AppBorderRadius.sm),
-        ),
-        child: Text(
-          l10n.freeCheckin,
-          style: AppTextStyles.caption.copyWith(
-            color: AppColors.primary,
-            fontWeight: FontWeight.w600,
-          ),
         ),
       );
     } else {
