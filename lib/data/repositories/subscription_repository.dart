@@ -23,8 +23,12 @@ class SubscriptionRepository {
   /// Initialize subscription service
   Future<void> initialize() async {
     try {
+      AppLogger.info('Initializing subscription service...');
+
       // Check if in-app purchase is available
       final isAvailable = await _iap.isAvailable();
+      AppLogger.info('IAP Available: $isAvailable');
+
       if (!isAvailable) {
         AppLogger.warning('In-app purchase not available');
         status.value = SubscriptionStatus.unavailable;
@@ -41,12 +45,15 @@ class SubscriptionRepository {
         onDone: _updateStreamOnDone,
         onError: _updateStreamOnError,
       );
+      AppLogger.info('Purchase stream listener registered');
 
       // Load products
       await loadProducts();
 
       // Check existing subscription
       await checkSubscriptionStatus();
+
+      AppLogger.info('Subscription service initialized. Status: ${status.value}');
     } catch (e) {
       // Web platform or other error - in-app purchase not available
       AppLogger.warning('In-app purchase not available on this platform: $e');
@@ -58,9 +65,16 @@ class SubscriptionRepository {
   Future<void> loadProducts() async {
     try {
       AppLogger.info('Loading products: ${SubscriptionProducts.allIds}');
+      AppLogger.info('Querying App Store for product details...');
+
       final response = await _iap.queryProductDetails(
         SubscriptionProducts.allIds.toSet(),
       );
+
+      AppLogger.info('Query response received');
+      AppLogger.info('  - Product details found: ${response.productDetails.length}');
+      AppLogger.info('  - Not found IDs: ${response.notFoundIDs}');
+      AppLogger.info('  - Error: ${response.error?.message ?? "None"}');
 
       if (response.notFoundIDs.isNotEmpty) {
         AppLogger.warning('Products not found: ${response.notFoundIDs}');
@@ -68,7 +82,12 @@ class SubscriptionRepository {
       }
 
       if (response.productDetails.isEmpty) {
-        AppLogger.error('No products found. Status: ${response.error?.message}');
+        AppLogger.error('No products found. Error: ${response.error?.message ?? "Unknown"}');
+        AppLogger.error('This usually means:');
+        AppLogger.error('  1. Products not configured in App Store Connect');
+        AppLogger.error('  2. Bundle ID mismatch between app and App Store Connect');
+        AppLogger.error('  3. Not signed in to App Store on device');
+        AppLogger.error('  4. Products not yet approved (may take 15-30 minutes after creation)');
         status.value = SubscriptionStatus.error;
       } else {
         products.value = response.productDetails.toList();
@@ -77,8 +96,8 @@ class SubscriptionRepository {
           AppLogger.info('  - ${p.id}: ${p.title} (${p.price})');
         }
       }
-    } catch (e) {
-      AppLogger.error('Failed to load products', error: e);
+    } catch (e, stackTrace) {
+      AppLogger.error('Failed to load products', error: e, stackTrace: stackTrace);
       if (e.toString().contains('No active account')) {
         AppLogger.warning('No active App Store account. Please sign in to App Store in Settings');
       }

@@ -7,6 +7,7 @@ import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/app_logger.dart';
 import '../../data/models/subscription.dart';
 import '../../data/repositories/subscription_repository.dart';
 import '../../l10n/app_localizations.dart';
@@ -23,12 +24,26 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
   final SubscriptionRepository _subscriptionRepo = SubscriptionRepository();
   ProductDetails? _selectedProduct;
   bool _isPurchasing = false;
+
+  // Debug: Track loading state
+  DateTime? _loadingStartTime;
+  bool get _isLoading => _subscriptionRepo.products.value.isEmpty &&
+                          _subscriptionRepo.status.value == SubscriptionStatus.unknown;
   Subscription? _currentSubscription;
 
   @override
   void initState() {
     super.initState();
+    _loadingStartTime = DateTime.now();
     _initializeSubscription();
+
+    // Check for loading timeout after 15 seconds
+    Future.delayed(const Duration(seconds: 15), () {
+      if (mounted && _isLoading) {
+        AppLogger.warning('Subscription loading timeout - status: ${_subscriptionRepo.status.value}, products: ${_subscriptionRepo.products.value.length}');
+        setState(() {}); // Trigger rebuild to show debug info
+      }
+    });
   }
 
   @override
@@ -393,6 +408,10 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
         return ValueListenableBuilder(
           valueListenable: _subscriptionRepo.products,
           builder: (context, products, _) {
+            // Check for timeout
+            final hasTimedOut = _loadingStartTime != null &&
+                                DateTime.now().difference(_loadingStartTime!).inSeconds > 15;
+
             // Still loading products
             if (products.isEmpty) {
               return Center(
@@ -409,6 +428,11 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                         color: AppColors.textOnDark.withValues(alpha:0.8),
                       ),
                     ),
+                    // Show debug info after timeout
+                    if (hasTimedOut) ...[
+                      const SizedBox(height: AppSpacing.lg),
+                      _buildDebugInfo(l10n),
+                    ],
                   ],
                 ),
               );
@@ -464,6 +488,79 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
           },
         );
       },
+    );
+  }
+
+  Widget _buildDebugInfo(AppLocalizations l10n) {
+    final status = _subscriptionRepo.status.value;
+    final products = _subscriptionRepo.products.value.length;
+    final elapsed = _loadingStartTime != null
+        ? DateTime.now().difference(_loadingStartTime!).inSeconds
+        : 0;
+
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: AppColors.warning.withValues(alpha: 0.2),
+        borderRadius: BorderRadius.circular(AppBorderRadius.md),
+        border: Border.all(color: AppColors.warning),
+      ),
+      child: Column(
+        children: [
+          Text(
+            'Debug Info',
+            style: AppTextStyles.bodySmall.copyWith(
+              color: AppColors.warning,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            'Status: ${status.name}',
+            style: AppTextStyles.bodySmall.copyWith(
+              color: AppColors.textOnDark,
+            ),
+          ),
+          Text(
+            'Products: $products',
+            style: AppTextStyles.bodySmall.copyWith(
+              color: AppColors.textOnDark,
+            ),
+          ),
+          Text(
+            'Elapsed: ${elapsed}s',
+            style: AppTextStyles.bodySmall.copyWith(
+              color: AppColors.textOnDark,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            'Possible issues:',
+            style: AppTextStyles.bodySmall.copyWith(
+              color: AppColors.textOnDark,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          Text(
+            '• Not signed in to App Store',
+            style: AppTextStyles.bodySmall.copyWith(
+              color: AppColors.textOnDark,
+            ),
+          ),
+          Text(
+            '• Products not configured in App Store Connect',
+            style: AppTextStyles.bodySmall.copyWith(
+              color: AppColors.textOnDark,
+            ),
+          ),
+          Text(
+            '• Bundle ID mismatch',
+            style: AppTextStyles.bodySmall.copyWith(
+              color: AppColors.textOnDark,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
