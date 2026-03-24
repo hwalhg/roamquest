@@ -41,6 +41,13 @@ class _HomePageState extends State<HomePage> {
     _loadUnlockedCities();
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Refresh cities when returning to this page
+    _loadUnlockedCities();
+  }
+
   /// Load unlocked cities from user's checklists
   Future<void> _loadUnlockedCities() async {
     final userId = _authService.currentUserId;

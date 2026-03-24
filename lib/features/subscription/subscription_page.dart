@@ -380,48 +380,36 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
     return ValueListenableBuilder(
       valueListenable: _subscriptionRepo.status,
       builder: (context, status, _) {
-        // Show message for web platform
+        // Show message for web platform or unavailable
         if (status == SubscriptionStatus.unavailable) {
-          return Container(
-            padding: const EdgeInsets.all(AppSpacing.lg),
-            decoration: BoxDecoration(
-              color: AppColors.textOnDark.withValues(alpha:0.15),
-              borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-            ),
-            child: Column(
-              children: [
-                const Icon(
-                  Icons.info_outline,
-                  size: 48,
-                  color: AppColors.textOnDark,
-                ),
-                const SizedBox(height: AppSpacing.md),
-                Text(
-                  l10n.get('webNotSupported'),
-                  style: AppTextStyles.h4.copyWith(
-                    color: AppColors.textOnDark,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                Text(
-                  l10n.get('webNotSupportedDesc'),
-                  style: AppTextStyles.bodyMedium.copyWith(
-                    color: AppColors.textOnDark.withValues(alpha:0.8),
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ),
-          );
+          return _buildUnavailableMessage(l10n);
+        }
+
+        // Show error message
+        if (status == SubscriptionStatus.error) {
+          return _buildErrorMessage(l10n);
         }
 
         return ValueListenableBuilder(
           valueListenable: _subscriptionRepo.products,
           builder: (context, products, _) {
+            // Still loading products
             if (products.isEmpty) {
-              return const Center(
-                child: CircularProgressIndicator(
-                  color: AppColors.textOnDark,
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const CircularProgressIndicator(
+                      color: AppColors.textOnDark,
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    Text(
+                      'Loading subscriptions...',
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: AppColors.textOnDark.withValues(alpha:0.8),
+                      ),
+                    ),
+                  ],
                 ),
               );
             }
@@ -430,40 +418,168 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
             final quarterly = _getQuarterlyProduct();
             final yearly = _getYearlyProduct();
 
+            // No products found
+            if (monthly == null && quarterly == null && yearly == null) {
+              return _buildNoProductsMessage(l10n);
+            }
+
             return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                _buildPlanOption(
-                  product: monthly,
-                  isSelected: _selectedProduct == monthly,
-                  onTap: () {
-                    setState(() => _selectedProduct = monthly);
-                  },
-                  badge: null,
-                ),
-                const SizedBox(height: AppSpacing.md),
-                _buildPlanOption(
-                  product: quarterly,
-                  isSelected: _selectedProduct == quarterly,
-                  onTap: () {
-                    setState(() => _selectedProduct = quarterly);
-                  },
-                  badge: _buildSavingsBadge(quarterly, monthly, quarterly: true),
-                ),
-                const SizedBox(height: AppSpacing.md),
-                _buildPlanOption(
-                  product: yearly,
-                  isSelected: _selectedProduct == yearly,
-                  onTap: () {
-                    setState(() => _selectedProduct = yearly);
-                  },
-                  badge: _buildBestValueBadge(),
-                ),
+                if (monthly != null) ...[
+                  _buildPlanOption(
+                    product: monthly,
+                    isSelected: _selectedProduct == monthly,
+                    onTap: () {
+                      setState(() => _selectedProduct = monthly);
+                    },
+                    badge: null,
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                ],
+                if (quarterly != null) ...[
+                  _buildPlanOption(
+                    product: quarterly,
+                    isSelected: _selectedProduct == quarterly,
+                    onTap: () {
+                      setState(() => _selectedProduct = quarterly);
+                    },
+                    badge: _buildSavingsBadge(quarterly, monthly, quarterly: true),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                ],
+                if (yearly != null) ...[
+                  _buildPlanOption(
+                    product: yearly,
+                    isSelected: _selectedProduct == yearly,
+                    onTap: () {
+                      setState(() => _selectedProduct = yearly);
+                    },
+                    badge: _buildBestValueBadge(),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                ],
               ],
             );
           },
         );
       },
+    );
+  }
+
+  Widget _buildUnavailableMessage(AppLocalizations l10n) {
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      decoration: BoxDecoration(
+        color: AppColors.textOnDark.withValues(alpha:0.15),
+        borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+      ),
+      child: Column(
+        children: [
+          const Icon(
+            Icons.info_outline,
+            size: 48,
+            color: AppColors.textOnDark,
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Text(
+            l10n.get('webNotSupported'),
+            style: AppTextStyles.h4.copyWith(
+              color: AppColors.textOnDark,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            l10n.get('webNotSupportedDesc'),
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: AppColors.textOnDark.withValues(alpha:0.8),
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildErrorMessage(AppLocalizations l10n) {
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      decoration: BoxDecoration(
+        color: AppColors.error.withValues(alpha:0.1),
+        borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+      ),
+      child: Column(
+        children: [
+          const Icon(
+            Icons.error_outline,
+            size: 48,
+            color: AppColors.error,
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Text(
+            'Unable to load subscriptions',
+            style: AppTextStyles.h4.copyWith(
+              color: AppColors.textOnDark,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            'Please make sure you are signed in to App Store',
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: AppColors.textOnDark.withValues(alpha:0.8),
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: AppSpacing.md),
+          ElevatedButton(
+            onPressed: () {
+              setState(() {
+                _selectedProduct = null;
+              });
+              _subscriptionRepo.initialize();
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.textOnDark,
+              foregroundColor: AppColors.primary,
+            ),
+            child: Text(l10n.get('retry') ?? 'Retry'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNoProductsMessage(AppLocalizations l10n) {
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      decoration: BoxDecoration(
+        color: AppColors.warning.withValues(alpha:0.1),
+        borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+      ),
+      child: Column(
+        children: [
+          const Icon(
+            Icons.warning_amber_outlined,
+            size: 48,
+            color: AppColors.warning,
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Text(
+            'No subscription products found',
+            style: AppTextStyles.h4.copyWith(
+              color: AppColors.textOnDark,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            'Please check App Store Connect for product configuration',
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: AppColors.textOnDark.withValues(alpha:0.8),
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
     );
   }
 
