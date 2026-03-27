@@ -85,3 +85,4 @@ coverage/
 # Docs
 /doc/
 *.apk
+ios/build/

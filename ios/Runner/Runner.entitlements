@@ -2,12 +2,9 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<!-- In-App Purchase Subscription Products -->
-	<key>com.apple.developer.in-app-payments</key>
+	<key>com.apple.developer.applesignin</key>
 	<array>
-		<string>com.roamquest.subscription.monthly</string>
-		<string>com.roamquest.subscription.quarterly</string>
-		<string>com.roamquest.subscription.yearly</string>
+		<string>Default</string>
 	</array>
 </dict>
 </plist>

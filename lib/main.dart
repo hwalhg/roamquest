@@ -84,32 +84,38 @@ class _RoamQuestAppState extends State<RoamQuestApp> {
         // Always use English for overseas app
         return const Locale('en');
       },
-      home: StreamBuilder<AuthState>(
-        stream: _auth.authStateChanges,
-        builder: (context, snapshot) {
-          // Show loading while checking auth state
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const _AuthLoadingScreen();
-          }
+      // Handle deep links and unknown routes
+      onGenerateRoute: (settings) {
+        // If it's a deep link, let the auth state stream handle navigation
+        return MaterialPageRoute(
+          builder: (context) => StreamBuilder<AuthState>(
+            stream: _auth.authStateChanges,
+            builder: (context, snapshot) {
+              // Show loading while checking auth state
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const _AuthLoadingScreen();
+              }
 
-          if (snapshot.hasError) {
-            return _ErrorScreen(error: snapshot.error.toString());
-          }
+              if (snapshot.hasError) {
+                return _ErrorScreen(error: snapshot.error.toString());
+              }
 
-          final session = snapshot.data?.session;
+              final session = snapshot.data?.session;
 
-          // Handle auth state change
-          _handleAuthStateChange(session);
+              // Handle auth state change
+              _handleAuthStateChange(session);
 
-          // Not authenticated - show login
-          if (session == null) {
-            return const LoginPage();
-          }
+              // Not authenticated - show login
+              if (session == null) {
+                return const LoginPage();
+              }
 
-          // Authenticated - go to home with bottom navigation
-          return const MainNavigationPage();
-        },
-      ),
+              // Authenticated - go to home with bottom navigation
+              return const MainNavigationPage();
+            },
+          ),
+        );
+      },
       builder: (context, child) {
         return MediaQuery(
           // Prevent text scaling beyond 1.3 for better UI
