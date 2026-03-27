@@ -292,34 +292,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                           ),
                         ),
 
-                        const SizedBox(height: 40),
-
-                        // Email (read-only)
-                        TextFormField(
-                          initialValue: user?.email ?? '',
-                          enabled: false,
-                          decoration: InputDecoration(
-                            labelText: 'Email',
-                            labelStyle: AppTextStyles.bodyMedium.copyWith(
-                              color: AppColors.textOnDark.withValues(alpha:0.7),
-                            ),
-                            filled: true,
-                            fillColor: AppColors.textOnDark.withValues(alpha:0.1),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide.none,
-                            ),
-                            disabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide.none,
-                            ),
-                          ),
-                          style: AppTextStyles.bodyMedium.copyWith(
-                            color: AppColors.textOnDark.withValues(alpha:0.5),
-                          ),
-                        ),
-
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 60),
 
                         // Nickname
                         TextFormField(
