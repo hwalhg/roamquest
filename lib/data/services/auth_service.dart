@@ -1,5 +1,9 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:math';
+import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/profile.dart';
 import '../../core/config/supabase_config.dart';
@@ -116,24 +120,53 @@ class AuthService {
   /// OAuth Authentication (Apple, Google, etc.)
   /// ============================================
 
-  /// Sign in with Apple
+  /// Sign in with Apple (native flow, no browser needed)
   Future<bool> signInWithApple() async {
     try {
-      AppLogger.info('Signing in with Apple');
+      AppLogger.info('Signing in with Apple (native)');
 
-      await _client.auth.signInWithOAuth(
-        OAuthProvider.apple,
-        redirectTo: kIsWeb
-            ? 'http://localhost:8080/auth/callback'
-            : 'roamquest://auth/callback',
+      // Generate a random nonce for security
+      final rawNonce = _generateNonce();
+      final hashedNonce = sha256.convert(utf8.encode(rawNonce)).toString();
+
+      // Request Apple credential using native Sign in with Apple
+      final credential = await SignInWithApple.getAppleIDCredential(
+        scopes: [
+          AppleIDAuthorizationScopes.email,
+          AppleIDAuthorizationScopes.fullName,
+        ],
+        nonce: hashedNonce,
       );
 
-      AppLogger.info('Apple sign-in initiated');
+      final idToken = credential.identityToken;
+      if (idToken == null) {
+        throw Exception('No identity token received from Apple');
+      }
+
+      // Sign in with Supabase using the Apple identity token
+      await _client.auth.signInWithIdToken(
+        provider: OAuthProvider.apple,
+        idToken: idToken,
+        nonce: rawNonce,
+      );
+
+      AppLogger.info('Apple sign-in successful');
       return true;
     } catch (e) {
       AppLogger.error('Apple sign-in failed', error: e);
       rethrow;
     }
+  }
+
+  /// Generate a cryptographically secure random nonce
+  String _generateNonce([int length = 32]) {
+    const charset =
+        '0123456789ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz-._';
+    final random = Random.secure();
+    return List.generate(
+      length,
+      (_) => charset[random.nextInt(charset.length)],
+    ).join();
   }
 
   /// Sign in with Google

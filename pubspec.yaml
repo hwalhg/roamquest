@@ -30,6 +30,7 @@ dependencies:
 
   # Authentication
   sign_in_with_apple: ^6.1.1
+  crypto: ^3.0.3
 
   # Media
   image_picker: ^1.0.7
