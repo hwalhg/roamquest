@@ -183,6 +183,11 @@ class SubscriptionRepository {
 
   /// Check subscription status from local storage
   Future<void> checkSubscriptionStatus() async {
+    // Don't override error status from loadProducts()
+    if (status.value == SubscriptionStatus.error) {
+      return;
+    }
+
     try {
       final prefs = await SharedPreferences.getInstance();
       final isActive = prefs.getBool('subscription_is_active') ?? false;
