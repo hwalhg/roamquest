@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="RoamQuest - An AI-powered city exploration app that generates personalized travel checklists, photo check-ins, and visual travel reports.">
+  <meta name="keywords" content="city exploration, travel, AI, check-in, checklist, RoamQuest">
+  <title>RoamQuest - Discover Cities, One Adventure at a Time</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav class="nav" id="nav">
+    <div class="nav-inner">
+      <a href="/" class="nav-logo">
+        <svg class="nav-logo-icon" width="28" height="28" viewBox="0 0 28 28" fill="none">
+          <circle cx="14" cy="14" r="13" stroke="currentColor" stroke-width="1.5"/>
+          <path d="M14 3 L14 25 M3 14 L25 14 M6 6 L22 22 M22 6 L6 22" stroke="currentColor" stroke-width="0.8" opacity="0.3"/>
+          <circle cx="14" cy="14" r="5" stroke="currentColor" stroke-width="1.2"/>
+          <circle cx="14" cy="14" r="2" fill="currentColor"/>
+        </svg>
+        <span>RoamQuest</span>
+      </a>
+      <button class="nav-toggle" id="navToggle" aria-label="Menu">
+        <span></span><span></span><span></span>
+      </button>
+      <div class="nav-links" id="navLinks">
+        <a href="#about">About</a>
+        <a href="#features">Features</a>
+        <a href="#contact">Contact</a>
+        <a href="privacy.html">Privacy</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="hero" id="hero">
+    <div class="hero-contour">
+      <svg viewBox="0 0 1440 800" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+        <path class="contour-line c1" d="M-100,500 C100,460 300,540 500,480 C700,420 900,520 1100,470 C1300,420 1400,480 1540,460"/>
+        <path class="contour-line c2" d="M-100,540 C120,500 320,580 520,530 C720,480 920,560 1120,510 C1320,460 1420,520 1540,500"/>
+        <path class="contour-line c3" d="M-100,580 C140,550 340,620 540,570 C740,520 940,600 1140,550 C1340,500 1440,560 1540,540"/>
+        <path class="contour-line c4" d="M-100,620 C160,590 360,660 560,610 C760,560 960,640 1160,590 C1360,540 1460,600 1540,580"/>
+        <path class="contour-line c5" d="M-100,660 C180,630 380,700 580,650 C780,600 980,680 1180,630 C1380,580 1480,640 1540,620"/>
+        <path class="contour-line c6" d="M-100,700 C200,670 400,740 600,690 C800,640 1000,720 1200,670 C1400,620 1500,680 1540,660"/>
+      </svg>
+    </div>
+    <div class="hero-inner">
+      <div class="hero-badge reveal">
+        <span class="hero-badge-dot"></span>
+        AI-Powered City Exploration
+      </div>
+      <h1 class="hero-title reveal reveal-delay-1">
+        Discover Cities,<br>
+        <span class="hero-title-accent">One Adventure at a Time</span>
+      </h1>
+      <p class="hero-subtitle reveal reveal-delay-2">
+        RoamQuest uses artificial intelligence to create personalized city checklists, <br class="hide-mobile">
+        helping you uncover the most unique landmarks, cuisine, and experiences.
+      </p>
+      <div class="hero-cta reveal reveal-delay-3">
+        <a href="#features" class="btn btn-primary">Learn More</a>
+        <a href="#contact" class="btn btn-ghost">Contact Us</a>
+      </div>
+    </div>
+    <div class="hero-scroll-hint reveal reveal-delay-4">
+      <svg width="20" height="32" viewBox="0 0 20 32" fill="none">
+        <rect x="1" y="1" width="18" height="30" rx="9" stroke="currentColor" stroke-width="1.5"/>
+        <circle cx="10" cy="10" r="2" fill="currentColor">
+          <animate attributeName="cy" values="10;18;10" dur="2s" repeatCount="indefinite"/>
+        </circle>
+      </svg>
+    </div>
+  </section>
+
+  <!-- About -->
+  <section class="about" id="about">
+    <div class="container">
+      <div class="section-header reveal">
+        <span class="section-label">About Us</span>
+        <h2 class="section-title">Making Every City Exploration<br>a Unique Journey</h2>
+      </div>
+      <div class="about-content">
+        <div class="about-text reveal">
+          <p class="about-lead">
+            RoamQuest is a mobile application designed for travelers and urban explorers worldwide. Powered by advanced AI, it automatically generates personalized checklists of landmarks, restaurants, and experiences based on your location and preferences.
+          </p>
+          <p>
+            Whether you're visiting a brand-new city or rediscovering your hometown, RoamQuest helps you find hidden gems worth exploring. Check in with photos, track your progress, generate beautiful visual reports, and share your adventures with friends.
+          </p>
+        </div>
+        <div class="about-stats reveal">
+          <div class="stat-card">
+            <div class="stat-number">20<span class="stat-plus">+</span></div>
+            <div class="stat-label">Items per Checklist</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number">4</div>
+            <div class="stat-label">Categories</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number">AI</div>
+            <div class="stat-label">Smart Engine</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section class="features" id="features">
+    <div class="container">
+      <div class="section-header reveal">
+        <span class="section-label">Features</span>
+        <h2 class="section-title">A Complete<br>City Exploration Experience</h2>
+      </div>
+      <div class="feature-grid">
+        <div class="feature-card reveal">
+          <div class="feature-icon">
+            <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+              <circle cx="16" cy="16" r="12" stroke="currentColor" stroke-width="1.5"/>
+              <path d="M16 8 L16 16 L22 20" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              <circle cx="16" cy="16" r="2" fill="currentColor"/>
+            </svg>
+          </div>
+          <h3 class="feature-title">Smart Location Detection</h3>
+          <p class="feature-desc">Automatically detects your current city via GPS. No manual search needed — start exploring instantly.</p>
+        </div>
+        <div class="feature-card reveal">
+          <div class="feature-icon">
+            <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+              <rect x="6" y="4" width="20" height="24" rx="3" stroke="currentColor" stroke-width="1.5"/>
+              <path d="M11 10L21 10M11 14L21 14M11 18L17 18" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+              <circle cx="22" cy="22" r="4" stroke="currentColor" stroke-width="1.2"/>
+              <path d="M22 20.5L22 23.5L24 22.5" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <h3 class="feature-title">AI-Generated Checklists</h3>
+          <p class="feature-desc">Our AI engine curates 20+ personalized items covering landmarks, cuisine, and unique experiences.</p>
+        </div>
+        <div class="feature-card reveal">
+          <div class="feature-icon">
+            <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+              <rect x="6" y="6" width="20" height="20" rx="3" stroke="currentColor" stroke-width="1.5"/>
+              <circle cx="13" cy="13" r="3" stroke="currentColor" stroke-width="1.2"/>
+              <path d="M6 22 L12 16 L16 20 L20 15 L26 22" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <h3 class="feature-title">Photo Check-ins</h3>
+          <p class="feature-desc">Capture every moment with photos. Supports camera and album selection with automatic location tagging.</p>
+        </div>
+        <div class="feature-card reveal">
+          <div class="feature-icon">
+            <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+              <rect x="4" y="8" width="24" height="16" rx="2" stroke="currentColor" stroke-width="1.5"/>
+              <rect x="8" y="12" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1"/>
+              <path d="M18 13L26 13M18 16L24 16M18 19L22 19" stroke="currentColor" stroke-width="1" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <h3 class="feature-title">Visual Reports</h3>
+          <p class="feature-desc">Auto-generate beautiful travel reports with photo collages, map markers, and completion stats — one tap to share.</p>
+        </div>
+        <div class="feature-card reveal">
+          <div class="feature-icon">
+            <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+              <path d="M16 4 L4 12 L4 20 L16 28 L28 20 L28 12 Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+              <path d="M16 4 L16 28 M4 12 L28 12 M4 20 L28 20" stroke="currentColor" stroke-width="0.8" opacity="0.4"/>
+            </svg>
+          </div>
+          <h3 class="feature-title">Category Filtering</h3>
+          <p class="feature-desc">Browse by Landmarks, Food, Experiences, and Hidden Gems — find exactly what you want to explore.</p>
+        </div>
+        <div class="feature-card reveal">
+          <div class="feature-icon">
+            <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+              <path d="M16 6 C10 6, 5 10, 5 16 C5 22, 10 26, 16 26 C22 26, 27 22, 27 16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              <path d="M27 16 C27 13, 25 10, 22 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              <circle cx="22" cy="9" r="2" fill="currentColor"/>
+              <path d="M13 16 L16 19 L22 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <h3 class="feature-title">Progress Tracking</h3>
+          <p class="feature-desc">Track your completion progress in real time. Every check-in becomes a lasting memory of your journey.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Banner -->
+  <section class="cta-banner">
+    <div class="cta-contour">
+      <svg viewBox="0 0 1440 320" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+        <path class="contour-line c1" d="M-100,100 C200,60 400,140 700,90 C1000,40 1200,120 1540,80" />
+        <path class="contour-line c2" d="M-100,140 C200,100 400,180 700,130 C1000,80 1200,160 1540,120" />
+        <path class="contour-line c3" d="M-100,180 C200,140 400,220 700,170 C1000,120 1200,200 1540,160" />
+        <path class="contour-line c4" d="M-100,220 C200,180 400,260 700,210 C1000,160 1200,240 1540,200" />
+      </svg>
+    </div>
+    <div class="container">
+      <div class="cta-inner reveal">
+        <h2 class="cta-title">Ready to Start Your City Adventure?</h2>
+        <p class="cta-subtitle">Download RoamQuest and let AI be your personal city guide.</p>
+        <a href="#" class="btn btn-primary btn-lg">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M18.71 19.5C17.88 20.74 17 21.95 15.66 21.97C14.32 22 13.89 21.18 12.37 21.18C10.84 21.18 10.37 21.95 9.1 22C7.79 22.05 6.8 20.68 5.96 19.47C4.25 17 2.94 12.45 4.7 9.39C5.57 7.87 7.13 6.91 8.82 6.88C10.1 6.86 11.32 7.75 12.11 7.75C12.89 7.75 14.37 6.68 15.92 6.84C16.57 6.87 18.39 7.1 19.56 8.82C19.47 8.88 17.39 10.1 17.41 12.63C17.44 15.65 20.06 16.66 20.09 16.67C20.06 16.74 19.67 18.11 18.71 19.5ZM13 3.5C13.73 2.67 14.94 2.04 15.94 2C16.07 3.17 15.6 4.35 14.9 5.19C14.21 6.04 13.07 6.7 11.95 6.61C11.8 5.46 12.36 4.26 13 3.5Z"/>
+          </svg>
+          Download on App Store
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Contact -->
+  <section class="contact" id="contact">
+    <div class="container">
+      <div class="section-header reveal">
+        <span class="section-label">Contact</span>
+        <h2 class="section-title">We're Here<br>to Help</h2>
+      </div>
+      <div class="contact-grid">
+        <div class="contact-card reveal">
+          <div class="contact-icon">
+            <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+              <rect x="3" y="6" width="22" height="16" rx="3" stroke="currentColor" stroke-width="1.5"/>
+              <path d="M3 9 L14 17 L25 9" stroke="currentColor" stroke-width="1.5"/>
+            </svg>
+          </div>
+          <h3 class="contact-card-title">Email</h3>
+          <a href="mailto:liuweiqiang@sailforai.com" class="contact-link">liuweiqiang@sailforai.com</a>
+          <p class="contact-note">We respond within 24 hours on business days</p>
+        </div>
+        <div class="contact-card reveal">
+          <div class="contact-icon">
+            <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+              <circle cx="14" cy="14" r="11" stroke="currentColor" stroke-width="1.5"/>
+              <path d="M9 12 L19 12M9 16 L16 16" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+              <path d="M11 20 C11 20, 12 22, 14 22 C16 22, 17 20, 17 20" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <h3 class="contact-card-title">In-App Support</h3>
+          <p class="contact-text">Built-in feedback feature</p>
+          <p class="contact-note">Submit questions or suggestions directly in the app</p>
+        </div>
+        <div class="contact-card reveal">
+          <div class="contact-icon">
+            <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+              <path d="M14 4 L4 10 L4 18 L14 24 L24 18 L24 10 Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+              <circle cx="14" cy="14" r="4" stroke="currentColor" stroke-width="1.2"/>
+              <path d="M14 4 L14 10 M14 18 L14 24 M4 10 L10 14 M18 14 L24 10" stroke="currentColor" stroke-width="0.8" opacity="0.3"/>
+            </svg>
+          </div>
+          <h3 class="contact-card-title">Privacy & Security</h3>
+          <a href="privacy.html" class="contact-link">View Privacy Policy</a>
+          <p class="contact-note">Learn how we protect your data</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-inner">
+        <div class="footer-brand">
+          <div class="footer-logo">
+            <svg width="24" height="24" viewBox="0 0 28 28" fill="none">
+              <circle cx="14" cy="14" r="13" stroke="currentColor" stroke-width="1.5"/>
+              <path d="M14 3 L14 25 M3 14 L25 14 M6 6 L22 22 M22 6 L6 22" stroke="currentColor" stroke-width="0.8" opacity="0.3"/>
+              <circle cx="14" cy="14" r="5" stroke="currentColor" stroke-width="1.2"/>
+              <circle cx="14" cy="14" r="2" fill="currentColor"/>
+            </svg>
+            <span>RoamQuest</span>
+          </div>
+          <p class="footer-tagline">Discover cities, one adventure at a time.</p>
+        </div>
+        <div class="footer-links">
+          <div class="footer-col">
+            <h4>Product</h4>
+            <a href="#features">Features</a>
+            <a href="#about">About</a>
+          </div>
+          <div class="footer-col">
+            <h4>Legal</h4>
+            <a href="privacy.html">Privacy Policy</a>
+          </div>
+          <div class="footer-col">
+            <h4>Support</h4>
+            <a href="mailto:liuweiqiang@sailforai.com">Contact Us</a>
+            <a href="mailto:liuweiqiang@sailforai.com">Technical Support</a>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; 2025 RoamQuest. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
