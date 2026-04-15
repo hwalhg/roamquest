@@ -959,7 +959,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
               WidgetSpan(
                 alignment: PlaceholderAlignment.middle,
                 child: InkWell(
-                  onTap: () => _openUrl('https://roamquest.xyz/terms'),
+                  onTap: () => _openUrl('https://sailforai.github.io/roamquest/terms.html'),
                   child: Text(
                     l10n.get('termsAndPrivacy'),
                     style: const TextStyle(

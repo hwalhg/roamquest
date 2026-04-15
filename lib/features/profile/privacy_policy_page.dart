@@ -162,8 +162,8 @@ Updated: January 2025
                   '''
 If you have questions about this privacy policy, please contact us:
 
-Email: privacy@roamquest.app
-Website: www.roamquest.app
+Email: liuweiqiang@sailforai.com
+Website: https://sailforai.github.io/roamquest/
 ''',
                 ),
 
