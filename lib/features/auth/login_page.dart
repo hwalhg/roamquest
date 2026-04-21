@@ -490,7 +490,7 @@ class _LoginPageState extends State<LoginPage> {
                 _buildSection('5. Your Rights',
                     'You have the right to access, update, or delete your personal information. You can also opt out of communications from us.'),
                 _buildSection('6. Contact Us',
-                    'If you have questions about this Privacy Policy, please contact us at: support@roamquest.app'),
+                    'If you have questions about this Privacy Policy, please contact us at: liuweiqiang@sailforai.com'),
               ],
             ],
           ),

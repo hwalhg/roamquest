@@ -62,7 +62,7 @@
 	<key>NSAppTransparency</key>
 	<true/>
 	<key>NSPrivacyPolicyLocationUsageDescription</key>
-	<string>Visit our privacy policy to learn how we use your location data: https://sailforai.github.io/roamquest/privacy.html</string>
+	<string>Visit our privacy policy to learn how we use your location data: https://sailforai.github.io/roamquest-site/privacy.html</string>
 	<key>NSUserTrackingUsageDescription</key>
 	<string>We do not use your data for cross-app tracking.</string>
 

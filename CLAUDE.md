@@ -475,8 +475,8 @@ A: 自动重试最多 3 次，失败后显示错误提示。
 
 ## 联系方式
 
-- **项目地址**: https://github.com/yourusername/roam_quest
-- **支持邮箱**: support@roamquest.app
+- **项目地址**: https://github.com/sailforai/roamquest
+- **支持邮箱**: liuweiqiang@sailforai.com
 - **隐私政策**: 见 PRIVACY_POLICY.md
 
 ---
