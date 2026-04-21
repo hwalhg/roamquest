@@ -697,6 +697,24 @@ a { color: inherit; text-decoration: none; }
   color: var(--c-primary);
 }
 
+.footer-company {
+  padding-top: var(--space-lg);
+  border-top: 1px solid var(--c-border-light);
+  text-align: center;
+  margin-bottom: var(--space-md);
+}
+
+.footer-company-name {
+  font-size: 0.85rem;
+  color: var(--c-text-secondary);
+  margin-bottom: 4px;
+}
+
+.footer-company-addr {
+  font-size: 0.8rem;
+  color: var(--c-text-muted);
+}
+
 .footer-bottom {
   padding-top: var(--space-lg);
   border-top: 1px solid var(--c-border-light);
