@@ -35,6 +35,8 @@ class AppLogger {
   static void _log(String level, String message, String? tag) {
     final timestamp = DateTime.now().toIso8601String();
     final tagStr = tag != null ? '[$tag] ' : '';
+    // ignore: avoid_print
+    print('[$level] $tagStr$message');
     developer.log('$timestamp $level $tagStr$message');
   }
 }

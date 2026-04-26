@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
+import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/services/auth_service.dart';
+import '../home/main_navigation_page.dart';
 import '../../l10n/app_localizations.dart';
 
 /// Simple login page with email + password
@@ -80,7 +82,7 @@ class _LoginPageState extends State<LoginPage> {
       width: 100,
       height: 100,
       decoration: BoxDecoration(
-        color: AppColors.textOnDark.withValues(alpha:0.2),
+        color: AppColors.textOnDark.withValues(alpha: 0.2),
         shape: BoxShape.circle,
       ),
       child: const Icon(
@@ -105,7 +107,7 @@ class _LoginPageState extends State<LoginPage> {
         Text(
           l10n.appSlogan,
           style: AppTextStyles.bodyMedium.copyWith(
-            color: AppColors.textOnDark.withValues(alpha:0.9),
+            color: AppColors.textOnDark.withValues(alpha: 0.9),
           ),
         ),
       ],
@@ -125,9 +127,9 @@ class _LoginPageState extends State<LoginPage> {
           decoration: InputDecoration(
             labelText: l10n.email,
             filled: true,
-            fillColor: AppColors.textOnDark.withValues(alpha:0.15),
+            fillColor: AppColors.textOnDark.withValues(alpha: 0.15),
             labelStyle: AppTextStyles.bodyMedium.copyWith(
-              color: AppColors.textOnDark.withValues(alpha:0.8),
+              color: AppColors.textOnDark.withValues(alpha: 0.8),
             ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppBorderRadius.lg),
@@ -142,7 +144,7 @@ class _LoginPageState extends State<LoginPage> {
               borderSide: const BorderSide(color: AppColors.primary, width: 2),
             ),
             hintStyle: AppTextStyles.bodyMedium.copyWith(
-              color: AppColors.textOnDark.withValues(alpha:0.6),
+              color: AppColors.textOnDark.withValues(alpha: 0.6),
             ),
           ),
         ),
@@ -157,9 +159,9 @@ class _LoginPageState extends State<LoginPage> {
           decoration: InputDecoration(
             labelText: l10n.passwordMin,
             filled: true,
-            fillColor: AppColors.textOnDark.withValues(alpha:0.15),
+            fillColor: AppColors.textOnDark.withValues(alpha: 0.15),
             labelStyle: AppTextStyles.bodyMedium.copyWith(
-              color: AppColors.textOnDark.withValues(alpha:0.8),
+              color: AppColors.textOnDark.withValues(alpha: 0.8),
             ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppBorderRadius.lg),
@@ -174,7 +176,7 @@ class _LoginPageState extends State<LoginPage> {
               borderSide: const BorderSide(color: AppColors.primary, width: 2),
             ),
             hintStyle: AppTextStyles.bodyMedium.copyWith(
-              color: AppColors.textOnDark.withValues(alpha:0.6),
+              color: AppColors.textOnDark.withValues(alpha: 0.6),
             ),
           ),
         ),
@@ -190,7 +192,8 @@ class _LoginPageState extends State<LoginPage> {
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.textOnDark,
               foregroundColor: AppColors.primary,
-              disabledBackgroundColor: AppColors.textOnDark.withValues(alpha:0.5),
+              disabledBackgroundColor:
+                  AppColors.textOnDark.withValues(alpha: 0.5),
             ),
             child: _isLoading
                 ? const SizedBox(
@@ -203,7 +206,8 @@ class _LoginPageState extends State<LoginPage> {
                   )
                 : Text(
                     _isLogin ? l10n.signIn : l10n.signUp,
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                    style: const TextStyle(
+                        fontSize: 16, fontWeight: FontWeight.w600),
                   ),
           ),
         ),
@@ -213,7 +217,7 @@ class _LoginPageState extends State<LoginPage> {
           children: [
             Expanded(
               child: Divider(
-                color: AppColors.textOnDark.withValues(alpha:0.3),
+                color: AppColors.textOnDark.withValues(alpha: 0.3),
                 thickness: 1,
               ),
             ),
@@ -222,13 +226,13 @@ class _LoginPageState extends State<LoginPage> {
               child: Text(
                 'OR',
                 style: AppTextStyles.bodySmall.copyWith(
-                  color: AppColors.textOnDark.withValues(alpha:0.7),
+                  color: AppColors.textOnDark.withValues(alpha: 0.7),
                 ),
               ),
             ),
             Expanded(
               child: Divider(
-                color: AppColors.textOnDark.withValues(alpha:0.3),
+                color: AppColors.textOnDark.withValues(alpha: 0.3),
                 thickness: 1,
               ),
             ),
@@ -245,10 +249,10 @@ class _LoginPageState extends State<LoginPage> {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        color: AppColors.error.withValues(alpha:0.2),
+        color: AppColors.error.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(AppBorderRadius.md),
         border: Border.all(
-          color: AppColors.error.withValues(alpha:0.5),
+          color: AppColors.error.withValues(alpha: 0.5),
         ),
       ),
       child: Row(
@@ -279,16 +283,18 @@ class _LoginPageState extends State<LoginPage> {
         Text(
           _isLogin ? l10n.dontHaveAccount : l10n.alreadyHaveAccount,
           style: AppTextStyles.bodyMedium.copyWith(
-            color: AppColors.textOnDark.withValues(alpha:0.8),
+            color: AppColors.textOnDark.withValues(alpha: 0.8),
           ),
         ),
         GestureDetector(
-          onTap: _isLoading ? null : () {
-            setState(() {
-              _isLogin = !_isLogin;
-              _errorMessage = null;
-            });
-          },
+          onTap: _isLoading
+              ? null
+              : () {
+                  setState(() {
+                    _isLogin = !_isLogin;
+                    _errorMessage = null;
+                  });
+                },
           child: Text(
             _isLogin ? l10n.signUp : l10n.signIn,
             style: AppTextStyles.bodyMedium.copyWith(
@@ -306,7 +312,7 @@ class _LoginPageState extends State<LoginPage> {
     return Text(
       l10n.get('termsOfService'),
       style: AppTextStyles.caption.copyWith(
-        color: AppColors.textOnDark.withValues(alpha:0.7),
+        color: AppColors.textOnDark.withValues(alpha: 0.7),
       ),
       textAlign: TextAlign.center,
     );
@@ -321,22 +327,24 @@ class _LoginPageState extends State<LoginPage> {
           height: 24,
           child: Checkbox(
             value: _agreedToTerms,
-            onChanged: _isLoading ? null : (bool? value) {
-              setState(() {
-                _agreedToTerms = value ?? false;
-              });
-            },
+            onChanged: _isLoading
+                ? null
+                : (bool? value) {
+                    setState(() {
+                      _agreedToTerms = value ?? false;
+                    });
+                  },
             fillColor: WidgetStateProperty.resolveWith((states) {
               if (states.contains(WidgetState.selected)) {
                 return AppColors.textOnDark;
               }
-              return AppColors.textOnDark.withValues(alpha:0.3);
+              return AppColors.textOnDark.withValues(alpha: 0.3);
             }),
             checkColor: AppColors.primary,
             side: BorderSide(
               color: _agreedToTerms
                   ? AppColors.textOnDark
-                  : AppColors.textOnDark.withValues(alpha:0.5),
+                  : AppColors.textOnDark.withValues(alpha: 0.5),
               width: 2,
             ),
           ),
@@ -442,14 +450,11 @@ class _LoginPageState extends State<LoginPage> {
         await _auth.signInWithEmail(email: email, password: password);
       }
 
-      // Auth state change will be handled by main.dart
-      // Navigation to home will happen automatically
+      await _completeLogin();
     } catch (e) {
       if (mounted) {
         setState(() {
-          _errorMessage = _isLogin
-              ? l10n.loginFailed
-              : l10n.signupFailed;
+          _errorMessage = _isLogin ? l10n.loginFailed : l10n.signupFailed;
           _isLoading = false;
         });
       }
@@ -490,7 +495,7 @@ class _LoginPageState extends State<LoginPage> {
                 _buildSection('5. Your Rights',
                     'You have the right to access, update, or delete your personal information. You can also opt out of communications from us.'),
                 _buildSection('6. Contact Us',
-                    'If you have questions about this Privacy Policy, please contact us at: liuweiqiang@sailforai.com'),
+                    'If you have questions about this Privacy Policy, please contact us at: ${AppLinks.supportEmail}'),
               ],
             ],
           ),
@@ -567,12 +572,12 @@ class _LoginPageState extends State<LoginPage> {
       // Send credential to Supabase
       await _auth.signInWithApple();
 
-      // Auth state change will be handled by main.dart
-      // Navigation to home will happen automatically
+      await _completeLogin();
     } on PlatformException catch (e) {
       if (mounted) {
         setState(() {
-          _errorMessage = 'Apple sign-in failed: ${e.message ?? "Unknown error"}';
+          _errorMessage =
+              'Apple sign-in failed: ${e.message ?? "Unknown error"}';
           _isLoading = false;
         });
       }
@@ -584,5 +589,32 @@ class _LoginPageState extends State<LoginPage> {
         });
       }
     }
+  }
+
+  Future<void> _completeLogin() async {
+    if (!_auth.isLoggedIn) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = 'Login succeeded but no active session was found.';
+        });
+      }
+      return;
+    }
+
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _isLoading = false;
+    });
+
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(
+        builder: (_) => const MainNavigationPage(),
+      ),
+      (route) => false,
+    );
   }
 }

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:intl/intl.dart';
@@ -27,8 +29,10 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
 
   // Debug: Track loading state
   DateTime? _loadingStartTime;
-  bool get _isLoading => _subscriptionRepo.products.value.isEmpty &&
-                          _subscriptionRepo.status.value == SubscriptionStatus.unknown;
+  Timer? _loadingTimeoutTimer;
+  bool get _isLoading =>
+      _subscriptionRepo.products.value.isEmpty &&
+      _subscriptionRepo.status.value == SubscriptionStatus.unknown;
   Subscription? _currentSubscription;
 
   @override
@@ -38,9 +42,10 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
     _initializeSubscription();
 
     // Check for loading timeout after 15 seconds
-    Future.delayed(const Duration(seconds: 15), () {
+    _loadingTimeoutTimer = Timer(const Duration(seconds: 15), () {
       if (mounted && _isLoading) {
-        AppLogger.warning('Subscription loading timeout - status: ${_subscriptionRepo.status.value}, products: ${_subscriptionRepo.products.value.length}');
+        AppLogger.warning(
+            'Subscription loading timeout - status: ${_subscriptionRepo.status.value}, products: ${_subscriptionRepo.products.value.length}');
         setState(() {}); // Trigger rebuild to show debug info
       }
     });
@@ -48,6 +53,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
 
   @override
   void dispose() {
+    _loadingTimeoutTimer?.cancel();
     _subscriptionRepo.products.removeListener(_onProductsLoaded);
     _subscriptionRepo.dispose();
     super.dispose();
@@ -122,20 +128,48 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
         _selectedProduct!.id,
       );
 
-      if (success && mounted) {
-        _showSuccessDialog();
-      } else if (mounted) {
-        _showErrorDialog();
+      if (success) {
+        // buyNonConsumable returned true = purchase initiated.
+        // Keep _isPurchasing = true and wait for the purchaseStream callback
+        // which will update status to premium/error/free.
+        // Listen for status changes to handle the result.
+        _waitForPurchaseResult();
+      } else {
+        // Purchase initiation failed immediately
+        if (mounted) {
+          setState(() => _isPurchasing = false);
+          _showErrorDialog();
+        }
       }
     } catch (e) {
       if (mounted) {
+        setState(() => _isPurchasing = false);
         _showErrorDialog();
       }
-    } finally {
-      if (mounted) {
-        setState(() => _isPurchasing = false);
+    }
+  }
+
+  /// Wait for purchase result from the purchase stream
+  void _waitForPurchaseResult() {
+    void listener() {
+      final status = _subscriptionRepo.status.value;
+      if (status == SubscriptionStatus.premium) {
+        _subscriptionRepo.status.removeListener(listener);
+        if (mounted) {
+          setState(() => _isPurchasing = false);
+          _showSuccessDialog();
+        }
+      } else if (status == SubscriptionStatus.error ||
+          status == SubscriptionStatus.free) {
+        _subscriptionRepo.status.removeListener(listener);
+        if (mounted) {
+          setState(() => _isPurchasing = false);
+          _showErrorDialog();
+        }
       }
     }
+
+    _subscriptionRepo.status.addListener(listener);
   }
 
   Future<void> _restorePurchase() async {
@@ -163,7 +197,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
             Container(
               padding: const EdgeInsets.all(AppSpacing.md),
               decoration: BoxDecoration(
-                color: AppColors.success.withValues(alpha:0.1),
+                color: AppColors.success.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
@@ -289,7 +323,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
         Container(
           padding: const EdgeInsets.all(AppSpacing.lg),
           decoration: BoxDecoration(
-            color: AppColors.textOnDark.withValues(alpha:0.2),
+            color: AppColors.textOnDark.withValues(alpha: 0.2),
             shape: BoxShape.circle,
           ),
           child: const Icon(
@@ -309,7 +343,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
         Text(
           l10n.get('unlockUnlimited'),
           style: AppTextStyles.bodyMedium.copyWith(
-            color: AppColors.textOnDark.withValues(alpha:0.9),
+            color: AppColors.textOnDark.withValues(alpha: 0.9),
           ),
         ),
       ],
@@ -322,20 +356,20 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
     }
 
     final subscription = _currentSubscription!;
-    final isExpiringSoon = subscription.daysRemaining > 0 && subscription.daysRemaining <= 3;
+    final isExpiringSoon =
+        subscription.daysRemaining > 0 && subscription.daysRemaining <= 3;
     final isExpired = subscription.daysRemaining < 0;
 
     final dateFormatter = DateFormat.yMd();
     final expiryDate = subscription.endDate;
-    final expiryText = expiryDate != null
-        ? dateFormatter.format(expiryDate)
-        : 'Lifetime';
+    final expiryText =
+        expiryDate != null ? dateFormatter.format(expiryDate) : 'Lifetime';
 
     final bgColor = isExpired
-        ? AppColors.error.withValues(alpha:0.1)
+        ? AppColors.error.withValues(alpha: 0.1)
         : isExpiringSoon
-            ? AppColors.warning.withValues(alpha:0.1)
-            : AppColors.success.withValues(alpha:0.1);
+            ? AppColors.warning.withValues(alpha: 0.1)
+            : AppColors.success.withValues(alpha: 0.1);
 
     final icon = isExpired
         ? Icons.error_outline
@@ -379,7 +413,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                   Text(
                     'Expires: $expiryText',
                     style: AppTextStyles.bodySmall.copyWith(
-                      color: AppColors.textOnDark.withValues(alpha:0.8),
+                      color: AppColors.textOnDark.withValues(alpha: 0.8),
                     ),
                   ),
                 ],
@@ -410,7 +444,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
           builder: (context, products, _) {
             // Check for timeout
             final hasTimedOut = _loadingStartTime != null &&
-                                DateTime.now().difference(_loadingStartTime!).inSeconds > 15;
+                DateTime.now().difference(_loadingStartTime!).inSeconds > 15;
 
             // Still loading products
             if (products.isEmpty) {
@@ -425,7 +459,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                     Text(
                       'Loading subscriptions...',
                       style: AppTextStyles.bodyMedium.copyWith(
-                        color: AppColors.textOnDark.withValues(alpha:0.8),
+                        color: AppColors.textOnDark.withValues(alpha: 0.8),
                       ),
                     ),
                     // Show debug info after timeout
@@ -468,7 +502,8 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                     onTap: () {
                       setState(() => _selectedProduct = quarterly);
                     },
-                    badge: _buildSavingsBadge(quarterly, monthly, quarterly: true),
+                    badge:
+                        _buildSavingsBadge(quarterly, monthly, quarterly: true),
                   ),
                   const SizedBox(height: AppSpacing.md),
                 ],
@@ -568,7 +603,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
-        color: AppColors.textOnDark.withValues(alpha:0.15),
+        color: AppColors.textOnDark.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(AppBorderRadius.lg),
       ),
       child: Column(
@@ -589,7 +624,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
           Text(
             l10n.get('webNotSupportedDesc'),
             style: AppTextStyles.bodyMedium.copyWith(
-              color: AppColors.textOnDark.withValues(alpha:0.8),
+              color: AppColors.textOnDark.withValues(alpha: 0.8),
             ),
             textAlign: TextAlign.center,
           ),
@@ -602,7 +637,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
-        color: AppColors.error.withValues(alpha:0.1),
+        color: AppColors.error.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(AppBorderRadius.lg),
       ),
       child: Column(
@@ -623,7 +658,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
           Text(
             'Please make sure you are signed in to App Store',
             style: AppTextStyles.bodyMedium.copyWith(
-              color: AppColors.textOnDark.withValues(alpha:0.8),
+              color: AppColors.textOnDark.withValues(alpha: 0.8),
             ),
             textAlign: TextAlign.center,
           ),
@@ -633,6 +668,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
               setState(() {
                 _selectedProduct = null;
               });
+              _subscriptionRepo.resetForRetry();
               _subscriptionRepo.initialize();
             },
             style: ElevatedButton.styleFrom(
@@ -650,7 +686,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
-        color: AppColors.warning.withValues(alpha:0.1),
+        color: AppColors.warning.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(AppBorderRadius.lg),
       ),
       child: Column(
@@ -671,7 +707,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
           Text(
             'Please check App Store Connect for product configuration',
             style: AppTextStyles.bodyMedium.copyWith(
-              color: AppColors.textOnDark.withValues(alpha:0.8),
+              color: AppColors.textOnDark.withValues(alpha: 0.8),
             ),
             textAlign: TextAlign.center,
           ),
@@ -695,7 +731,9 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
       child: Container(
         padding: const EdgeInsets.all(AppSpacing.lg),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.textOnDark : AppColors.textOnDark.withValues(alpha:0.2),
+          color: isSelected
+              ? AppColors.textOnDark
+              : AppColors.textOnDark.withValues(alpha: 0.2),
           borderRadius: BorderRadius.circular(AppBorderRadius.lg),
           border: Border.all(
             color: isSelected ? AppColors.primary : Colors.transparent,
@@ -704,7 +742,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: AppColors.primary.withValues(alpha:0.3),
+                    color: AppColors.primary.withValues(alpha: 0.3),
                     blurRadius: 12,
                   ),
                 ]
@@ -721,7 +759,9 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                       child: Text(
                         product.title,
                         style: AppTextStyles.h4.copyWith(
-                          color: isSelected ? AppColors.primary : AppColors.textOnDark,
+                          color: isSelected
+                              ? AppColors.primary
+                              : AppColors.textOnDark,
                         ),
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -737,15 +777,16 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                   product.description,
                   style: AppTextStyles.bodySmall.copyWith(
                     color: isSelected
-                        ? AppColors.textOnDark.withValues(alpha:0.8)
-                        : AppColors.textOnDark.withValues(alpha:0.7),
+                        ? AppColors.textOnDark.withValues(alpha: 0.8)
+                        : AppColors.textOnDark.withValues(alpha: 0.7),
                   ),
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 Text(
                   product.price,
                   style: AppTextStyles.h2.copyWith(
-                    color: isSelected ? AppColors.primary : AppColors.textOnDark,
+                    color:
+                        isSelected ? AppColors.primary : AppColors.textOnDark,
                   ),
                 ),
               ],
@@ -766,7 +807,8 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
     );
   }
 
-  Widget _buildSavingsBadge(ProductDetails? current, ProductDetails? monthly, {bool quarterly = false}) {
+  Widget _buildSavingsBadge(ProductDetails? current, ProductDetails? monthly,
+      {bool quarterly = false}) {
     if (current == null || monthly == null) return const SizedBox.shrink();
 
     // Calculate savings percentage
@@ -822,7 +864,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
-        color: AppColors.textOnDark.withValues(alpha:0.15),
+        color: AppColors.textOnDark.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(AppBorderRadius.lg),
       ),
       child: Column(
@@ -867,7 +909,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
         Container(
           padding: const EdgeInsets.all(AppSpacing.sm),
           decoration: BoxDecoration(
-            color: AppColors.primary.withValues(alpha:0.2),
+            color: AppColors.primary.withValues(alpha: 0.2),
             shape: BoxShape.circle,
           ),
           child: Icon(
@@ -892,7 +934,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
               Text(
                 description,
                 style: AppTextStyles.bodySmall.copyWith(
-                  color: AppColors.textOnDark.withValues(alpha:0.8),
+                  color: AppColors.textOnDark.withValues(alpha: 0.8),
                 ),
                 overflow: TextOverflow.ellipsis,
                 maxLines: 2,
@@ -915,7 +957,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.textOnDark,
           foregroundColor: AppColors.primary,
-          disabledBackgroundColor: AppColors.textOnDark.withValues(alpha:0.5),
+          disabledBackgroundColor: AppColors.textOnDark.withValues(alpha: 0.5),
         ),
         child: _isPurchasing
             ? const SizedBox(
@@ -928,7 +970,8 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
               )
             : Text(
                 l10n.get('subscribeNow'),
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                style:
+                    const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
               ),
       ),
     );
@@ -952,14 +995,14 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
         Text.rich(
           TextSpan(
             style: AppTextStyles.caption.copyWith(
-              color: AppColors.textOnDark.withValues(alpha:0.7),
+              color: AppColors.textOnDark.withValues(alpha: 0.7),
             ),
             children: [
               TextSpan(text: l10n.get('termsOfService') + ' '),
               WidgetSpan(
                 alignment: PlaceholderAlignment.middle,
                 child: InkWell(
-                  onTap: () => _openUrl('https://sailforai.github.io/roamquest-site/terms.html'),
+                  onTap: () => _openUrl(AppLinks.termsOfServiceUrl),
                   child: Text(
                     l10n.get('termsAndPrivacy'),
                     style: const TextStyle(
@@ -979,14 +1022,14 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
         Text.rich(
           TextSpan(
             style: AppTextStyles.caption.copyWith(
-              color: AppColors.textOnDark.withValues(alpha:0.6),
+              color: AppColors.textOnDark.withValues(alpha: 0.6),
             ),
             children: [
               TextSpan(text: l10n.get('autoRenew')),
               WidgetSpan(
                 alignment: PlaceholderAlignment.middle,
                 child: InkWell(
-                  onTap: () => _openUrl('https://support.apple.com/HT202039'),
+                  onTap: () => _openUrl(AppLinks.appleSubscriptionHelpUrl),
                   child: Text(
                     '\n\n' + l10n.get('howToCancel'),
                     style: const TextStyle(

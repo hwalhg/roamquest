@@ -184,8 +184,8 @@ The updated policy will be effective when posted.
 
 If you have any questions, concerns, or requests regarding this Privacy Policy or your personal information, please contact us:
 
-**Email:** liuweiqiang@sailforai.com
-**Website:** https://sailforai.github.io/roamquest-site/
+**Email:** support@roamquest.xyz
+**Website:** https://roamquest.xyz
 
 ---
 

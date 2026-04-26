@@ -8,6 +8,11 @@ class Subscription {
   final bool isActive;
   final bool autoRenew;
   final String? originalTransactionId;
+  final String? latestTransactionId;
+  final String? appStoreEnvironment;
+  final int? statusCode;
+  final String? verificationSource;
+  final DateTime? verifiedAt;
 
   Subscription({
     required this.id,
@@ -18,6 +23,11 @@ class Subscription {
     required this.isActive,
     required this.autoRenew,
     this.originalTransactionId,
+    this.latestTransactionId,
+    this.appStoreEnvironment,
+    this.statusCode,
+    this.verificationSource,
+    this.verifiedAt,
   });
 
   /// Create from JSON
@@ -33,6 +43,13 @@ class Subscription {
       isActive: json['is_active'] as bool? ?? false,
       autoRenew: json['auto_renew'] as bool? ?? true,
       originalTransactionId: json['original_transaction_id'] as String?,
+      latestTransactionId: json['latest_transaction_id'] as String?,
+      appStoreEnvironment: json['app_store_environment'] as String?,
+      statusCode: json['status_code'] as int?,
+      verificationSource: json['verification_source'] as String?,
+      verifiedAt: json['verified_at'] != null
+          ? DateTime.parse(json['verified_at'] as String)
+          : null,
     );
   }
 
@@ -47,6 +64,11 @@ class Subscription {
       'is_active': isActive,
       'auto_renew': autoRenew,
       'original_transaction_id': originalTransactionId,
+      'latest_transaction_id': latestTransactionId,
+      'app_store_environment': appStoreEnvironment,
+      'status_code': statusCode,
+      'verification_source': verificationSource,
+      'verified_at': verifiedAt?.toIso8601String(),
     };
   }
 
@@ -84,6 +106,11 @@ class Subscription {
     bool? isActive,
     bool? autoRenew,
     String? originalTransactionId,
+    String? latestTransactionId,
+    String? appStoreEnvironment,
+    int? statusCode,
+    String? verificationSource,
+    DateTime? verifiedAt,
   }) {
     return Subscription(
       id: id ?? this.id,
@@ -93,7 +120,13 @@ class Subscription {
       endDate: endDate ?? this.endDate,
       isActive: isActive ?? this.isActive,
       autoRenew: autoRenew ?? this.autoRenew,
-      originalTransactionId: originalTransactionId ?? this.originalTransactionId,
+      originalTransactionId:
+          originalTransactionId ?? this.originalTransactionId,
+      latestTransactionId: latestTransactionId ?? this.latestTransactionId,
+      appStoreEnvironment: appStoreEnvironment ?? this.appStoreEnvironment,
+      statusCode: statusCode ?? this.statusCode,
+      verificationSource: verificationSource ?? this.verificationSource,
+      verifiedAt: verifiedAt ?? this.verifiedAt,
     );
   }
 }

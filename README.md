@@ -7,18 +7,17 @@ RoamQuest is a city exploration app that generates personalized "must-do" checkl
 ## Features
 
 - 🌍 **Auto Location Detection** - Automatically detects your city to generate relevant checklists
-- 🤖 **AI-Powered Checklists** - 20 curated items per city (landmarks, food, experiences, hidden gems)
+- 🤖 **AI-Powered Checklists** - City-specific checklists across landmarks, food, experiences, and hidden gems
 - 📸 **Photo Check-ins** - Capture and store memories for each checklist item
 - 📊 **Visual Reports** - Beautiful map-based reports with photo collages
-- 💰 **Freemium Model** - Free tier (5 check-ins) + Premium (unlimited)
+- 💰 **Subscription Model** - Free tier preview + Premium subscription for unlimited access
 - 🌐 **Multi-language** - English and Chinese support
 
 ## Tech Stack
 
 - **Frontend**: Flutter 3.x (Dart)
 - **Backend**: Supabase (PostgreSQL + Storage + Auth)
-- **AI**: Claude API (generate city checklists)
-- **Maps**: Mapbox GL
+- **AI**: DeepSeek API (generate city checklists)
 - **Payments**: Apple In-App Purchase (subscription)
 - **State**: Provider
 - **i18n**: flutter_localizations
@@ -31,8 +30,7 @@ RoamQuest is a city exploration app that generates personalized "must-do" checkl
 - Xcode (for iOS development)
 - Android Studio (for Android development)
 - Supabase account
-- Claude API key
-- Mapbox access token
+- DeepSeek API key
 
 ### Installation
 
@@ -89,12 +87,50 @@ Create a `.env` file in the project root:
 SUPABASE_URL=your_supabase_project_url
 SUPABASE_ANON_KEY=your_supabase_anon_key
 
-# Claude AI API
-CLAUDE_API_KEY=your_claude_api_key
-
-# Mapbox
-MAPBOX_ACCESS_TOKEN=your_mapbox_access_token
+# DeepSeek AI API
+DEEPSEEK_API_KEY=your_deepseek_api_key
 ```
+
+## App Store Subscription Verification
+
+RoamQuest now verifies iOS subscriptions through a Supabase Edge Function instead of trusting local purchase duration.
+
+### Database update
+
+Run the migration before using the new verification flow:
+
+```sql
+\i database/migrations/20260426_add_subscription_verification_fields.sql
+```
+
+Or copy the SQL into the Supabase SQL editor.
+
+### Edge Function
+
+The verification function lives at:
+
+```text
+supabase/functions/verify-app-store-subscription/index.ts
+```
+
+Deploy it with the Supabase CLI in your backend workspace:
+
+```bash
+supabase functions deploy verify-app-store-subscription
+```
+
+### Required Supabase Function secrets
+
+Set these as server-side function secrets, not in the Flutter `.env` file:
+
+```bash
+supabase secrets set APP_STORE_ISSUER_ID=your_issuer_id
+supabase secrets set APP_STORE_KEY_ID=your_key_id
+supabase secrets set APP_STORE_BUNDLE_ID=com.roamquest.app
+supabase secrets set APP_STORE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----"
+```
+
+The function uses the App Store Server API production endpoint first, then falls back to the sandbox endpoint when Apple reports the transaction is not found in production.
 
 ## Database Setup
 

@@ -62,7 +62,8 @@ class AIService {
       );
 
       // Parse DeepSeek response (OpenAI-compatible format)
-      final content = response.data['choices'][0]['message']['content'] as String;
+      final content =
+          response.data['choices'][0]['message']['content'] as String;
       final jsonStr = _extractJson(content);
 
       if (jsonStr == null) {
@@ -117,7 +118,7 @@ class AIService {
 
   /// Validate and normalize items
   List<Map<String, dynamic>> _validateItems(List<dynamic> items) {
-    final validCategories = ['landmark', 'food', 'experience'];
+    final validCategories = ['landmark', 'food', 'experience', 'hidden'];
     final result = <Map<String, dynamic>>[];
 
     for (final item in items) {
@@ -150,7 +151,7 @@ class AIService {
   /// Mark first N items of each category as free
   /// This allows users to try some content before subscribing
   List<ChecklistItem> _markFreeItems(List<ChecklistItem> items) {
-    const freeItemsPerCategory = 2;
+    const freeItemsPerCategory = 1;
 
     // Group items by category and track count
     final categoryCount = <String, int>{};

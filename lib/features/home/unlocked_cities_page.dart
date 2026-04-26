@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:uuid/uuid.dart';
-import '../checklist/checklist_page.dart';
-import 'city_selection_bottom_sheet.dart';
 
-/// Page showing all unlocked cities in a scrollable list
+import '../../data/models/city.dart';
+import '../../l10n/app_localizations.dart';
+
+/// Page showing all cities the user has already started exploring.
 class UnlockedCitiesPage extends StatefulWidget {
   final List<City> cities;
   final Function(City) onCitySelected;
@@ -18,10 +18,8 @@ class UnlockedCitiesPage extends StatefulWidget {
   State<UnlockedCitiesPage> createState() => _UnlockedCitiesPageState();
 }
 
-class _UnlockedCitiesPageState extends State<UnlockedCitiesPage>
-    with SingleTickerProviderStateMixin {
+class _UnlockedCitiesPageState extends State<UnlockedCitiesPage> {
   late ScrollController _scrollController;
-  late TabController _tabController;
 
   @override
   void initState() {
@@ -29,18 +27,18 @@ class _UnlockedCitiesPageState extends State<UnlockedCitiesPage>
     _scrollController = ScrollController();
     // Sort cities by name for better organization
     widget.cities.sort((a, b) => a.name.compareTo(b.name));
-    _tabController = TabController(length: 1, vsync: this);
   }
 
   @override
   void dispose() {
     _scrollController.dispose();
-    _tabController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
@@ -77,7 +75,7 @@ class _UnlockedCitiesPageState extends State<UnlockedCitiesPage>
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Unlocked Cities',
+                            l10n.get('startedCities'),
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 20,
@@ -111,6 +109,8 @@ class _UnlockedCitiesPageState extends State<UnlockedCitiesPage>
   }
 
   Widget _buildEmptyState() {
+    final l10n = AppLocalizations.of(context);
+
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -128,8 +128,8 @@ class _UnlockedCitiesPageState extends State<UnlockedCitiesPage>
             ),
           ),
           const SizedBox(height: 24),
-          const Text(
-            'No unlocked cities yet',
+          Text(
+            l10n.get('noStartedCities'),
             style: TextStyle(
               color: Colors.white,
               fontSize: 18,
@@ -137,8 +137,8 @@ class _UnlockedCitiesPageState extends State<UnlockedCitiesPage>
             ),
           ),
           const SizedBox(height: 8),
-          const Text(
-            'Start exploring to unlock new cities!',
+          Text(
+            l10n.get('startedCitiesHint'),
             style: TextStyle(
               color: Colors.white,
               fontSize: 14,
@@ -154,7 +154,7 @@ class _UnlockedCitiesPageState extends State<UnlockedCitiesPage>
               foregroundColor: const Color(0xFF6A11CB),
               padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
             ),
-            child: const Text('Start Exploring'),
+            child: Text(l10n.startExploring),
           ),
         ],
       ),
@@ -169,15 +169,15 @@ class _UnlockedCitiesPageState extends State<UnlockedCitiesPage>
       separatorBuilder: (context, index) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
         final city = widget.cities[index];
-        return _buildCityCard(city);
+        return _buildCityCard(city, index);
       },
     );
   }
 
-  Widget _buildCityCard(City city) {
+  Widget _buildCityCard(City city, int index) {
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
-      duration: Duration(milliseconds: 300 + (index * 50)),
+      duration: Duration(milliseconds: 300 + index * 50),
       curve: Curves.easeOut,
       builder: (context, value, child) {
         return Transform.translate(
@@ -267,7 +267,8 @@ class _UnlockedCitiesPageState extends State<UnlockedCitiesPage>
                     ),
                     const SizedBox(width: 8),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
                         color: const Color(0xFF4CAF50).withValues(alpha: 0.8),
                         borderRadius: BorderRadius.circular(12),

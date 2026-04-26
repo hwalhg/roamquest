@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:intl/message_lookup_by_library.dart';
 
 /// AppLocalizations class for internationalization
 class AppLocalizations {
@@ -15,7 +14,7 @@ class AppLocalizations {
 
   AppLocalizations(this.locale);
 
-  static Map<String, Map<String, String>> _localizedValues = {
+  static final Map<String, Map<String, String>> _localizedValues = {
     'en': {
       // App
       'appName': 'RoamQuest',
@@ -49,6 +48,9 @@ class AppLocalizations {
       'detectLocation': '📍 Detect My Location',
       'selectFromList': '🏙️ Select from List',
       'recentExplorations': 'Recent Explorations',
+      'startedCities': 'Started Cities',
+      'noStartedCities': 'No started cities yet',
+      'startedCitiesHint': 'Start exploring to build your city history.',
       'completed': 'Completed',
       'experiences': 'experiences',
       'all': 'All',
@@ -91,7 +93,8 @@ class AppLocalizations {
 
       // Terms & Privacy
       'agreeToTerms': 'I agree to the Terms of Service and Privacy Policy',
-      'mustAgreeToTerms': 'Please agree to the Terms of Service and Privacy Policy',
+      'mustAgreeToTerms':
+          'Please agree to the Terms of Service and Privacy Policy',
       'unlimitedCheckin': 'Unlimited Check-ins',
       'unlimitedCheckinDesc': 'Complete all 20 experiences in each city',
       'fullReport': 'Full Reports',
@@ -100,15 +103,16 @@ class AppLocalizations {
       'downloadShareDesc': 'Save reports and share with friends',
       'monthly': 'Monthly',
       'yearly': 'Yearly',
-      'save': 'Save',
       'subscribeNow': 'Subscribe Now',
       'restorePurchase': 'Restore Purchase',
       'termsOfService': 'By subscribing, you agree to our',
       'termsAndPrivacy': 'Terms of Service and Privacy Policy',
-      'autoRenew': 'Subscription will auto-renew unless cancelled at least 24h before expiration. All cities are unlocked during subscription.',
+      'autoRenew':
+          'Subscription will auto-renew unless cancelled at least 24h before expiration. All cities are unlocked during subscription.',
       'howToCancel': 'How to cancel subscription?',
       'webNotSupported': 'Web platform does not support subscriptions',
-      'webNotSupportedDesc': 'Please use iOS or Android device for subscription',
+      'webNotSupportedDesc':
+          'Please use iOS or Android device for subscription',
       'paymentFailed': 'Payment failed',
       'paymentFailedDesc': 'Unable to complete purchase, please try again.',
       'welcomePremium': 'Welcome to Premium!',
@@ -126,10 +130,12 @@ class AppLocalizations {
       'aboutPremium': 'About Premium',
       'freeTier': 'Free Tier',
       'freeTierDesc': 'Explore 5 experiences per city for free',
-      'freeTierItems': '• 2 landmarks\n• 1 food\n• 1 experience\n• 1 hidden gem',
+      'freeTierItems':
+          '• 2 landmarks\n• 1 food\n• 1 experience\n• 1 hidden gem',
       'premiumTier': 'Premium',
       'premiumTierDesc': 'Unlock full experiences in each city',
-      'premiumTierItems': '• All 20 experiences\n• Unlimited check-ins\n• Full reports\n• Download & share',
+      'premiumTierItems':
+          '• All 20 experiences\n• Unlimited check-ins\n• Full reports\n• Download & share',
       'howToUnlock': 'How to Unlock',
       'step1': '1. Go to a city checklist',
       'step2': '2. Tap on any locked item',
@@ -213,6 +219,9 @@ class AppLocalizations {
       'detectLocation': '📍 定位当前城市',
       'selectFromList': '🏙️ 从列表选择',
       'recentExplorations': '最近探索',
+      'startedCities': '已开始的城市',
+      'noStartedCities': '还没有开始的城市',
+      'startedCitiesHint': '开始探索，建立你的城市足迹。',
       'completed': '已完成',
       'experiences': '个体验',
       'all': '全部',
@@ -410,7 +419,8 @@ class AppLocalizations {
   String get freeTierDesc => get('freeTierDesc');
 }
 
-class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
+class _AppLocalizationsDelegate
+    extends LocalizationsDelegate<AppLocalizations> {
   const _AppLocalizationsDelegate();
 
   @override

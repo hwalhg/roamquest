@@ -88,6 +88,11 @@ CREATE TABLE subscriptions (
   is_active BOOLEAN DEFAULT true,
   auto_renew BOOLEAN DEFAULT true,
   original_transaction_id VARCHAR(255),
+  latest_transaction_id VARCHAR(255),
+  app_store_environment VARCHAR(32),
+  status_code INTEGER,
+  verification_source VARCHAR(64) DEFAULT 'legacy_local',
+  verified_at TIMESTAMP WITH TIME ZONE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   CONSTRAINT fk_subscriptions_user FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE
@@ -248,6 +253,8 @@ CREATE INDEX IF NOT EXISTS idx_checklist_items_checked_at ON checklist_items(che
 CREATE INDEX IF NOT EXISTS idx_subscriptions_user ON subscriptions(user_id);
 CREATE INDEX IF NOT EXISTS idx_subscriptions_active ON subscriptions(is_active);
 CREATE INDEX IF NOT EXISTS idx_subscriptions_product ON subscriptions(product_id);
+CREATE INDEX IF NOT EXISTS idx_subscriptions_original_transaction ON subscriptions(original_transaction_id);
+CREATE INDEX IF NOT EXISTS idx_subscriptions_latest_transaction ON subscriptions(latest_transaction_id);
 
 -- profiles 表索引
 CREATE INDEX IF NOT EXISTS idx_profiles_user ON profiles(user_id);
@@ -288,6 +295,11 @@ CREATE INDEX IF NOT EXISTS idx_profiles_user ON profiles(user_id);
 --   - is_active: 订阅是否激活
 --   - auto_renew: 是否自动续订
 --   - original_transaction_id: 原始交易 ID（用于 App Store/Play Store 回调）
+--   - latest_transaction_id: 最近一次 Apple 交易 ID
+--   - app_store_environment: Apple 环境（Production / Sandbox）
+--   - status_code: Apple 订阅状态码
+--   - verification_source: 订阅状态来源（如 app_store_server_api）
+--   - verified_at: 最近一次服务端验单时间
 
 -- profiles 表：存储用户个人资料
 --   - id: UUID 主键

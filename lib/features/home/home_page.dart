@@ -10,7 +10,6 @@ import '../../data/services/ai_service.dart';
 import '../../data/services/location_service.dart';
 import '../../data/services/city_service.dart';
 import '../../data/services/auth_service.dart';
-import '../../data/services/subscription_status_service.dart';
 import '../../l10n/app_localizations.dart';
 import 'city_selection_bottom_sheet.dart';
 import '../checklist/checklist_page.dart';
@@ -30,34 +29,33 @@ class _HomePageState extends State<HomePage> {
   final LocationService _locationService = LocationService();
   final AuthService _authService = AuthService();
   final AIService _aiService = AIService();
-  final SubscriptionStatusService _subscriptionStatus = SubscriptionStatusService();
 
   bool _isGenerating = false;
-  List<City> _unlockedCities = [];
+  List<City> _startedCities = [];
 
   @override
   void initState() {
     super.initState();
-    _loadUnlockedCities();
+    _loadStartedCities();
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     // Refresh cities when returning to this page
-    _loadUnlockedCities();
+    _loadStartedCities();
   }
 
-  /// Load unlocked cities from user's checklists
-  Future<void> _loadUnlockedCities() async {
+  /// Load cities the user has already started from checklist history.
+  Future<void> _loadStartedCities() async {
     final userId = _authService.currentUserId;
     if (userId == null) {
-      AppLogger.warning('User ID is null, cannot load unlocked cities');
+      AppLogger.warning('User ID is null, cannot load started cities');
       return;
     }
 
     try {
-      AppLogger.info('开始加载用户的解锁城市，userId: $userId');
+      AppLogger.info('开始加载用户已开始的城市，userId: $userId');
 
       // Get all checklists for this user
       final allChecklists = await _checklistRepo.getAllChecklists();
@@ -66,17 +64,20 @@ class _HomePageState extends State<HomePage> {
       // Extract unique cities from checklists
       final uniqueCities = <City>{};
       for (final checklist in allChecklists) {
-        AppLogger.info('Checklist: ${checklist.id}, 城市: ${checklist.city.name}');
+        AppLogger.info(
+            'Checklist: ${checklist.id}, 城市: ${checklist.city.name}');
         uniqueCities.add(checklist.city);
       }
 
       setState(() {
-        _unlockedCities = uniqueCities.toList();
+        _startedCities = uniqueCities.toList();
       });
 
-      AppLogger.info('成功加载 ${_unlockedCities.length} 个解锁城市: ${_unlockedCities.map((c) => c.name).join(', ')}');
+      AppLogger.info(
+        '成功加载 ${_startedCities.length} 个已开始城市: ${_startedCities.map((c) => c.name).join(', ')}',
+      );
     } catch (e, stackTrace) {
-      AppLogger.error('加载解锁城市失败', error: e, stackTrace: stackTrace);
+      AppLogger.error('加载已开始城市失败', error: e, stackTrace: stackTrace);
     }
   }
 
@@ -118,25 +119,30 @@ class _HomePageState extends State<HomePage> {
         setState(() {
           _isGenerating = false;
         });
-        _showErrorDialog('Failed to detect location. Please try selecting a city manually.');
+        _showErrorDialog(
+            'Failed to detect location. Please try selecting a city manually.');
       }
     }
   }
 
   /// Generate checklist for selected city
   Future<void> _generateChecklistForCity(City city) async {
+    final language = AppLocalizations.of(context).locale.languageCode;
+
     try {
       AppLogger.info('开始为城市生成清单: ${city.name}');
 
       // 先检查该城市是否已有未完成的 checklist
-      final existingChecklist = await _checklistRepo.getIncompleteChecklistForCity(city);
+      final existingChecklist =
+          await _checklistRepo.getIncompleteChecklistForCity(city);
 
       if (existingChecklist != null) {
         // 有该城市的清单，检查是否有 items
         AppLogger.info('找到已存在的清单，检查 items - id: ${existingChecklist.id}');
 
         // Load items for this checklist
-        final items = await _checklistRepo.loadChecklistItems(existingChecklist.id);
+        final items =
+            await _checklistRepo.loadChecklistItems(existingChecklist.id);
 
         if (items.isEmpty) {
           // Items 为空，需要创建 items
@@ -161,10 +167,6 @@ class _HomePageState extends State<HomePage> {
 
       // 没有该城市的清单，创建新的
       AppLogger.info('没有该城市的清单，创建新清单');
-
-      // Get app language
-      final l10n = AppLocalizations.of(context)!;
-      final language = l10n.locale.languageCode;
 
       // Get current user ID
       final userId = _authService.currentUserId ?? 'anonymous';
@@ -253,7 +255,7 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context);
 
     return Scaffold(
       body: Container(
@@ -331,13 +333,13 @@ class _HomePageState extends State<HomePage> {
                       ),
                     ),
                     const SizedBox(height: 50),
-                    // Unlocked cities list - Simple design
-                    if (_unlockedCities.isNotEmpty)
+                    // Started cities list - Simple design
+                    if (_startedCities.isNotEmpty)
                       Column(
                         children: [
                           // Title with count
                           Text(
-                            'Unlocked Cities (${_unlockedCities.length})',
+                            '${l10n.get('startedCities')} (${_startedCities.length})',
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 16,
@@ -350,7 +352,7 @@ class _HomePageState extends State<HomePage> {
                             spacing: 8,
                             runSpacing: 8,
                             alignment: WrapAlignment.center,
-                            children: _unlockedCities.map((city) {
+                            children: _startedCities.map((city) {
                               return _buildSimpleCityChip(city);
                             }).toList(),
                           ),
@@ -435,7 +437,8 @@ class _HomePageState extends State<HomePage> {
       AppLogger.info('点击城市芯片，导航到: ${city.name}');
 
       // 查找该城市的 checklist
-      final checklist = await _checklistRepo.getIncompleteChecklistForCity(city);
+      final checklist =
+          await _checklistRepo.getIncompleteChecklistForCity(city);
 
       if (checklist != null) {
         // 找到 checklist，检查是否有 items
@@ -458,7 +461,8 @@ class _HomePageState extends State<HomePage> {
       } else {
         // 没有找到 checklist，提示用户
         if (mounted) {
-          _showErrorDialog('No checklist found for ${city.name}. Please create a new one.');
+          _showErrorDialog(
+              'No checklist found for ${city.name}. Please create a new one.');
         }
       }
     } catch (e) {
@@ -471,7 +475,6 @@ class _HomePageState extends State<HomePage> {
 
   /// Create checklist items for a checklist
   Future<void> _createChecklistItems(Checklist checklist, City city) async {
-    final l10n = AppLocalizations.of(context)!;
     final language = checklist.language;
 
     // Check if template already exists
@@ -505,6 +508,7 @@ class _HomePageState extends State<HomePage> {
 
     // Save checklist items
     await _checklistRepo.saveChecklistItems(checklist.id, items);
-    AppLogger.info('保存 checklist items 完成 - checklistId: ${checklist.id}, 数量: ${items.length}');
+    AppLogger.info(
+        '保存 checklist items 完成 - checklistId: ${checklist.id}, 数量: ${items.length}');
   }
 }

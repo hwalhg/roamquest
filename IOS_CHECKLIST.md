@@ -64,11 +64,12 @@ travel, city guide, checklist, trip planner, attractions, local food, cultural e
 
 ## 第三阶段：配置内购产品
 
-### 非消耗型产品 (每城市解锁)
-- [ ] 产品 ID: `com.roamquest.city.unlock`
-- [ ] 价格: $2.99
-- [ ] 本地化名称: Unlock City Access
-- [ ] 本地化描述: Unlock unlimited check-ins and full features for this city
+### 自动续订订阅产品
+- [ ] 产品 ID: `com.roamquest.subscription.monthly`
+- [ ] 产品 ID: `com.roamquest.subscription.quarterly`
+- [ ] 产品 ID: `com.roamquest.subscription.yearly`
+- [ ] 配置订阅组: `RoamQuest Premium`
+- [ ] 完成英文本地化名称和描述
 
 ---
 
@@ -157,8 +158,8 @@ Password: [your test password]
 ## 联系信息配置
 
 ### 支持信息 (必填)
-- [ ] 支持 URL: https://roamquest.app/support 或 email: support@roamquest.app
-- [ ] 营销 URL: https://roamquest.app (可选)
+- [ ] 支持 URL: https://roamquest.xyz/support 或 email: support@roamquest.xyz
+- [ ] 营销 URL: https://roamquest.xyz (可选)
 
 ---
 

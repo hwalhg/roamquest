@@ -13,9 +13,9 @@ class AppConstants {
   // Categories
   static const List<String> categories = [
     'landmark', // 著名景点
-    'food',     // 特色美食
+    'food', // 特色美食
     'experience', // 文化体验
-    'hidden',    // 隐藏宝藏
+    'hidden', // 隐藏宝藏
   ];
 
   // Category Colors (for UI)
@@ -50,6 +50,17 @@ class AppConstants {
   // Animation Durations
   static const int animationDurationMs = 300;
   static const int listAnimationStaggerMs = 50;
+}
+
+/// Public URLs and support contacts used across the app and release docs.
+class AppLinks {
+  static const String marketingUrl = 'https://roamquest.xyz';
+  static const String privacyPolicyUrl = 'https://roamquest.xyz/privacy';
+  static const String termsOfServiceUrl = 'https://roamquest.xyz/terms';
+  static const String supportUrl = 'https://roamquest.xyz/support';
+  static const String supportEmail = 'support@roamquest.xyz';
+  static const String appleSubscriptionHelpUrl =
+      'https://support.apple.com/HT202039';
 }
 
 /// Subscription Product IDs

@@ -32,8 +32,8 @@ class _ChecklistPageState extends State<ChecklistPage>
   late TabController _tabController;
   String _selectedCategory = 'all';
   final ChecklistRepository _checklistRepo = ChecklistRepository();
-  final SubscriptionStatusService _subscriptionService = SubscriptionStatusService();
-  bool _isCityUnlocked = false;
+  final SubscriptionStatusService _subscriptionService =
+      SubscriptionStatusService();
   bool _hasPremiumSubscription = false;
   Map<String, int>? _remainingFreeCheckIns;
   List<ChecklistItem> _items = [];
@@ -73,7 +73,6 @@ class _ChecklistPageState extends State<ChecklistPage>
   }
 
   Future<void> _checkSubscriptionStatus() async {
-    final isUnlocked = await _subscriptionService.isCityUnlocked(_checklist.city);
     final hasPremium = await _subscriptionService.hasPremiumSubscription();
     final remaining = await _subscriptionService.getRemainingFreeCheckIns(
       _checklist.city,
@@ -81,7 +80,6 @@ class _ChecklistPageState extends State<ChecklistPage>
     );
     if (mounted) {
       setState(() {
-        _isCityUnlocked = isUnlocked;
         _hasPremiumSubscription = hasPremium;
         _remainingFreeCheckIns = remaining;
       });
@@ -160,7 +158,8 @@ class _ChecklistPageState extends State<ChecklistPage>
             FloatingActionButton.extended(
               onPressed: () => _viewReport(),
               icon: const Icon(Icons.share),
-              label: Text('${l10n.get('share')} (${Checklist.getCompletedCount(_items)})'),
+              label: Text(
+                  '${l10n.get('share')} (${Checklist.getCompletedCount(_items)})'),
               heroTag: 'share',
               backgroundColor: AppColors.success,
             ),
@@ -259,7 +258,8 @@ class _ChecklistPageState extends State<ChecklistPage>
                 backgroundColor: AppColors.surfaceVariant,
                 selectedColor: AppColors.primary,
                 labelStyle: AppTextStyles.bodySmall.copyWith(
-                  color: isSelected ? AppColors.textOnDark : AppColors.textPrimary,
+                  color:
+                      isSelected ? AppColors.textOnDark : AppColors.textPrimary,
                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                 ),
               ),
@@ -381,7 +381,7 @@ class _ChecklistPageState extends State<ChecklistPage>
       width: 48,
       height: 48,
       decoration: BoxDecoration(
-        color: color.withValues(alpha:0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(AppBorderRadius.md),
       ),
       child: Center(
@@ -436,7 +436,7 @@ class _ChecklistPageState extends State<ChecklistPage>
       return Container(
         padding: const EdgeInsets.all(AppSpacing.sm),
         decoration: BoxDecoration(
-          color: AppColors.success.withValues(alpha:0.1),
+          color: AppColors.success.withValues(alpha: 0.1),
           shape: BoxShape.circle,
         ),
         child: const Icon(
@@ -634,7 +634,9 @@ class _ChecklistPageState extends State<ChecklistPage>
                 ),
               ).then((_) => _checkSubscriptionStatus());
             },
-            child: Text(_checklist.city.isFree ? l10n.get('unlockFree') : '${l10n.get('unlock')} \$${cityPrice.toStringAsFixed(2)}'),
+            child: Text(_checklist.city.isFree
+                ? l10n.get('unlockFree')
+                : '${l10n.get('unlock')} \$${cityPrice.toStringAsFixed(2)}'),
           ),
         ],
       ),

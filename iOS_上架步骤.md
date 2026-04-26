@@ -46,7 +46,7 @@
 
 <!-- 隐私政策 URL（必需）-->
 <key>NSPrivacyPolicyLocationUsageDescription</key>
-<string>访问我们的隐私政策以了解我们如何使用您的位置数据：https://roamquest.app/privacy</string>
+<string>访问我们的隐私政策以了解我们如何使用您的位置数据：https://roamquest.xyz/privacy</string>
 
 <!-- 订阅相关说明 -->
 <key>NSUserTrackingUsageDescription</key>
@@ -107,10 +107,10 @@ https://appstoreconnect.apple.com
 | **Subtitle** | 城市探索之旅 |
 | **Description** | 发现每个城市的精彩之处，生成个性化清单，记录你的旅行回忆。支持无限打卡和精美报告。 |
 | **Keywords** | travel, city, exploration, checklist, guide, adventure |
-| **Support URL** | https://roamquest.app/support |
-| **Marketing URL** | https://roamquest.app |
-| **Privacy Policy URL** | https://roamquest.app/privacy |
-| **Terms of Use URL** | https://roamquest.app/terms |
+| **Support URL** | https://roamquest.xyz/support |
+| **Marketing URL** | https://roamquest.xyz |
+| **Privacy Policy URL** | https://roamquest.xyz/privacy |
+| **Terms of Use URL** | https://roamquest.xyz/terms |
 
 #### Age Rating（必填）
 
@@ -250,7 +250,7 @@ https://appstoreconnect.apple.com
 ## 8. 联系我们
 
 如有疑问，请通过以下方式联系我们：
-- 邮箱: support@roamquest.app
+- 邮箱: support@roamquest.xyz
 ```
 
 #### 服务条款内容
@@ -321,7 +321,7 @@ RoamQuest 提供以下订阅计划：
 本应用使用以下第三方服务：
 - Supabase（后端服务）
 - Apple（订阅服务）
-- Claude API（AI 生成服务）
+- DeepSeek API（AI 生成服务）
 
 我们对这些第三方服务的可用性或性能不承担责任。
 
@@ -352,7 +352,7 @@ RoamQuest 应用及其所有内容均受知识产权保护。
 ## 9. 联系我们
 
 如有疑问或需要支持，请联系：
-- 邮箱: support@roamquest.app
+- 邮箱: support@roamquest.xyz
 ```
 
 ### 托管方式
@@ -384,10 +384,10 @@ RoamQuest 应用及其所有内容均受知识产权保护。
 将以下 URL 替换为实际地址：
 ```dart
 // 第 719 行
-'https://roamquest.app/terms'
+'https://roamquest.xyz/terms'
 
 // 第 734 行
-'https://roamquest.app/privacy'
+'https://roamquest.xyz/privacy'
 
 // 第 761 行
 'https://support.apple.com/HT202039'
@@ -398,7 +398,7 @@ RoamQuest 应用及其所有内容均受知识产权保护。
 确保隐私政策 URL 正确：
 ```xml
 <key>NSPrivacyPolicyLocationUsageDescription</key>
-<string>访问我们的隐私政策以了解我们如何使用您的位置数据：https://roamquest.app/privacy</string>
+<string>访问我们的隐私政策以了解我们如何使用您的位置数据：https://roamquest.xyz/privacy</string>
 ```
 
 ---
@@ -581,7 +581,7 @@ open ios/Runner.xcworkspace
 
 ### 用户支持
 用户支持渠道：
-- 邮箱: support@roamquest.app
+- 邮箱: support@roamquest.xyz
 - 可在 App Store Connect 中配置
 
 ---

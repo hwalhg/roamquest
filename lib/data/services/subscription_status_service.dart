@@ -11,8 +11,7 @@ class SubscriptionStatusService {
   final SupabaseClient _client = SupabaseConfig.client;
   final AuthService _authService = AuthService();
 
-  /// Check if user has premium subscription (unlimited access)
-  /// Queries from database to check if user has an active, non-expired subscription
+  /// Check if user has a currently active premium subscription.
   Future<bool> hasPremiumSubscription() async {
     final userId = _authService.currentUserId;
     if (userId == null) return false;
@@ -27,16 +26,18 @@ class SubscriptionStatusService {
           .maybeSingle();
 
       final hasActiveSubscription = response != null;
-      AppLogger.info('Premium subscription check: $hasActiveSubscription for user $userId');
+      AppLogger.info(
+          'Premium subscription check: $hasActiveSubscription for user $userId');
       return hasActiveSubscription;
     } catch (e) {
-      AppLogger.error('Error checking premium subscription from database', error: e);
+      AppLogger.error('Error checking premium subscription from database',
+          error: e);
       return false;
     }
   }
 
-  /// Check if user has a checklist for the city
-  Future<bool> hasChecklistForCity(City city) async {
+  /// Check if the user has already started this city by creating a checklist.
+  Future<bool> hasStartedCity(City city) async {
     final userId = _authService.currentUserId;
     if (userId == null) return false;
 
@@ -55,42 +56,25 @@ class SubscriptionStatusService {
     }
   }
 
-  /// Check if a city is unlocked for current user
-  /// 用户已有该城市的 checklist 就表示已解锁
-  Future<bool> isCityUnlocked(City city) async {
-    final userId = _authService.currentUserId;
-    if (userId == null) return false;
+  /// Backward-compatible alias for started-city checks.
+  Future<bool> hasChecklistForCity(City city) async {
+    return hasStartedCity(city);
+  }
 
-    // Free cities are always unlocked
+  /// Check whether the user can access this city right now.
+  /// Premium means all cities are accessible, even if the user has not started them yet.
+  Future<bool> hasAccessToCity(City city) async {
     if (city.isFree) return true;
 
-    try {
-      // 检查用户是否已有该城市的 checklist
-      final response = await _client
-          .from('checklists')
-          .select()
-          .eq('user_id', userId)
-          .eq('city_id', city.id)
-          .maybeSingle();
-
-      return response != null;
-    } catch (e) {
-      AppLogger.error('Error checking city unlock status', error: e);
-      return false;
+    if (await hasPremiumSubscription()) {
+      return true;
     }
+
+    return hasStartedCity(city);
   }
 
-  /// Unlock a city for current user
-  /// 创建 checklist 时即自动解锁，无需单独操作
-  Future<bool> unlockCity(City city) async {
-    // 创建 checklist 时已经自动"解锁"城市了
-    // 不需要单独的解锁操作
-    return true;
-  }
-
-  /// Get list of unlocked cities for current user
-  /// 从用户的 checklists 中获取所有已解锁的城市
-  Future<List<String>> getUnlockedCityNames() async {
+  /// Get the list of cities the user has actually started.
+  Future<List<String>> getStartedCityNames() async {
     final userId = _authService.currentUserId;
     if (userId == null) return [];
 
@@ -101,9 +85,8 @@ class SubscriptionStatusService {
           .eq('user_id', userId);
 
       // 需要关联 cities 表获取城市名
-      final cityIds = (response as List)
-          .map((row) => row['city_id'] as int)
-          .toSet();
+      final cityIds =
+          (response as List).map((row) => row['city_id'] as int).toSet();
 
       if (cityIds.isEmpty) return [];
 
@@ -117,15 +100,20 @@ class SubscriptionStatusService {
           .map((city) => city['name'] as String)
           .toList();
     } catch (e) {
-      AppLogger.error('Error getting unlocked cities', error: e);
+      AppLogger.error('Error getting started cities', error: e);
       return [];
     }
+  }
+
+  /// Backward-compatible alias for existing callers that expect checklist history.
+  Future<List<String>> getUnlockedCityNames() async {
+    return getStartedCityNames();
   }
 
   /// Check if user can check in to an item
   /// Returns true if:
   /// - The item is free (isFree = true), OR
-  /// - Premium user with valid subscription (active and not expired)
+  /// - User currently has access to the city via premium subscription
   Future<bool> canCheckIn(
     City city,
     List<ChecklistItem> completedItems,
@@ -137,14 +125,12 @@ class SubscriptionStatusService {
       return true;
     }
 
-    // Premium users with valid subscription: unlimited access
-    if (await hasPremiumSubscription()) {
-      AppLogger.info('Premium subscription detected, allowing check-in');
+    if (await hasAccessToCity(city)) {
+      AppLogger.info('City access granted, allowing check-in');
       return true;
     }
 
-    // No valid subscription: deny access
-    AppLogger.info('No valid subscription, denying check-in');
+    AppLogger.info('No city access, denying check-in');
     return false;
   }
 
@@ -153,8 +139,7 @@ class SubscriptionStatusService {
     City city,
     List<ChecklistItem> completedItems,
   ) async {
-    // Premium users with checklist: unlimited
-    if (await hasPremiumSubscription() && await hasChecklistForCity(city)) {
+    if (await hasPremiumSubscription()) {
       return {'landmark': 999, 'food': 999, 'experience': 999, 'hidden': 999};
     }
 

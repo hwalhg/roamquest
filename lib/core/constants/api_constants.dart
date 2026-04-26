@@ -3,11 +3,11 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 /// API endpoints and configuration
 class ApiConstants {
   // DeepSeek AI Configuration (国产大模型)
-  static const String deepSeekBaseUrl = 'https://api.deepseek.com/v1/chat/completions';
+  static const String deepSeekBaseUrl =
+      'https://api.deepseek.com/v1/chat/completions';
   static const String deepSeekModel = 'deepseek-chat';
 
-  static String get deepSeekApiKey =>
-      dotenv.env['DEEPSEEK_API_KEY'] ?? '';
+  static String get deepSeekApiKey => dotenv.env['DEEPSEEK_API_KEY'] ?? '';
 
   // Claude AI Configuration (已停用，改用DeepSeek)
   // static const String claudeBaseUrl = 'https://api.anthropic.com/v1';
@@ -16,17 +16,19 @@ class ApiConstants {
   // static String get claudeApiKey => dotenv.env['CLAUDE_API_KEY'] ?? '';
 
   // Supabase Configuration
-  static String get supabaseUrl =>
-      dotenv.env['SUPABASE_URL'] ?? '';
+  static String get supabaseUrl => dotenv.env['SUPABASE_URL'] ?? '';
 
-  static String get supabaseAnonKey =>
-      dotenv.env['SUPABASE_ANON_KEY'] ?? '';
+  static String get supabaseAnonKey => dotenv.env['SUPABASE_ANON_KEY'] ?? '';
 
   // Supabase Tables
   static const String tableChecklists = 'checklists';
   static const String tableChecklistItems = 'checklist_items';
   static const String tableSubscriptions = 'subscriptions';
   static const String tableAttractions = 'attractions';
+
+  // Supabase Edge Functions
+  static const String fnVerifyAppStoreSubscription =
+      'verify-app-store-subscription';
 
   // Supabase Storage
   static const String storagePhotos = 'photos';
@@ -49,7 +51,8 @@ class ApiConstants {
 
 /// AI Prompt Templates
 class PromptTemplates {
-  static String generateChecklist(String city, String country, String language) {
+  static String generateChecklist(
+      String city, String country, String language) {
     final lang = language == 'zh' ? 'Chinese' : 'English';
 
     return '''

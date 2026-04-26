@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 
@@ -38,11 +40,10 @@ class PrivacyPolicyPage extends StatelessWidget {
                 Text(
                   'Last updated: January 2025',
                   style: AppTextStyles.bodySmall.copyWith(
-                    color: AppColors.textOnDark.withValues(alpha:0.7),
+                    color: AppColors.textOnDark.withValues(alpha: 0.7),
                   ),
                 ),
                 const SizedBox(height: 32),
-
                 _buildSection(
                   '1. Information We Collect',
                   '''
@@ -56,9 +57,7 @@ We collect information you provide directly to us:
 We do not collect your precise location continuously. We only request location access when you choose to use our location detection feature.
 ''',
                 ),
-
                 const SizedBox(height: 24),
-
                 _buildSection(
                   '2. How We Use Your Information',
                   '''
@@ -71,9 +70,7 @@ We use the information we collect to:
 • Communicate with you about service updates
 ''',
                 ),
-
                 const SizedBox(height: 24),
-
                 _buildSection(
                   '3. Data Storage and Security',
                   '''
@@ -83,9 +80,7 @@ We use the information we collect to:
 • Your data is isolated by user account - each user's data is completely separate
 ''',
                 ),
-
                 const SizedBox(height: 24),
-
                 _buildSection(
                   '4. Data Sharing',
                   '''
@@ -101,9 +96,7 @@ Third-party services we use:
 • Apple: In-app purchases (if you subscribe)
 ''',
                 ),
-
                 const SizedBox(height: 24),
-
                 _buildSection(
                   '5. Your Rights',
                   '''
@@ -116,9 +109,7 @@ You have the right to:
 • Cancel your subscription at any time
 ''',
                 ),
-
                 const SizedBox(height: 24),
-
                 _buildSection(
                   '6. Location Permissions',
                   '''
@@ -134,18 +125,14 @@ You can:
 • Change your permission in device settings
 ''',
                 ),
-
                 const SizedBox(height: 24),
-
                 _buildSection(
                   '7. Children\'s Privacy',
                   '''
 Our service is not intended for children under 13. We do not knowingly collect information from children under 13.
 ''',
                 ),
-
                 const SizedBox(height: 24),
-
                 _buildSection(
                   '8. Changes to This Policy',
                   '''
@@ -154,19 +141,16 @@ We may update this privacy policy from time to time. We will notify you of any c
 Updated: January 2025
 ''',
                 ),
-
                 const SizedBox(height: 24),
-
                 _buildSection(
                   '9. Contact Us',
                   '''
 If you have questions about this privacy policy, please contact us:
 
-Email: liuweiqiang@sailforai.com
-Website: https://sailforai.github.io/roamquest-site/
+Email: ${AppLinks.supportEmail}
+Website: ${AppLinks.marketingUrl}
 ''',
                 ),
-
                 const SizedBox(height: 32),
               ],
             ),
@@ -191,7 +175,7 @@ Website: https://sailforai.github.io/roamquest-site/
         Text(
           content,
           style: AppTextStyles.bodyMedium.copyWith(
-            color: AppColors.textOnDark.withValues(alpha:0.9),
+            color: AppColors.textOnDark.withValues(alpha: 0.9),
             height: 1.6,
           ),
         ),
