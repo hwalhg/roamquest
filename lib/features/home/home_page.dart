@@ -31,6 +31,7 @@ class _HomePageState extends State<HomePage> {
   final AIService _aiService = AIService();
 
   bool _isGenerating = false;
+  bool _isOpeningStartedCity = false;
   List<City> _startedCities = [];
 
   @override
@@ -42,7 +43,6 @@ class _HomePageState extends State<HomePage> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Refresh cities when returning to this page
     _loadStartedCities();
   }
 
@@ -69,8 +69,10 @@ class _HomePageState extends State<HomePage> {
         uniqueCities.add(checklist.city);
       }
 
+      if (!mounted) return;
       setState(() {
-        _startedCities = uniqueCities.toList();
+        _startedCities = uniqueCities.toList()
+          ..sort((a, b) => a.name.compareTo(b.name));
       });
 
       AppLogger.info(
@@ -81,30 +83,47 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  Future<void> _refreshStartedCities() async {
+    await _loadStartedCities();
+  }
+
+  void _trackStartedCity(City city) {
+    final exists = _startedCities.any(
+      (startedCity) =>
+          startedCity.name == city.name && startedCity.country == city.country,
+    );
+    if (exists || !mounted) return;
+
+    setState(() {
+      _startedCities = [..._startedCities, city]
+        ..sort((a, b) => a.name.compareTo(b.name));
+    });
+  }
+
+  Future<void> _openChecklistPage(Checklist checklist) async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ChecklistPage(checklist: checklist),
+      ),
+    );
+
+    if (mounted) {
+      await _loadStartedCities();
+    }
+  }
+
   /// Auto-detect location and generate checklist
   Future<void> _detectLocation() async {
     setState(() {
       _isGenerating = true;
     });
 
+    City currentCity;
     try {
       AppLogger.info('开始自动位置检测');
-
-      // Get current city from location service
-      final currentCity = await _locationService.getCurrentCity();
+      currentCity = await _locationService.getCurrentCity();
       AppLogger.info('检测到城市: ${currentCity.name}, ${currentCity.country}');
-
-      // Find or create city in database
-      final city = await _cityService.findOrCreateCity(
-        currentCity.name,
-        currentCity.country,
-        currentCity.countryCode,
-        currentCity.latitude,
-        currentCity.longitude,
-      );
-
-      // Generate checklist for this city
-      await _generateChecklistForCity(city);
     } on LocationException catch (e) {
       AppLogger.error('位置检测失败: ${e.message}');
       if (mounted) {
@@ -113,20 +132,51 @@ class _HomePageState extends State<HomePage> {
         });
         _showErrorDialog(e.message);
       }
+      return;
     } catch (e) {
-      AppLogger.error('自动检测失败', error: e);
+      AppLogger.error('获取当前位置失败', error: e);
       if (mounted) {
         setState(() {
           _isGenerating = false;
         });
         _showErrorDialog(
-            'Failed to detect location. Please try selecting a city manually.');
+          'Failed to get your current location. Please try selecting a city manually.',
+        );
+      }
+      return;
+    }
+
+    try {
+      final city = await _cityService.findOrCreateCity(
+        currentCity.name,
+        currentCity.country,
+        currentCity.countryCode,
+        currentCity.latitude,
+        currentCity.longitude,
+      );
+
+      await _generateChecklistForCity(city);
+    } catch (e) {
+      AppLogger.error('定位成功，但城市匹配或清单生成失败', error: e);
+      if (mounted) {
+        setState(() {
+          _isGenerating = false;
+        });
+        _showErrorDialog(
+          'Location detected, but we could not match a supported city. Please select a city manually.',
+        );
       }
     }
   }
 
   /// Generate checklist for selected city
   Future<void> _generateChecklistForCity(City city) async {
+    if (mounted && !_isGenerating) {
+      setState(() {
+        _isGenerating = true;
+      });
+    }
+
     final language = AppLocalizations.of(context).locale.languageCode;
 
     try {
@@ -144,23 +194,19 @@ class _HomePageState extends State<HomePage> {
         final items =
             await _checklistRepo.loadChecklistItems(existingChecklist.id);
 
-        if (items.isEmpty) {
-          // Items 为空，需要创建 items
-          AppLogger.info('清单为空，创建 items');
+        if (items.length < 4) {
+          // Items 为空或异常少，重建该城市的 checklist items
+          AppLogger.info('清单项目数量异常 (${items.length})，重建 items');
           await _createChecklistItems(existingChecklist, city);
         }
 
         if (mounted) {
+          _trackStartedCity(city);
           setState(() {
             _isGenerating = false;
           });
 
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => ChecklistPage(checklist: existingChecklist),
-            ),
-          );
+          await _openChecklistPage(existingChecklist);
         }
         return;
       }
@@ -190,16 +236,12 @@ class _HomePageState extends State<HomePage> {
 
       // Navigate to checklist page
       if (mounted) {
+        _trackStartedCity(city);
         setState(() {
           _isGenerating = false;
         });
 
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => ChecklistPage(checklist: checklist),
-          ),
-        );
+        await _openChecklistPage(checklist);
       }
     } on AIServiceException catch (e) {
       AppLogger.error('AI 生成失败', error: e);
@@ -269,96 +311,117 @@ class _HomePageState extends State<HomePage> {
         child: SafeArea(
           child: Stack(
             children: [
-              // Main content
-              Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    // App name
-                    Text(
-                      l10n.appName,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 48,
-                        fontWeight: FontWeight.bold,
-                      ),
+              RefreshIndicator(
+                onRefresh: _refreshStartedCities,
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight: MediaQuery.of(context).size.height -
+                          MediaQuery.of(context).padding.top,
                     ),
-                    const SizedBox(height: 8),
-                    // Tagline
-                    Text(
-                      l10n.appSlogan,
-                      style: const TextStyle(
-                        color: Color(0xFFE0E0E0),
-                        fontSize: 16,
-                      ),
-                    ),
-                    const SizedBox(height: 60),
-                    // Create Checklist button
-                    GestureDetector(
-                      onTap: _showCitySelection,
-                      child: Container(
-                        width: 200,
-                        height: 200,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF4CAF50),
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.2),
-                              blurRadius: 20,
-                              offset: const Offset(0, 10),
+                    child: Center(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 24,
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              l10n.appName,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 48,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
+                            const SizedBox(height: 8),
+                            Text(
+                              l10n.appSlogan,
+                              style: const TextStyle(
+                                color: Color(0xFFE0E0E0),
+                                fontSize: 16,
+                              ),
+                            ),
+                            const SizedBox(height: 60),
+                            GestureDetector(
+                              onTap: _showCitySelection,
+                              child: Container(
+                                width: 200,
+                                height: 200,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF4CAF50),
+                                  shape: BoxShape.circle,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color:
+                                          Colors.black.withValues(alpha: 0.2),
+                                      blurRadius: 20,
+                                      offset: const Offset(0, 10),
+                                    ),
+                                  ],
+                                ),
+                                child: Center(
+                                  child: _isGenerating
+                                      ? const SizedBox(
+                                          width: 30,
+                                          height: 30,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 3,
+                                            color: Color(0xFF6A11CB),
+                                          ),
+                                        )
+                                      : Text(
+                                          l10n.createChecklist,
+                                          style: const TextStyle(
+                                            color: Color(0xFF6A11CB),
+                                            fontSize: 24,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                          textAlign: TextAlign.center,
+                                        ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 50),
+                            Text(
+                              'Pull down to refresh your started cities',
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.82),
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            if (_startedCities.isNotEmpty)
+                              Column(
+                                children: [
+                                  Text(
+                                    '${l10n.get('startedCities')} (${_startedCities.length})',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Wrap(
+                                    spacing: 8,
+                                    runSpacing: 8,
+                                    alignment: WrapAlignment.center,
+                                    children: _startedCities.map((city) {
+                                      return _buildSimpleCityChip(city);
+                                    }).toList(),
+                                  ),
+                                ],
+                              ),
                           ],
                         ),
-                        child: Center(
-                          child: _isGenerating
-                              ? const SizedBox(
-                                  width: 30,
-                                  height: 30,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 3,
-                                    color: Color(0xFF6A11CB),
-                                  ),
-                                )
-                              : Text(
-                                  l10n.createChecklist,
-                                  style: const TextStyle(
-                                    color: Color(0xFF6A11CB),
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
-                        ),
                       ),
                     ),
-                    const SizedBox(height: 50),
-                    // Started cities list - Simple design
-                    if (_startedCities.isNotEmpty)
-                      Column(
-                        children: [
-                          // Title with count
-                          Text(
-                            '${l10n.get('startedCities')} (${_startedCities.length})',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          // Cities list - simple text chips
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            alignment: WrapAlignment.center,
-                            children: _startedCities.map((city) {
-                              return _buildSimpleCityChip(city);
-                            }).toList(),
-                          ),
-                        ],
-                      ),
-                  ],
+                  ),
                 ),
               ),
               // Auto-detect floating button (optional, small)
@@ -382,6 +445,65 @@ class _HomePageState extends State<HomePage> {
                     ),
                   ),
                 ),
+              if (_isGenerating)
+                Positioned.fill(
+                  child: AbsorbPointer(
+                    child: Container(
+                      color: Colors.black.withValues(alpha: 0.24),
+                      child: Center(
+                        child: Container(
+                          margin: const EdgeInsets.symmetric(horizontal: 32),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 24, vertical: 20),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: const [
+                              SizedBox(
+                                width: 32,
+                                height: 32,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 3,
+                                  color: Color(0xFF6A11CB),
+                                ),
+                              ),
+                              SizedBox(height: 16),
+                              Text(
+                                'Preparing your checklist...',
+                                style: TextStyle(
+                                  color: Color(0xFF333333),
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              if (_isOpeningStartedCity)
+                Positioned.fill(
+                  child: AbsorbPointer(
+                    child: Container(
+                      color: Colors.black.withValues(alpha: 0.18),
+                      child: const Center(
+                        child: SizedBox(
+                          width: 28,
+                          height: 28,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 3,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
             ],
           ),
         ),
@@ -391,41 +513,45 @@ class _HomePageState extends State<HomePage> {
 
   /// Build simple city chip - minimal design with click to navigate
   Widget _buildSimpleCityChip(City city) {
-    return GestureDetector(
-      onTap: () => _navigateToCityChecklist(city),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.15),
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Small flag
-            ClipRRect(
-              borderRadius: BorderRadius.circular(3),
-              child: Image.network(
-                'https://flagcdn.com/w20/${city.countryCode.toLowerCase()}.png',
-                width: 20,
-                height: 15,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return const SizedBox.shrink();
-                },
+    return Opacity(
+      opacity: _isOpeningStartedCity ? 0.65 : 1,
+      child: GestureDetector(
+        onTap:
+            _isOpeningStartedCity ? null : () => _navigateToCityChecklist(city),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Small flag
+              ClipRRect(
+                borderRadius: BorderRadius.circular(3),
+                child: Image.network(
+                  'https://flagcdn.com/w20/${city.countryCode.toLowerCase()}.png',
+                  width: 20,
+                  height: 15,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return const SizedBox.shrink();
+                  },
+                ),
               ),
-            ),
-            const SizedBox(width: 6),
-            // City name only
-            Text(
-              city.name,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
+              const SizedBox(width: 6),
+              // City name only
+              Text(
+                city.name,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -433,6 +559,14 @@ class _HomePageState extends State<HomePage> {
 
   /// Navigate to city checklist
   Future<void> _navigateToCityChecklist(City city) async {
+    if (_isOpeningStartedCity) return;
+
+    if (mounted) {
+      setState(() {
+        _isOpeningStartedCity = true;
+      });
+    }
+
     try {
       AppLogger.info('点击城市芯片，导航到: ${city.name}');
 
@@ -451,12 +585,7 @@ class _HomePageState extends State<HomePage> {
         }
 
         if (mounted) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => ChecklistPage(checklist: checklist),
-            ),
-          );
+          await _openChecklistPage(checklist);
         }
       } else {
         // 没有找到 checklist，提示用户
@@ -469,6 +598,12 @@ class _HomePageState extends State<HomePage> {
       AppLogger.error('导航到城市清单失败', error: e);
       if (mounted) {
         _showErrorDialog('Failed to open checklist. Please try again.');
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isOpeningStartedCity = false;
+        });
       }
     }
   }

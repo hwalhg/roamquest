@@ -65,7 +65,7 @@ class _CitySelectionPageState extends State<CitySelectionPage> {
 
   Future<void> _loadCities() async {
     try {
-      final cities = await _cityService.getCities();
+      final cities = await _cityService.getCities(forceRefresh: true);
       if (mounted) {
         setState(() {
           _allCities = cities;
@@ -140,10 +140,12 @@ class _CitySelectionPageState extends State<CitySelectionPage> {
                   hintText: '搜索城市...',
                   hintStyle: TextStyle(color: Color(0xFF999999)),
                   border: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  contentPadding:
+                      EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                   prefixIcon: Padding(
                     padding: EdgeInsets.only(right: 12),
-                    child: Icon(Icons.search, color: Color(0xFF999999), size: 20),
+                    child:
+                        Icon(Icons.search, color: Color(0xFF999999), size: 20),
                   ),
                 ),
               ),

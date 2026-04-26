@@ -12,11 +12,21 @@ class CityRepository {
     try {
       AppLogger.info('Fetching cities from database');
 
-      final response = await _client
+      var response = await _client
           .from('cities')
           .select()
           .eq('is_active', true)
           .order('sort_order', ascending: true);
+
+      if (response.isEmpty) {
+        AppLogger.warning(
+          'No active cities found in database, falling back to all cities',
+        );
+        response = await _client
+            .from('cities')
+            .select()
+            .order('sort_order', ascending: true);
+      }
 
       if (response.isEmpty) {
         AppLogger.warning('No cities found in database');
@@ -38,11 +48,8 @@ class CityRepository {
   /// Get city by ID
   Future<City?> getCityById(int id) async {
     try {
-      final response = await _client
-          .from('cities')
-          .select()
-          .eq('id', id)
-          .maybeSingle();
+      final response =
+          await _client.from('cities').select().eq('id', id).maybeSingle();
 
       if (response == null) return null;
 

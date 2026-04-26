@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 import '../models/city.dart';
 import '../repositories/city_repository.dart';
 import '../../core/utils/app_logger.dart';
@@ -223,12 +224,16 @@ class CityService {
   /// 1. 如果城市存在（无论 is_active 状态），返回该城市
   /// 2. 如果城市不存在，尝试翻译中文名后再次查找
   /// 3. 如果仍然不存在，创建新城市（需要 RLS 策略允许）
-  Future<City> findOrCreateCity(String name, String country, String countryCode, double latitude, double longitude) async {
-    AppLogger.info('findOrCreateCity called with: name="$name", country="$country", countryCode="$countryCode"');
+  Future<City> findOrCreateCity(String name, String country, String countryCode,
+      double latitude, double longitude) async {
+    AppLogger.info(
+        'findOrCreateCity called with: name="$name", country="$country", countryCode="$countryCode"');
 
     // Try to find existing city with original name (regardless of is_active status)
-    AppLogger.info('Searching for city with original name: "$name", "$country"');
-    final existingCity = await _repository.findCityByNameAndCountry(name, country);
+    AppLogger.info(
+        'Searching for city with original name: "$name", "$country"');
+    final existingCity =
+        await _repository.findCityByNameAndCountry(name, country);
 
     if (existingCity != null) {
       AppLogger.info('Found existing city: $name, $country');
@@ -241,19 +246,46 @@ class CityService {
     final englishName = _cityNameMapping[name];
     final englishCountry = _cityNameMapping[country];
 
-    AppLogger.info('Mapping lookup - englishName: $englishName, englishCountry: $englishCountry');
+    AppLogger.info(
+        'Mapping lookup - englishName: $englishName, englishCountry: $englishCountry');
 
     if (englishName != null || englishCountry != null) {
       final searchName = englishName ?? name;
       final searchCountry = englishCountry ?? country;
 
-      AppLogger.info('Translating city name: "$name, $country" -> "$searchName, $searchCountry"');
-      final translatedCity = await _repository.findCityByNameAndCountry(searchName, searchCountry);
+      AppLogger.info(
+          'Translating city name: "$name, $country" -> "$searchName, $searchCountry"');
+      final translatedCity =
+          await _repository.findCityByNameAndCountry(searchName, searchCountry);
 
       if (translatedCity != null) {
-        AppLogger.info('Found city after translation: $searchName, $searchCountry');
+        AppLogger.info(
+            'Found city after translation: $searchName, $searchCountry');
         return translatedCity;
       }
+    }
+
+    final normalizedMatch = await _findNormalizedCityMatch(
+      name: englishName ?? name,
+      country: englishCountry ?? country,
+    );
+    if (normalizedMatch != null) {
+      AppLogger.info(
+        'Found city via normalized match: ${normalizedMatch.name}, ${normalizedMatch.country}',
+      );
+      return normalizedMatch;
+    }
+
+    final nearestCity = await _findNearestCity(
+      countryCode: countryCode,
+      latitude: latitude,
+      longitude: longitude,
+    );
+    if (nearestCity != null) {
+      AppLogger.info(
+        'Found nearest city fallback: ${nearestCity.name}, ${nearestCity.country}',
+      );
+      return nearestCity;
     }
 
     // 城市不存在，创建新城市
@@ -270,6 +302,103 @@ class CityService {
 
     return await _repository.createCity(newCity);
   }
+
+  Future<City?> _findNormalizedCityMatch({
+    required String name,
+    required String country,
+  }) async {
+    final cities = await getCities(forceRefresh: true);
+    final normalizedName = _normalizeLocationToken(name);
+    final normalizedCountry = _normalizeLocationToken(country);
+
+    try {
+      return cities.firstWhere((city) {
+        return _normalizeLocationToken(city.name) == normalizedName &&
+            _normalizeLocationToken(city.country) == normalizedCountry;
+      });
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<City?> _findNearestCity({
+    required String countryCode,
+    required double latitude,
+    required double longitude,
+  }) async {
+    final cities = await getCities(forceRefresh: true);
+    if (cities.isEmpty) return null;
+
+    final preferredCities = cities.where((city) {
+      return city.countryCode.toUpperCase() == countryCode.toUpperCase();
+    }).toList();
+
+    final candidates = preferredCities.isNotEmpty ? preferredCities : cities;
+    City? nearestCity;
+    double? nearestDistanceMeters;
+
+    for (final city in candidates) {
+      final distanceMeters = _distanceInMeters(
+        latitude,
+        longitude,
+        city.latitude,
+        city.longitude,
+      );
+      if (nearestDistanceMeters == null ||
+          distanceMeters < nearestDistanceMeters) {
+        nearestDistanceMeters = distanceMeters;
+        nearestCity = city;
+      }
+    }
+
+    if (nearestCity == null || nearestDistanceMeters == null) {
+      return null;
+    }
+
+    AppLogger.info(
+      'Nearest city candidate: ${nearestCity.name}, distance=${nearestDistanceMeters.toStringAsFixed(0)}m',
+    );
+
+    if (nearestDistanceMeters <= 100000) {
+      return nearestCity;
+    }
+
+    return null;
+  }
+
+  String _normalizeLocationToken(String value) {
+    return value
+        .toLowerCase()
+        .replaceAll(RegExp(r'\s+'), '')
+        .replaceAll('市', '')
+        .replaceAll('省', '')
+        .replaceAll('特别行政区', '')
+        .replaceAll('city', '')
+        .replaceAll(RegExp(r'[^a-z0-9\u4e00-\u9fa5]'), '');
+  }
+
+  double _distanceInMeters(
+    double startLatitude,
+    double startLongitude,
+    double endLatitude,
+    double endLongitude,
+  ) {
+    const earthRadiusMeters = 6371000.0;
+    final dLat = _degreesToRadians(endLatitude - startLatitude);
+    final dLon = _degreesToRadians(endLongitude - startLongitude);
+    final lat1 = _degreesToRadians(startLatitude);
+    final lat2 = _degreesToRadians(endLatitude);
+
+    final a = math.sin(dLat / 2) * math.sin(dLat / 2) +
+        math.cos(lat1) *
+            math.cos(lat2) *
+            math.sin(dLon / 2) *
+            math.sin(dLon / 2);
+    final c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a));
+    return earthRadiusMeters * c;
+  }
+
+  double _degreesToRadians(double degrees) => degrees * math.pi / 180.0;
 
   /// Clear cache (call after updating cities)
   void clearCache() {

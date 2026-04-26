@@ -38,6 +38,7 @@ class _ChecklistPageState extends State<ChecklistPage>
   Map<String, int>? _remainingFreeCheckIns;
   List<ChecklistItem> _items = [];
   bool _isLoadingItems = true;
+  bool _isOpeningItem = false;
 
   List<CategoryItem> _categories = [];
 
@@ -109,6 +110,7 @@ class _ChecklistPageState extends State<ChecklistPage>
 
     // Save the updated items
     await _checklistRepo.saveChecklistItems(_checklist.id, _items);
+    await _checkSubscriptionStatus();
 
     // Check if all items are completed
     final completedCount = Checklist.getCompletedCount(_items);
@@ -129,7 +131,7 @@ class _ChecklistPageState extends State<ChecklistPage>
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context);
 
     // Initialize categories with localized names
     if (_categories.isEmpty) {
@@ -137,16 +139,38 @@ class _ChecklistPageState extends State<ChecklistPage>
     }
 
     return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          _buildAppBar(),
-          SliverToBoxAdapter(
-            child: _buildProgressHeader(l10n),
+      body: Stack(
+        children: [
+          CustomScrollView(
+            slivers: [
+              _buildAppBar(),
+              SliverToBoxAdapter(
+                child: _buildProgressHeader(l10n),
+              ),
+              SliverToBoxAdapter(
+                child: _buildCategoryTabs(l10n),
+              ),
+              _buildItemsList(l10n),
+            ],
           ),
-          SliverToBoxAdapter(
-            child: _buildCategoryTabs(l10n),
-          ),
-          _buildItemsList(l10n),
+          if (_isOpeningItem)
+            Positioned.fill(
+              child: AbsorbPointer(
+                child: Container(
+                  color: Colors.black.withValues(alpha: 0.12),
+                  child: const Center(
+                    child: SizedBox(
+                      width: 28,
+                      height: 28,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 3,
+                        color: AppColors.textOnDark,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
       floatingActionButton: Column(
@@ -317,7 +341,7 @@ class _ChecklistPageState extends State<ChecklistPage>
         padding: const EdgeInsets.only(bottom: AppSpacing.md),
         child: Card(
           child: InkWell(
-            onTap: () => _openItem(item, l10n),
+            onTap: _isOpeningItem ? null : () => _openItem(item, l10n),
             borderRadius: BorderRadius.circular(AppBorderRadius.lg),
             child: Padding(
               padding: const EdgeInsets.all(AppSpacing.md),
@@ -431,7 +455,7 @@ class _ChecklistPageState extends State<ChecklistPage>
           ),
         ),
       );
-    } else if (_hasPremiumSubscription) {
+    } else if (_hasPremiumSubscription || _checklist.city.isFree) {
       // Premium user - show unlock icon
       return Container(
         padding: const EdgeInsets.all(AppSpacing.sm),
@@ -518,38 +542,43 @@ class _ChecklistPageState extends State<ChecklistPage>
     );
   }
 
-  /// Check if this item still has free check-in remaining based on category
-  bool _hasFreeCheckInRemaining(ChecklistItem item) {
-    final category = item.category;
-    if (_remainingFreeCheckIns == null) return false;
-
-    final remaining = _remainingFreeCheckIns![category];
-    return remaining != null && remaining > 0;
-  }
-
   void _openItem(ChecklistItem item, AppLocalizations l10n) async {
-    // If already completed, allow editing without subscription check
-    if (item.isCompleted) {
-      _navigateToCheckin(item);
-      return;
-    }
+    if (_isOpeningItem) return;
 
-    // Check if user can check in (either unlocked or within free tier)
-    final canCheckIn = await _subscriptionService.canCheckIn(
-      _checklist.city,
-      Checklist.getCompletedItems(_items),
-      item, // Pass the item to check if it's within free tier
-    );
+    setState(() {
+      _isOpeningItem = true;
+    });
 
-    if (canCheckIn) {
-      _navigateToCheckin(item);
-    } else {
-      _showPaywallDialog(l10n);
+    try {
+      // If already completed, allow editing without subscription check
+      if (item.isCompleted) {
+        await _navigateToCheckin(item);
+        return;
+      }
+
+      // Check if user can check in (either unlocked or within free tier)
+      final canCheckIn = await _subscriptionService.canCheckIn(
+        _checklist.city,
+        Checklist.getCompletedItems(_items),
+        item, // Pass the item to check if it's within free tier
+      );
+
+      if (canCheckIn) {
+        await _navigateToCheckin(item);
+      } else {
+        await _showPaywallDialog(l10n);
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isOpeningItem = false;
+        });
+      }
     }
   }
 
-  void _navigateToCheckin(ChecklistItem item) {
-    Navigator.push(
+  Future<void> _navigateToCheckin(ChecklistItem item) async {
+    await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (_) => CheckinPage(
@@ -563,11 +592,11 @@ class _ChecklistPageState extends State<ChecklistPage>
     );
   }
 
-  void _showPaywallDialog(AppLocalizations l10n) {
+  Future<void> _showPaywallDialog(AppLocalizations l10n) {
     final remaining = _remainingFreeCheckIns;
     final cityPrice = _checklist.city.subscriptionPrice;
 
-    showDialog(
+    return showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: Text(l10n.upgradePremium),

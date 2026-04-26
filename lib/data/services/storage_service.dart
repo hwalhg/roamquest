@@ -15,20 +15,20 @@ class StorageService {
   final SupabaseClient _client = SupabaseConfig.client;
 
   /// Save a checklist header (items are saved separately)
-  Future<void> saveChecklist(Checklist checklist, {required String userId}) async {
+  Future<void> saveChecklist(Checklist checklist,
+      {required String userId}) async {
     try {
-      AppLogger.info('保存 checklist 开始 - id: ${checklist.id}, userId: $userId, cityId: ${checklist.cityId}');
+      AppLogger.info(
+          '保存 checklist 开始 - id: ${checklist.id}, userId: $userId, cityId: ${checklist.cityId}');
 
-      final response = await _client
-          .from(ApiConstants.tableChecklists)
-          .upsert({
-            'id': checklist.id,
-            'user_id': userId,
-            'city_id': checklist.cityId,
-            'language': checklist.language,
-            'created_at': checklist.createdAt.toIso8601String(),
-            'updated_at': DateTime.now().toIso8601String(),
-          });
+      final response = await _client.from(ApiConstants.tableChecklists).upsert({
+        'id': checklist.id,
+        'user_id': userId,
+        'city_id': checklist.cityId,
+        'language': checklist.language,
+        'created_at': checklist.createdAt.toIso8601String(),
+        'updated_at': DateTime.now().toIso8601String(),
+      });
 
       AppLogger.info('保存 checklist 完成 - id: ${checklist.id}, 响应: $response');
     } catch (e) {
@@ -61,7 +61,8 @@ class StorageService {
   }
 
   /// Get recent checklists for a specific user
-  Future<List<Checklist>> getRecentChecklists({required String userId, int limit = 10}) async {
+  Future<List<Checklist>> getRecentChecklists(
+      {required String userId, int limit = 10}) async {
     try {
       final response = await _client
           .from(ApiConstants.tableChecklists)
@@ -78,37 +79,39 @@ class StorageService {
   }
 
   /// Save checklist items (separate from header)
-  Future<void> saveChecklistItems(String checklistId, List<ChecklistItem> items) async {
+  Future<void> saveChecklistItems(
+      String checklistId, List<ChecklistItem> items) async {
     try {
-      AppLogger.info('保存 checklist items 开始 - checklistId: $checklistId, 数量: ${items.length}');
+      AppLogger.info(
+          '保存 checklist items 开始 - checklistId: $checklistId, 数量: ${items.length}');
 
       for (int i = 0; i < items.length; i++) {
         final item = items[i];
-        await _client
-            .from(ApiConstants.tableChecklistItems)
-            .upsert({
-              'id': item.id,
-              'checklist_id': checklistId,
-              'attraction_id': item.attractionId,
-              'title': item.title,
-              'location': item.location,
-              'category': item.category,
-              'sort_order': item.sortOrder,
-              'is_completed': item.isCompleted,
-              'is_free': item.isFree,
-              'checkin_photo_url': item.photoUrl,
-              'checked_at': item.completedAt?.toIso8601String(),
-              'latitude': item.latitude,
-              'longitude': item.longitude,
-              'rating': item.rating,
-              'notes': item.notes,
-              'updated_at': DateTime.now().toIso8601String(),
-            });
+        await _client.from(ApiConstants.tableChecklistItems).upsert({
+          'id': item.id,
+          'checklist_id': checklistId,
+          'attraction_id': item.attractionId,
+          'title': item.title,
+          'location': item.location,
+          'category': item.category,
+          'sort_order': item.sortOrder,
+          'is_completed': item.isCompleted,
+          'is_free': item.isFree,
+          'checkin_photo_url': item.photoUrl,
+          'checked_at': item.completedAt?.toIso8601String(),
+          'latitude': item.latitude,
+          'longitude': item.longitude,
+          'rating': item.rating,
+          'notes': item.notes,
+          'updated_at': DateTime.now().toIso8601String(),
+        });
 
         if (i == items.length - 1) {
-          AppLogger.info('保存 checklist items 完成 - checklistId: $checklistId, 总数: ${items.length}');
+          AppLogger.info(
+              '保存 checklist items 完成 - checklistId: $checklistId, 总数: ${items.length}');
         } else {
-          AppLogger.info('保存中 - checklistId: $checklistId, 进度: $i/${items.length}');
+          AppLogger.info(
+              '保存中 - checklistId: $checklistId, 进度: $i/${items.length}');
         }
       }
 
@@ -130,10 +133,7 @@ class StorageService {
           .eq('checklist_id', id);
 
       // Then delete checklist header
-      await _client
-          .from(ApiConstants.tableChecklists)
-          .delete()
-          .eq('id', id);
+      await _client.from(ApiConstants.tableChecklists).delete().eq('id', id);
 
       AppLogger.info('Checklist deleted: $id');
     } catch (e) {
@@ -208,7 +208,6 @@ class StorageService {
     }
   }
 
-
   /// Get attractions for a city by city_id
   /// Returns attractions as ChecklistItem templates (attraction_id is set from attractions.id)
   Future<List<ChecklistItem>?> getAttractionsByCity({
@@ -216,15 +215,28 @@ class StorageService {
     required String language,
   }) async {
     try {
-      AppLogger.info('Looking for attractions for city_id: $cityId, language: $language');
+      AppLogger.info(
+          'Looking for attractions for city_id: $cityId, language: $language');
 
-      final response = await _client
+      var response = await _client
           .from(ApiConstants.tableAttractions)
           .select()
           .eq('city_id', cityId)
           .eq('language', language)
           .eq('is_active', true)
           .order('sort_order', ascending: true);
+
+      if (response.length < 4) {
+        AppLogger.warning(
+          'Only ${response.length} attractions found for city_id: $cityId and language: $language, falling back to all active attractions for the city',
+        );
+        response = await _client
+            .from(ApiConstants.tableAttractions)
+            .select()
+            .eq('city_id', cityId)
+            .eq('is_active', true)
+            .order('sort_order', ascending: true);
+      }
 
       if (response.isEmpty) {
         AppLogger.info('No attractions found for city_id: $cityId');
@@ -279,18 +291,16 @@ class StorageService {
       for (int i = 0; i < items.length; i++) {
         final item = items[i];
 
-        await _client
-            .from(ApiConstants.tableAttractions)
-            .insert({
-              'city_id': cityId,
-              'title': item.title,
-              'location': item.location,
-              'category': item.category,
-              'language': language,
-              'is_active': true,
-              'is_free': item.isFree,
-              'sort_order': i,
-            });
+        await _client.from(ApiConstants.tableAttractions).insert({
+          'city_id': cityId,
+          'title': item.title,
+          'location': item.location,
+          'category': item.category,
+          'language': language,
+          'is_active': true,
+          'is_free': item.isFree,
+          'sort_order': i,
+        });
       }
 
       AppLogger.info('Attractions saved successfully');
@@ -319,7 +329,8 @@ class StorageService {
       );
     } else {
       // Fallback: create minimal city object with city_id
-      AppLogger.warning('No city data found for checklist ${data['id']}, using city_id: $cityId');
+      AppLogger.warning(
+          'No city data found for checklist ${data['id']}, using city_id: $cityId');
       city = City(
         id: cityId,
         name: 'Unknown City',

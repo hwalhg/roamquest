@@ -113,7 +113,8 @@ class SubscriptionStatusService {
   /// Check if user can check in to an item
   /// Returns true if:
   /// - The item is free (isFree = true), OR
-  /// - User currently has access to the city via premium subscription
+  /// - The city itself is free, OR
+  /// - User currently has an active premium subscription
   Future<bool> canCheckIn(
     City city,
     List<ChecklistItem> completedItems,
@@ -125,12 +126,17 @@ class SubscriptionStatusService {
       return true;
     }
 
-    if (await hasAccessToCity(city)) {
-      AppLogger.info('City access granted, allowing check-in');
+    if (city.isFree) {
+      AppLogger.info('Free city detected, allowing check-in');
       return true;
     }
 
-    AppLogger.info('No city access, denying check-in');
+    if (await hasPremiumSubscription()) {
+      AppLogger.info('Premium subscription active, allowing check-in');
+      return true;
+    }
+
+    AppLogger.info('Item is locked and requires subscription');
     return false;
   }
 

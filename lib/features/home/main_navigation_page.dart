@@ -4,6 +4,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/services/auth_service.dart';
+import '../auth/login_page.dart';
 import 'home_page.dart';
 import '../profile/edit_profile_page.dart';
 import '../profile/privacy_policy_page.dart';
@@ -40,13 +41,13 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
           color: AppColors.textOnDark,
           border: Border(
             top: BorderSide(
-              color: AppColors.textOnDark.withValues(alpha:0.2),
+              color: AppColors.textOnDark.withValues(alpha: 0.2),
               width: 1,
             ),
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha:0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 4,
               offset: const Offset(0, -2),
             ),
@@ -166,7 +167,10 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Widget _buildHeader(dynamic user) {
-    final displayName = _profileData?['full_name'] ?? _profileData?['username'] ?? user?.email ?? 'Guest';
+    final displayName = _profileData?['full_name'] ??
+        _profileData?['username'] ??
+        user?.email ??
+        'Guest';
     final avatarUrl = _profileData?['avatar_url'];
 
     return Column(
@@ -187,7 +191,7 @@ class _ProfilePageState extends State<ProfilePage> {
             width: 100,
             height: 100,
             decoration: BoxDecoration(
-              color: AppColors.textOnDark.withValues(alpha:0.2),
+              color: AppColors.textOnDark.withValues(alpha: 0.2),
               shape: BoxShape.circle,
             ),
             child: Stack(
@@ -243,7 +247,10 @@ class _ProfilePageState extends State<ProfilePage> {
         ),
         const SizedBox(height: 16),
         Text(
-          _profileData?['full_name'] ?? _profileData?['username'] ?? user?.email ?? 'Guest',
+          _profileData?['full_name'] ??
+              _profileData?['username'] ??
+              user?.email ??
+              'Guest',
           style: AppTextStyles.h4.copyWith(
             color: AppColors.textOnDark,
           ),
@@ -255,7 +262,7 @@ class _ProfilePageState extends State<ProfilePage> {
   Widget _buildMenuItems() {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.textOnDark.withValues(alpha:0.15),
+        color: AppColors.textOnDark.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(AppBorderRadius.lg),
       ),
       child: Column(
@@ -322,18 +329,29 @@ class _ProfilePageState extends State<ProfilePage> {
   void _showSignOutDialog() {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Sign Out'),
         content: const Text('Are you sure you want to sign out?'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text('Cancel'),
           ),
           ElevatedButton(
             onPressed: () async {
-              Navigator.pop(context);
-              await _auth.signOut();
+              final navigator = Navigator.of(context);
+              Navigator.pop(dialogContext);
+              final success = await _auth.signOut();
+              if (!mounted) return;
+
+              if (success) {
+                navigator.pushAndRemoveUntil(
+                  MaterialPageRoute(
+                    builder: (_) => const LoginPage(),
+                  ),
+                  (route) => false,
+                );
+              }
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.error,
