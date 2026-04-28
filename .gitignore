@@ -82,6 +82,9 @@ app.*.map.json
 # Coverage
 coverage/
 
+# Supabase CLI local state
+supabase/.temp/
+
 # Docs
 /doc/
 *.apk
