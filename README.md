@@ -126,7 +126,7 @@ Set these as server-side function secrets, not in the Flutter `.env` file:
 ```bash
 supabase secrets set APP_STORE_ISSUER_ID=your_issuer_id
 supabase secrets set APP_STORE_KEY_ID=your_key_id
-supabase secrets set APP_STORE_BUNDLE_ID=com.roamquest.app
+supabase secrets set APP_STORE_BUNDLE_ID=com.roamquest.roamQuest
 supabase secrets set APP_STORE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----"
 ```
 

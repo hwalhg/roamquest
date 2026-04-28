@@ -63,6 +63,12 @@ class AppLinks {
       'https://support.apple.com/HT202039';
 }
 
+/// Auth feature flags used to control which sign-in options are exposed in UI.
+class AuthFeatures {
+  static const bool enableAppleSignIn = true;
+  static const bool enableEmailAuth = false;
+}
+
 /// Subscription Product IDs
 /// Global subscription - unlocks all cities for a period of time
 class SubscriptionProducts {

@@ -31,6 +31,10 @@ class AppLocalizations {
       // Auth
       'signIn': 'Sign In',
       'signUp': 'Sign Up',
+      'continueWithApple': 'Continue with Apple',
+      'appleOnlyAuthTitle': 'Sign in with Apple',
+      'appleOnlyAuthSubtitle':
+          'Use your Apple account to sign in securely and restore your subscription across devices.',
       'email': 'Email',
       'password': 'Password',
       'passwordMin': 'Password (min 6 characters)',
@@ -102,6 +106,7 @@ class AppLocalizations {
       'downloadShare': 'Download & Share',
       'downloadShareDesc': 'Save reports and share with friends',
       'monthly': 'Monthly',
+      'quarterly': 'Quarterly',
       'yearly': 'Yearly',
       'subscribeNow': 'Subscribe Now',
       'restorePurchase': 'Restore Purchase',
@@ -117,6 +122,31 @@ class AppLocalizations {
       'paymentFailedDesc': 'Unable to complete purchase, please try again.',
       'welcomePremium': 'Welcome to Premium!',
       'unlimitedCity': 'You can now explore unlimited cities',
+      'currentSubscription': 'Current subscription',
+      'premiumAccessActiveDesc':
+          'Your Premium access is active. Change or cancel your plan in Apple subscriptions.',
+      'manageInApple': 'Manage in Apple',
+      'statusLabel': 'Status',
+      'planLabel': 'Plan',
+      'renewalLabel': 'Renewal',
+      'accessLabel': 'Access',
+      'activeStatus': 'Active',
+      'notSubscribedStatus': 'Not subscribed',
+      'allCitiesUnlockedShort': 'All cities unlocked',
+      'premiumAccess': 'Premium Access',
+      'premiumAccessInactiveDesc':
+          'Unlock all cities and unlimited check-ins.',
+      'viewPremium': 'View Premium',
+      'managePremium': 'Manage Premium',
+      'privacyPolicy': 'Privacy Policy',
+      'subscriptionExpiredStatus': 'Subscription Expired',
+      'subscriptionExpiringSoonStatus': 'Expiring Soon',
+      'subscriptionActiveStatus': 'Active Subscription',
+      'renewsOn': 'Renews on',
+      'expiredOn': 'Expired on',
+      'appleManagesRenewals': 'Apple manages renewals and plan changes after',
+      'appleManageBillingFallback':
+          'Open Apple subscriptions to manage billing and plan changes',
       'startExploring': 'Start Exploring',
       'freeCity': 'This city is currently free to unlock!',
       'oneTimePurchase': 'One time purchase, permanent access',
@@ -202,6 +232,9 @@ class AppLocalizations {
       // Auth
       'signIn': '登录',
       'signUp': '注册',
+      'continueWithApple': '使用 Apple 登录',
+      'appleOnlyAuthTitle': '使用 Apple 登录',
+      'appleOnlyAuthSubtitle': '使用你的 Apple 账号安全登录，并在不同设备间恢复订阅。',
       'email': '邮箱',
       'password': '密码',
       'passwordMin': '密码（至少6位）',
@@ -272,6 +305,7 @@ class AppLocalizations {
       'downloadShare': '下载与分享',
       'downloadShareDesc': '保存报告并与朋友分享',
       'monthly': '月付',
+      'quarterly': '季付',
       'yearly': '年付',
       'savings': '节省',
       'subscribeNow': '立即订阅',
@@ -286,6 +320,28 @@ class AppLocalizations {
       'paymentFailedDesc': '无法完成购买，请重试。',
       'welcomePremium': '欢迎升级高级版！',
       'unlimitedCity': '您现在可以无限探索城市',
+      'currentSubscription': '当前订阅',
+      'premiumAccessActiveDesc': '你的 Premium 已生效。套餐变更和取消请前往 Apple 订阅中管理。',
+      'manageInApple': '前往 Apple 管理',
+      'statusLabel': '状态',
+      'planLabel': '套餐',
+      'renewalLabel': '续期',
+      'accessLabel': '权限',
+      'activeStatus': '已生效',
+      'notSubscribedStatus': '未订阅',
+      'allCitiesUnlockedShort': '全部城市已解锁',
+      'premiumAccess': 'Premium 权益',
+      'premiumAccessInactiveDesc': '解锁全部城市和无限打卡。',
+      'viewPremium': '查看 Premium',
+      'managePremium': '管理 Premium',
+      'privacyPolicy': '隐私政策',
+      'subscriptionExpiredStatus': '订阅已过期',
+      'subscriptionExpiringSoonStatus': '即将到期',
+      'subscriptionActiveStatus': '订阅生效中',
+      'renewsOn': '续期时间',
+      'expiredOn': '过期时间',
+      'appleManagesRenewals': 'Apple 会在此时间后管理续订和套餐变更',
+      'appleManageBillingFallback': '前往 Apple 订阅管理账单和套餐变更',
       'startExploring': '开始探索',
       'freeCity': '此城市当前可免费解锁！',
       'oneTimePurchase': '一次性购买，永久访问',
@@ -372,6 +428,9 @@ class AppLocalizations {
   // Auth
   String get signIn => get('signIn');
   String get signUp => get('signUp');
+  String get continueWithApple => get('continueWithApple');
+  String get appleOnlyAuthTitle => get('appleOnlyAuthTitle');
+  String get appleOnlyAuthSubtitle => get('appleOnlyAuthSubtitle');
   String get email => get('email');
   String get password => get('password');
   String get passwordMin => get('passwordMin');

@@ -14,9 +14,17 @@ import '../../core/utils/app_logger.dart';
 
 /// Repository for managing subscriptions
 class SubscriptionRepository {
+  factory SubscriptionRepository() => _instance;
+
+  SubscriptionRepository._internal();
+
+  static final SubscriptionRepository _instance =
+      SubscriptionRepository._internal();
+
   final InAppPurchase _iap = InAppPurchase.instance;
   final Uuid _uuid = const Uuid();
   StreamSubscription<List<PurchaseDetails>>? _subscription;
+  final Set<String> _processingTransactionIds = <String>{};
 
   // Subscription state
   final ValueNotifier<SubscriptionStatus> status = ValueNotifier(
@@ -24,6 +32,7 @@ class SubscriptionRepository {
   );
 
   final ValueNotifier<List<ProductDetails>> products = ValueNotifier([]);
+  final ValueNotifier<String?> lastError = ValueNotifier(null);
 
   bool _isInitialized = false;
   bool _isPurchasing = false;
@@ -52,6 +61,7 @@ class SubscriptionRepository {
   void resetForRetry() {
     _isInitialized = false;
     status.value = SubscriptionStatus.unknown;
+    lastError.value = null;
   }
 
   /// Initialize subscription service
@@ -61,6 +71,7 @@ class SubscriptionRepository {
 
     try {
       AppLogger.info('Initializing subscription service...');
+      _clearError();
 
       // Check if in-app purchase is available
       final isAvailable = await _iap.isAvailable();
@@ -68,6 +79,7 @@ class SubscriptionRepository {
 
       if (!isAvailable) {
         AppLogger.warning('In-app purchase not available');
+        _setError('In-app purchases are not available on this device.');
         status.value = SubscriptionStatus.unavailable;
         return;
       }
@@ -95,6 +107,7 @@ class SubscriptionRepository {
     } catch (e) {
       // Web platform or other error - in-app purchase not available
       AppLogger.warning('In-app purchase not available on this platform: $e');
+      _setError('In-app purchases are not available on this platform.');
       status.value = SubscriptionStatus.unavailable;
     }
   }
@@ -102,6 +115,7 @@ class SubscriptionRepository {
   /// Load available products
   Future<void> loadProducts() async {
     try {
+      _clearError();
       AppLogger.info('Loading products: ${SubscriptionProducts.allIds}');
       AppLogger.info('Querying App Store for product details...');
 
@@ -122,6 +136,7 @@ class SubscriptionRepository {
       }
 
       if (response.productDetails.isEmpty) {
+        _setError(_describeProductLoadFailure(response.error?.message));
         AppLogger.error(
             'No products found. Error: ${response.error?.message ?? "Unknown"}');
         AppLogger.error('This usually means:');
@@ -149,6 +164,11 @@ class SubscriptionRepository {
       if (e.toString().contains('No active account')) {
         AppLogger.warning(
             'No active App Store account. Please sign in to App Store in Settings');
+        _setError(
+          'No active App Store account. Please sign in to the App Store in Settings and try again.',
+        );
+      } else {
+        _setError('Unable to load subscription products. Please try again.');
       }
       status.value = SubscriptionStatus.error;
     }
@@ -168,31 +188,59 @@ class SubscriptionRepository {
 
   /// Handle individual purchase
   Future<void> _handlePurchase(PurchaseDetails purchase) async {
+    final transactionId = purchase.purchaseID;
+    if (transactionId != null &&
+        transactionId.isNotEmpty &&
+        !_processingTransactionIds.add(transactionId)) {
+      AppLogger.warning(
+        'Skipping duplicate purchase update for transaction: $transactionId',
+      );
+      return;
+    }
+
     try {
       if (purchase.status == PurchaseStatus.purchased ||
           purchase.status == PurchaseStatus.restored) {
+        _clearError();
         final verifiedSubscription = await _verifyPurchase(purchase);
 
         await _saveSubscription(verifiedSubscription);
 
-        status.value = verifiedSubscription.isExpired
-            ? SubscriptionStatus.expired
-            : SubscriptionStatus.premium;
+        if (verifiedSubscription.isExpired) {
+          _setError(
+            'The App Store returned an expired subscription for this account. If you are testing in Sandbox, use a fresh Sandbox Apple ID or wait for the subscription to renew before trying again.',
+          );
+          status.value = SubscriptionStatus.expired;
+        } else {
+          status.value = SubscriptionStatus.premium;
+        }
         AppLogger.info('Purchase successful: ${purchase.productID}');
       } else if (purchase.status == PurchaseStatus.error) {
         AppLogger.error('Purchase error: ${purchase.error}');
+        _setError(_describePurchaseError(purchase.error));
         status.value = SubscriptionStatus.error;
       } else if (purchase.status == PurchaseStatus.canceled) {
+        _setError('Purchase was cancelled.');
         status.value = SubscriptionStatus.free;
-      }
-
-      // Complete purchase
-      if (purchase.pendingCompletePurchase) {
-        await _iap.completePurchase(purchase);
       }
     } catch (e) {
       AppLogger.error('Error handling purchase', error: e);
+      _setError(_sanitizeErrorMessage(e));
       status.value = SubscriptionStatus.error;
+    } finally {
+      if (transactionId != null && transactionId.isNotEmpty) {
+        _processingTransactionIds.remove(transactionId);
+      }
+
+      // Complete the StoreKit transaction even if server-side verification
+      // fails; otherwise iOS will keep replaying the same restored purchase.
+      if (purchase.pendingCompletePurchase) {
+        try {
+          await _iap.completePurchase(purchase);
+        } catch (e) {
+          AppLogger.error('Failed to complete purchase', error: e);
+        }
+      }
     }
   }
 
@@ -232,6 +280,11 @@ class SubscriptionRepository {
         if (appReceipt != null) 'appReceipt': appReceipt,
       },
     );
+
+    AppLogger.info(
+      'Subscription verification response received: status=${response.status}',
+    );
+    AppLogger.info('Subscription verification payload: ${response.data}');
 
     final payload = response.data;
     if (payload is! Map) {
@@ -441,10 +494,13 @@ class SubscriptionRepository {
     if (_isPurchasing) {
       AppLogger.warning(
           'Purchase already in progress, ignoring duplicate call');
+      _setError('A purchase is already in progress.');
       return false;
     }
 
     try {
+      _clearError();
+      status.value = SubscriptionStatus.unknown;
       AppLogger.info('purchaseSubscription called: $productId');
       final productDetails = products.value;
       final product = productDetails.firstWhere(
@@ -466,6 +522,7 @@ class SubscriptionRepository {
     } catch (e) {
       _isPurchasing = false;
       AppLogger.error('Failed to purchase', error: e);
+      _setError(_sanitizeErrorMessage(e));
       return false;
     }
   }
@@ -473,10 +530,12 @@ class SubscriptionRepository {
   /// Restore previous purchases
   Future<void> restorePurchases() async {
     try {
+      _clearError();
       await _iap.restorePurchases();
       AppLogger.info('Restoring purchases');
     } catch (e) {
       AppLogger.error('Failed to restore', error: e);
+      _setError(_sanitizeErrorMessage(e));
       status.value = SubscriptionStatus.error;
     }
   }
@@ -570,14 +629,54 @@ class SubscriptionRepository {
 
   void _updateStreamOnError(dynamic error) {
     AppLogger.error('Purchase stream error', error: error);
+    _setError(_sanitizeErrorMessage(error));
     status.value = SubscriptionStatus.error;
   }
 
   /// Dispose
   void dispose() {
-    _subscription?.cancel();
-    status.dispose();
-    products.dispose();
+    // Shared singleton for the whole app lifecycle.
+    // Individual pages should remove their own listeners, but the repository
+    // keeps the purchase stream alive to avoid duplicate StoreKit listeners.
+  }
+
+  void _clearError() {
+    lastError.value = null;
+  }
+
+  void _setError(String message) {
+    lastError.value = message;
+  }
+
+  String _describeProductLoadFailure(String? storeMessage) {
+    if (storeMessage != null && storeMessage.trim().isNotEmpty) {
+      return _sanitizeErrorMessage(storeMessage);
+    }
+
+    return 'No subscription products were returned from the App Store. Check App Store Connect product setup and your signed-in App Store account.';
+  }
+
+  String _describePurchaseError(IAPError? error) {
+    final message = error?.message;
+    if (message != null && message.trim().isNotEmpty) {
+      return _sanitizeErrorMessage(message);
+    }
+
+    return 'The App Store could not complete the purchase.';
+  }
+
+  String _sanitizeErrorMessage(Object? error) {
+    final raw = error?.toString().trim() ?? '';
+    if (raw.isEmpty) {
+      return 'Unable to complete purchase. Please try again.';
+    }
+
+    var message = raw.replaceFirst('Exception:', '').trim();
+    if (message.startsWith('error:')) {
+      message = message.substring(6).trim();
+    }
+
+    return message;
   }
 }
 

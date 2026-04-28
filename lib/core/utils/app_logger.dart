@@ -19,7 +19,8 @@ class AppLogger {
 
   /// Log error message
   static void error(String message, {Object? error, StackTrace? stackTrace}) {
-    _log('ERROR', message, null);
+    final errorSuffix = error != null ? ' | Error: $error' : '';
+    _log('ERROR', '$message$errorSuffix', null);
     if (error != null) {
       developer.log(
         'Error: $error',

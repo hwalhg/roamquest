@@ -26,6 +26,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
   final SubscriptionRepository _subscriptionRepo = SubscriptionRepository();
   ProductDetails? _selectedProduct;
   bool _isPurchasing = false;
+  VoidCallback? _purchaseStatusListener;
 
   // Debug: Track loading state
   DateTime? _loadingStartTime;
@@ -34,6 +35,10 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
       _subscriptionRepo.products.value.isEmpty &&
       _subscriptionRepo.status.value == SubscriptionStatus.unknown;
   Subscription? _currentSubscription;
+  bool get _hasActivePremiumSubscription {
+    return _subscriptionRepo.status.value == SubscriptionStatus.premium ||
+        (_currentSubscription?.isValid ?? false);
+  }
 
   @override
   void initState() {
@@ -54,6 +59,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
   @override
   void dispose() {
     _loadingTimeoutTimer?.cancel();
+    _removePurchaseStatusListener();
     _subscriptionRepo.products.removeListener(_onProductsLoaded);
     _subscriptionRepo.dispose();
     super.dispose();
@@ -61,21 +67,21 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
 
   Future<void> _initializeSubscription() async {
     await _subscriptionRepo.initialize();
-
-    // Load current subscription details
-    final subscription = await _subscriptionRepo.getSubscription();
+    await _refreshCurrentSubscription();
 
     // Wait for products to load and select one
     _subscriptionRepo.products.addListener(_onProductsLoaded);
+    _onProductsLoaded();
+  }
 
-    if (mounted) {
-      setState(() {
-        _currentSubscription = subscription;
-      });
+  Future<void> _refreshCurrentSubscription() async {
+    final subscription = await _subscriptionRepo.getSubscription();
 
-      // Try to set selected product immediately if already loaded
-      _onProductsLoaded();
-    }
+    if (!mounted) return;
+
+    setState(() {
+      _currentSubscription = subscription;
+    });
   }
 
   void _onProductsLoaded() {
@@ -122,6 +128,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
     if (_selectedProduct == null || _isPurchasing) return;
 
     setState(() => _isPurchasing = true);
+    _startWaitingForPurchaseResult();
 
     try {
       final success = await _subscriptionRepo.purchaseSubscription(
@@ -129,52 +136,72 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
       );
 
       if (success) {
-        // buyNonConsumable returned true = purchase initiated.
-        // Keep _isPurchasing = true and wait for the purchaseStream callback
-        // which will update status to premium/error/free.
-        // Listen for status changes to handle the result.
-        _waitForPurchaseResult();
+        // The purchase stream can update status before this future returns.
+        // Check immediately so the UI doesn't miss an already-delivered result.
+        _handlePurchaseStatusChange();
       } else {
         // Purchase initiation failed immediately
+        _removePurchaseStatusListener();
         if (mounted) {
           setState(() => _isPurchasing = false);
-          _showErrorDialog();
+          _showErrorDialog(_subscriptionRepo.lastError.value);
         }
       }
     } catch (e) {
+      _removePurchaseStatusListener();
       if (mounted) {
         setState(() => _isPurchasing = false);
-        _showErrorDialog();
+        _showErrorDialog(_subscriptionRepo.lastError.value ?? e.toString());
       }
     }
   }
 
-  /// Wait for purchase result from the purchase stream
-  void _waitForPurchaseResult() {
-    void listener() {
-      final status = _subscriptionRepo.status.value;
-      if (status == SubscriptionStatus.premium) {
-        _subscriptionRepo.status.removeListener(listener);
-        if (mounted) {
-          setState(() => _isPurchasing = false);
-          _showSuccessDialog();
-        }
-      } else if (status == SubscriptionStatus.error ||
-          status == SubscriptionStatus.free) {
-        _subscriptionRepo.status.removeListener(listener);
-        if (mounted) {
-          setState(() => _isPurchasing = false);
-          _showErrorDialog();
-        }
-      }
+  void _startWaitingForPurchaseResult() {
+    _removePurchaseStatusListener();
+    _purchaseStatusListener = _handlePurchaseStatusChange;
+    _subscriptionRepo.status.addListener(_purchaseStatusListener!);
+  }
+
+  void _removePurchaseStatusListener() {
+    final listener = _purchaseStatusListener;
+    if (listener == null) return;
+    _subscriptionRepo.status.removeListener(listener);
+    _purchaseStatusListener = null;
+  }
+
+  /// Handle purchase result from the purchase stream.
+  void _handlePurchaseStatusChange() {
+    final status = _subscriptionRepo.status.value;
+    if (status == SubscriptionStatus.unknown) return;
+
+    _removePurchaseStatusListener();
+    _finalizePurchaseStatus(status);
+  }
+
+  Future<void> _finalizePurchaseStatus(SubscriptionStatus status) async {
+    await _refreshCurrentSubscription();
+
+    if (!mounted) return;
+
+    setState(() => _isPurchasing = false);
+
+    if (status == SubscriptionStatus.premium) {
+      _showSuccessDialog();
+      return;
     }
 
-    _subscriptionRepo.status.addListener(listener);
+    if (status == SubscriptionStatus.error ||
+        status == SubscriptionStatus.free ||
+        status == SubscriptionStatus.expired ||
+        status == SubscriptionStatus.unavailable) {
+      _showErrorDialog(_subscriptionRepo.lastError.value);
+    }
   }
 
   Future<void> _restorePurchase() async {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context);
     await _subscriptionRepo.restorePurchases();
+    await _refreshCurrentSubscription();
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(l10n.get('restorePurchaseCompleted'))),
@@ -183,7 +210,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
   }
 
   void _showSuccessDialog() {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context);
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -237,13 +264,17 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
     );
   }
 
-  void _showErrorDialog() {
-    final l10n = AppLocalizations.of(context)!;
+  void _showErrorDialog([String? detailedMessage]) {
+    final l10n = AppLocalizations.of(context);
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: Text(l10n.get('paymentFailed')),
-        content: Text(l10n.get('paymentFailedDesc')),
+        content: Text(
+          detailedMessage != null && detailedMessage.trim().isNotEmpty
+              ? '${l10n.get('paymentFailedDesc')}\n\n$detailedMessage'
+              : l10n.get('paymentFailedDesc'),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -256,7 +287,8 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context);
+    final hasActivePremiumSubscription = _hasActivePremiumSubscription;
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
@@ -282,9 +314,13 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                     const SizedBox(height: AppSpacing.xl),
                     _buildFeatures(l10n),
                     const SizedBox(height: AppSpacing.xl),
-                    _buildPurchaseButton(l10n),
-                    const SizedBox(height: AppSpacing.md),
-                    _buildRestoreButton(l10n),
+                    if (hasActivePremiumSubscription)
+                      _buildManageSubscriptionButton()
+                    else ...[
+                      _buildPurchaseButton(l10n),
+                      const SizedBox(height: AppSpacing.md),
+                      _buildRestoreButton(l10n),
+                    ],
                     const SizedBox(height: AppSpacing.xl),
                     _buildTerms(l10n),
                   ],
@@ -355,12 +391,14 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
       return const SizedBox.shrink();
     }
 
+    final l10n = AppLocalizations.of(context);
     final subscription = _currentSubscription!;
+    final periodName = _localizedPlanName(subscription.productId, l10n);
     final isExpiringSoon =
         subscription.daysRemaining > 0 && subscription.daysRemaining <= 3;
     final isExpired = subscription.daysRemaining < 0;
 
-    final dateFormatter = DateFormat.yMd();
+    final dateFormatter = DateFormat('yyyy-MM-dd HH:mm');
     final expiryDate = subscription.endDate;
     final expiryText =
         expiryDate != null ? dateFormatter.format(expiryDate) : 'Lifetime';
@@ -399,10 +437,10 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
               children: [
                 Text(
                   isExpired
-                      ? 'Subscription Expired'
+                      ? l10n.get('subscriptionExpiredStatus')
                       : isExpiringSoon
-                          ? 'Expiring Soon'
-                          : 'Active Subscription',
+                          ? l10n.get('subscriptionExpiringSoonStatus')
+                          : l10n.get('subscriptionActiveStatus'),
                   style: AppTextStyles.bodyMedium.copyWith(
                     color: iconColor,
                     fontWeight: FontWeight.w600,
@@ -411,7 +449,9 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                 if (expiryDate != null) ...[
                   const SizedBox(height: 4),
                   Text(
-                    'Expires: $expiryText',
+                    isExpired
+                        ? '$periodName • ${l10n.get('expiredOn')}: $expiryText'
+                        : '$periodName • ${l10n.get('renewsOn')}: $expiryText',
                     style: AppTextStyles.bodySmall.copyWith(
                       color: AppColors.textOnDark.withValues(alpha: 0.8),
                     ),
@@ -426,6 +466,80 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
   }
 
   Widget _buildSubscriptionPlans(AppLocalizations l10n) {
+    if (_hasActivePremiumSubscription) {
+      final subscription = _currentSubscription;
+      final planName = subscription != null
+          ? _localizedPlanName(subscription.productId, l10n)
+          : l10n.get('premiumAccess');
+      final renewalText = subscription?.endDate != null
+          ? DateFormat('yyyy-MM-dd HH:mm').format(subscription!.endDate!)
+          : l10n.get('appleManageBillingFallback');
+
+      return Container(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        decoration: BoxDecoration(
+          color: AppColors.success.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+          border: Border.all(
+            color: AppColors.success.withValues(alpha: 0.35),
+          ),
+        ),
+        child: Column(
+          children: [
+            const Icon(
+              Icons.workspace_premium,
+              size: 48,
+              color: AppColors.success,
+            ),
+            const SizedBox(height: AppSpacing.md),
+            Text(
+              l10n.get('currentSubscription'),
+              style: AppTextStyles.h4.copyWith(
+                color: AppColors.textOnDark,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              l10n.get('premiumAccessActiveDesc'),
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: AppColors.textOnDark.withValues(alpha: 0.8),
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(AppSpacing.md),
+              decoration: BoxDecoration(
+                color: AppColors.textOnDark.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+              ),
+              child: Column(
+                children: [
+                  _buildSubscriptionMetaRow(l10n.get('planLabel'), planName),
+                  const SizedBox(height: AppSpacing.sm),
+                  _buildSubscriptionMetaRow(
+                    l10n.get('statusLabel'),
+                    l10n.get('activeStatus'),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  _buildSubscriptionMetaRow(
+                    l10n.get('renewalLabel'),
+                    renewalText,
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  _buildSubscriptionMetaRow(
+                    l10n.get('accessLabel'),
+                    l10n.get('allCitiesUnlockedShort'),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     return ValueListenableBuilder(
       valueListenable: _subscriptionRepo.status,
       builder: (context, status, _) {
@@ -675,7 +789,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
               backgroundColor: AppColors.textOnDark,
               foregroundColor: AppColors.primary,
             ),
-            child: Text(l10n.get('retry') ?? 'Retry'),
+            child: Text(l10n.get('retry')),
           ),
         ],
       ),
@@ -727,7 +841,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
     }
 
     return GestureDetector(
-      onTap: onTap,
+      onTap: _hasActivePremiumSubscription ? null : onTap,
       child: Container(
         padding: const EdgeInsets.all(AppSpacing.lg),
         decoration: BoxDecoration(
@@ -768,7 +882,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                     ),
                     if (badge != null) ...[
                       const SizedBox(width: AppSpacing.sm),
-                      badge!,
+                      badge,
                     ],
                   ],
                 ),
@@ -951,7 +1065,9 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
       width: double.infinity,
       height: 56,
       child: ElevatedButton(
-        onPressed: _isPurchasing || _selectedProduct == null
+        onPressed: _isPurchasing ||
+                _selectedProduct == null ||
+                _hasActivePremiumSubscription
             ? null
             : _purchaseSubscription,
         style: ElevatedButton.styleFrom(
@@ -969,11 +1085,95 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                 ),
               )
             : Text(
-                l10n.get('subscribeNow'),
+                _hasActivePremiumSubscription
+                    ? 'Premium Active'
+                    : l10n.get('subscribeNow'),
                 style:
                     const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
               ),
       ),
+    );
+  }
+
+  Widget _buildManageSubscriptionButton() {
+    final l10n = AppLocalizations.of(context);
+    final subscription = _currentSubscription;
+    final periodName = subscription != null
+        ? _localizedPlanName(subscription.productId, l10n)
+        : l10n.get('premiumAccess');
+    final renewalText = subscription?.endDate != null
+        ? '${l10n.get('appleManagesRenewals')} ${DateFormat('yyyy-MM-dd HH:mm').format(subscription!.endDate!)}'
+        : l10n.get('appleManageBillingFallback');
+
+    return SizedBox(
+      width: double.infinity,
+      height: 64,
+      child: OutlinedButton(
+        onPressed: () => _openUrl(AppLinks.appleSubscriptionHelpUrl),
+        style: OutlinedButton.styleFrom(
+          side: BorderSide(
+            color: AppColors.textOnDark.withValues(alpha: 0.65),
+          ),
+          foregroundColor: AppColors.textOnDark,
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              '${l10n.get('manageInApple')} · $periodName',
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              renewalText,
+              style: TextStyle(
+                fontSize: 12,
+                color: AppColors.textOnDark.withValues(alpha: 0.75),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _localizedPlanName(String productId, AppLocalizations l10n) {
+    switch (productId) {
+      case SubscriptionProducts.monthly:
+        return l10n.get('monthly');
+      case SubscriptionProducts.quarterly:
+        return l10n.get('quarterly');
+      case SubscriptionProducts.yearly:
+        return l10n.get('yearly');
+      default:
+        return l10n.get('premiumAccess');
+    }
+  }
+
+  Widget _buildSubscriptionMetaRow(String label, String value) {
+    return Row(
+      children: [
+        Text(
+          label,
+          style: AppTextStyles.bodySmall.copyWith(
+            color: AppColors.textOnDark.withValues(alpha: 0.68),
+          ),
+        ),
+        const Spacer(),
+        Flexible(
+          child: Text(
+            value,
+            textAlign: TextAlign.right,
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: AppColors.textOnDark,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ],
     );
   }
 

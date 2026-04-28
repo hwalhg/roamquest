@@ -10,7 +10,7 @@ import '../../data/services/auth_service.dart';
 import '../home/main_navigation_page.dart';
 import '../../l10n/app_localizations.dart';
 
-/// Simple login page with email + password
+/// Login page with feature-flagged auth options.
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
 
@@ -28,6 +28,9 @@ class _LoginPageState extends State<LoginPage> {
   bool _agreedToTerms = false; // Privacy policy agreement
   String? _errorMessage;
 
+  bool get _showEmailAuth => AuthFeatures.enableEmailAuth;
+  bool get _showAppleSignIn => AuthFeatures.enableAppleSignIn;
+
   @override
   void dispose() {
     _emailController.dispose();
@@ -37,7 +40,7 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context);
 
     return Scaffold(
       body: Container(
@@ -105,16 +108,21 @@ class _LoginPageState extends State<LoginPage> {
         ),
         const SizedBox(height: 8),
         Text(
-          l10n.appSlogan,
+          _showEmailAuth ? l10n.appSlogan : l10n.appleOnlyAuthSubtitle,
           style: AppTextStyles.bodyMedium.copyWith(
             color: AppColors.textOnDark.withValues(alpha: 0.9),
           ),
+          textAlign: TextAlign.center,
         ),
       ],
     );
   }
 
   Widget _buildForm(AppLocalizations l10n) {
+    if (!_showEmailAuth) {
+      return _buildAppleOnlyForm(l10n);
+    }
+
     return Column(
       children: [
         TextField(
@@ -245,6 +253,51 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
+  Widget _buildAppleOnlyForm(AppLocalizations l10n) {
+    return Column(
+      children: [
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          decoration: BoxDecoration(
+            color: AppColors.textOnDark.withValues(alpha: 0.14),
+            borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+            border: Border.all(
+              color: AppColors.textOnDark.withValues(alpha: 0.18),
+            ),
+          ),
+          child: Column(
+            children: [
+              const Icon(
+                Icons.privacy_tip_outlined,
+                color: AppColors.textOnDark,
+                size: 28,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                l10n.appleOnlyAuthTitle,
+                style: AppTextStyles.h4.copyWith(
+                  color: AppColors.textOnDark,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                l10n.appleOnlyAuthSubtitle,
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: AppColors.textOnDark.withValues(alpha: 0.85),
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 24),
+        if (_showAppleSignIn) _buildAppleSignInButton(),
+      ],
+    );
+  }
+
   Widget _buildErrorMessage() {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
@@ -277,6 +330,10 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Widget _buildToggleMode(AppLocalizations l10n) {
+    if (!_showEmailAuth) {
+      return const SizedBox.shrink();
+    }
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -544,7 +601,7 @@ class _LoginPageState extends State<LoginPage> {
             _handleAppleSignIn();
           }
         },
-        text: 'Sign in with Apple',
+        text: AppLocalizations.of(context).continueWithApple,
         height: 56,
         style: SignInWithAppleButtonStyle.black,
       ),

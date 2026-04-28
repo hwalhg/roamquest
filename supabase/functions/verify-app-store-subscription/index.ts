@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { importPKCS8, SignJWT } from "npm:jose@5.9.6";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -189,7 +190,9 @@ async function fetchSubscriptionStatus(
     return productionResponse.body;
   }
 
-  if (productionResponse.status !== 404) {
+  // Sandbox transaction IDs can return 401 on the production endpoint even
+  // when the JWT is valid, so fall through to sandbox for both 401 and 404.
+  if (productionResponse.status !== 401 && productionResponse.status !== 404) {
     throw new Error(
       productionResponse.body.errorMessage ??
         `App Store production verification failed: ${productionResponse.status}`,
@@ -224,7 +227,24 @@ async function fetchAppleEnvironment(
     },
   });
 
-  const body = (await response.json()) as AppleStatusResponse;
+  const rawText = await response.text();
+  let body: AppleStatusResponse;
+
+  if (!rawText.trim()) {
+    body = {
+      errorMessage: `Apple returned an empty response (${response.status})`,
+    };
+  } else {
+    try {
+      body = JSON.parse(rawText) as AppleStatusResponse;
+    } catch (_) {
+      body = {
+        errorMessage:
+          `Apple returned a non-JSON response (${response.status}): ${rawText}`,
+      };
+    }
+  }
+
   return {
     ok: response.ok,
     status: response.status,
@@ -260,7 +280,7 @@ function flattenTransactions(
   }
 
   const filtered = requestedProductId
-    ? flattened.filter((entry) {
+    ? flattened.filter((entry) => {
         return entry.transaction.productId === requestedProductId ||
           entry.renewal.productId === requestedProductId ||
           entry.renewal.autoRenewProductId === requestedProductId;
@@ -307,64 +327,21 @@ async function createAppStoreToken(): Promise<string> {
   );
 
   const nowSeconds = Math.floor(Date.now() / 1000);
-  const header = {
-    alg: "ES256",
-    kid: keyId,
-    typ: "JWT",
-  };
-  const payload = {
+  const key = await importPKCS8(privateKeyPem, "ES256");
+
+  return await new SignJWT({
     iss: issuerId,
-    iat: nowSeconds,
-    exp: nowSeconds + 300,
     aud: "appstoreconnect-v1",
     bid: bundleId,
-  };
-
-  const encodedHeader = base64UrlEncode(JSON.stringify(header));
-  const encodedPayload = base64UrlEncode(JSON.stringify(payload));
-  const signingInput = `${encodedHeader}.${encodedPayload}`;
-  const signature = await signEs256(signingInput, privateKeyPem);
-
-  return `${signingInput}.${signature}`;
-}
-
-async function signEs256(
-  payload: string,
-  privateKeyPem: string,
-): Promise<string> {
-  const key = await crypto.subtle.importKey(
-    "pkcs8",
-    pemToArrayBuffer(privateKeyPem),
-    {
-      name: "ECDSA",
-      namedCurve: "P-256",
-    },
-    false,
-    ["sign"],
-  );
-
-  const signature = await crypto.subtle.sign(
-    { name: "ECDSA", hash: "SHA-256" },
-    key,
-    new TextEncoder().encode(payload),
-  );
-
-  return base64UrlEncode(new Uint8Array(signature));
-}
-
-function pemToArrayBuffer(pem: string): ArrayBuffer {
-  const cleaned = pem
-    .replace("-----BEGIN PRIVATE KEY-----", "")
-    .replace("-----END PRIVATE KEY-----", "")
-    .replaceAll(/\s+/g, "");
-
-  const binary = atob(cleaned);
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i += 1) {
-    bytes[i] = binary.charCodeAt(i);
-  }
-
-  return bytes.buffer;
+  })
+    .setProtectedHeader({
+      alg: "ES256",
+      kid: keyId,
+      typ: "JWT",
+    })
+    .setIssuedAt(nowSeconds)
+    .setExpirationTime(nowSeconds + 300)
+    .sign(key);
 }
 
 function base64UrlEncode(value: string | Uint8Array): string {
