@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
+import '../../l10n/app_localizations.dart';
 
 /// City selection bottom sheet
 /// Shows options to detect location or select from list
 class CitySelectionBottomSheet extends StatelessWidget {
   final VoidCallback onDetectLocation;
   final VoidCallback onSelectFromList;
+  final VoidCallback onCreateCustomChecklist;
 
   const CitySelectionBottomSheet({
     super.key,
     required this.onDetectLocation,
     required this.onSelectFromList,
+    required this.onCreateCustomChecklist,
   });
 
   /// Show the bottom sheet
@@ -18,6 +21,7 @@ class CitySelectionBottomSheet extends StatelessWidget {
     required BuildContext context,
     required VoidCallback onDetectLocation,
     required VoidCallback onSelectFromList,
+    required VoidCallback onCreateCustomChecklist,
   }) {
     return showModalBottomSheet(
       context: context,
@@ -32,12 +36,18 @@ class CitySelectionBottomSheet extends StatelessWidget {
           Navigator.pop(context);
           onSelectFromList();
         },
+        onCreateCustomChecklist: () {
+          Navigator.pop(context);
+          onCreateCustomChecklist();
+        },
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
     return Container(
       decoration: const BoxDecoration(
         color: Colors.white,
@@ -53,9 +63,9 @@ class CitySelectionBottomSheet extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               // Title
-              const Text(
-                'Select City',
-                style: TextStyle(
+              Text(
+                l10n.createChecklist,
+                style: const TextStyle(
                   color: Colors.black,
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
@@ -110,14 +120,52 @@ class CitySelectionBottomSheet extends StatelessWidget {
                     color: Colors.white,
                     size: 24,
                   ),
-                  label: const Text(
-                    'Select from List',
-                    style: TextStyle(
+                  label: Text(
+                    l10n.selectFromList,
+                    style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
                 ),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                height: 56,
+                child: OutlinedButton.icon(
+                  onPressed: onCreateCustomChecklist,
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.primary,
+                    backgroundColor: AppColors.primary.withValues(alpha: 0.04),
+                    side: BorderSide(
+                      color: AppColors.primary.withValues(alpha: 0.16),
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  icon: const Icon(
+                    Icons.playlist_add_circle_outlined,
+                    size: 24,
+                  ),
+                  label: Text(
+                    l10n.get('createCustomChecklist'),
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                l10n.get('createCustomChecklistDesc'),
+                style: const TextStyle(
+                  color: Color(0xFF777777),
+                  fontSize: 13,
+                ),
+                textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
               // Cancel button
@@ -131,11 +179,11 @@ class CitySelectionBottomSheet extends StatelessWidget {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    side: BorderSide(color: AppColors.primary, width: 1.5),
+                    side: const BorderSide(color: AppColors.primary, width: 1.5),
                   ),
-                  child: const Text(
-                    'Cancel',
-                    style: TextStyle(
+                  child: Text(
+                    l10n.get('cancel'),
+                    style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w500,
                     ),

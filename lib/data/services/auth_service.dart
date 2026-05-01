@@ -150,6 +150,12 @@ class AuthService {
         nonce: rawNonce,
       );
 
+      final userId = currentUserId;
+      if (userId != null) {
+        await _localStorage.setUserId(userId);
+        AppLogger.info('User ID set for data isolation: $userId');
+      }
+
       AppLogger.info('Apple sign-in successful');
       return true;
     } catch (e) {

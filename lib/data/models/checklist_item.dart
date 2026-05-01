@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:uuid/uuid.dart';
+import '../../core/constants/app_constants.dart';
 
 /// Checklist item model (stored in checklist_items table)
 /// Each item is linked to both a checklist and optionally an attraction template
@@ -13,10 +14,13 @@ class ChecklistItem extends Equatable {
   final int sortOrder; // Renamed from 'order' to 'sort_order'
   final bool isCompleted;
   final bool isFree; // Whether this item is free for all users
+  final String source; // official or custom
   final String? photoUrl;
   final DateTime? completedAt;
-  final double? latitude;
-  final double? longitude;
+  final double? spotLatitude;
+  final double? spotLongitude;
+  final double? checkinLatitude;
+  final double? checkinLongitude;
   final int? rating; // User rating 1-10
   final String? notes; // User notes
 
@@ -30,10 +34,13 @@ class ChecklistItem extends Equatable {
     required this.sortOrder,
     this.isCompleted = false,
     this.isFree = false,
+    this.source = AppConstants.checklistItemSourceOfficial,
     this.photoUrl,
     this.completedAt,
-    this.latitude,
-    this.longitude,
+    this.spotLatitude,
+    this.spotLongitude,
+    this.checkinLatitude,
+    this.checkinLongitude,
     this.rating,
     this.notes,
   });
@@ -50,16 +57,32 @@ class ChecklistItem extends Equatable {
       sortOrder: json['sort_order'] as int,
       isCompleted: json['is_completed'] as bool? ?? false,
       isFree: json['is_free'] as bool? ?? false,
+      source: json['source'] as String? ?? AppConstants.checklistItemSourceOfficial,
       photoUrl: json['checkin_photo_url'] as String?,
       completedAt: json['checked_at'] != null
           ? DateTime.parse(json['checked_at'] as String)
           : null,
-      latitude: json['latitude'] != null
-          ? (json['latitude'] as num).toDouble()
-          : null,
-      longitude: json['longitude'] != null
-          ? (json['longitude'] as num).toDouble()
-          : null,
+      spotLatitude: json['spot_latitude'] != null
+          ? (json['spot_latitude'] as num).toDouble()
+          : json['latitude'] != null
+              ? (json['latitude'] as num).toDouble()
+              : null,
+      spotLongitude: json['spot_longitude'] != null
+          ? (json['spot_longitude'] as num).toDouble()
+          : json['longitude'] != null
+              ? (json['longitude'] as num).toDouble()
+              : null,
+      checkinLatitude: json['checkin_latitude'] != null
+          ? (json['checkin_latitude'] as num).toDouble()
+          : (json['is_completed'] as bool? ?? false) && json['latitude'] != null
+              ? (json['latitude'] as num).toDouble()
+              : null,
+      checkinLongitude: json['checkin_longitude'] != null
+          ? (json['checkin_longitude'] as num).toDouble()
+          : (json['is_completed'] as bool? ?? false) &&
+                  json['longitude'] != null
+              ? (json['longitude'] as num).toDouble()
+              : null,
       rating: json['rating'] as int?,
       notes: json['notes'] as String?,
     );
@@ -77,10 +100,15 @@ class ChecklistItem extends Equatable {
       'sort_order': sortOrder,
       'is_completed': isCompleted,
       'is_free': isFree,
+      'source': source,
       'checkin_photo_url': photoUrl,
       'checked_at': completedAt?.toIso8601String(),
-      'latitude': latitude,
-      'longitude': longitude,
+      'spot_latitude': spotLatitude,
+      'spot_longitude': spotLongitude,
+      'checkin_latitude': checkinLatitude,
+      'checkin_longitude': checkinLongitude,
+      'latitude': checkinLatitude ?? spotLatitude,
+      'longitude': checkinLongitude ?? spotLongitude,
       'rating': rating,
       'notes': notes,
     };
@@ -95,7 +123,7 @@ class ChecklistItem extends Equatable {
     return ChecklistItem(
       id: itemId,
       checklistId: '', // Placeholder, will be set when saving to checklist
-      attractionId: null, // No attraction ID for AI-generated items initially
+      attractionId: null,
       title: json['title'] as String,
       location: json['location'] as String,
       category: json['category'] as String,
@@ -120,22 +148,61 @@ class ChecklistItem extends Equatable {
       category: attraction['category'] as String,
       sortOrder: sortOrder,
       isFree: attraction['is_free'] as bool? ?? false,
+      source:
+          attraction['source'] as String? ?? AppConstants.checklistItemSourceOfficial,
+      spotLatitude: attraction['spot_latitude'] != null
+          ? (attraction['spot_latitude'] as num).toDouble()
+          : attraction['latitude'] != null
+              ? (attraction['latitude'] as num).toDouble()
+              : null,
+      spotLongitude: attraction['spot_longitude'] != null
+          ? (attraction['spot_longitude'] as num).toDouble()
+          : attraction['longitude'] != null
+              ? (attraction['longitude'] as num).toDouble()
+              : null,
+    );
+  }
+
+  factory ChecklistItem.customSpot({
+    required String checklistId,
+    required String title,
+    required String location,
+    required String category,
+    required int sortOrder,
+    double? spotLatitude,
+    double? spotLongitude,
+    String? notes,
+  }) {
+    final itemId = const Uuid().v4();
+    return ChecklistItem(
+      id: itemId,
+      checklistId: checklistId,
+      attractionId: null,
+      title: title,
+      location: location,
+      category: category,
+      sortOrder: sortOrder,
+      isFree: false,
+      source: AppConstants.checklistItemSourceCustom,
+      spotLatitude: spotLatitude,
+      spotLongitude: spotLongitude,
+      notes: notes,
     );
   }
 
   /// Mark as completed
   ChecklistItem markCompleted({
     required String photoUrl,
-    double? latitude,
-    double? longitude,
+    double? checkinLatitude,
+    double? checkinLongitude,
     int? rating,
   }) {
     return copyWith(
       isCompleted: true,
       photoUrl: photoUrl,
       completedAt: DateTime.now(),
-      latitude: latitude,
-      longitude: longitude,
+      checkinLatitude: checkinLatitude,
+      checkinLongitude: checkinLongitude,
       rating: rating,
     );
   }
@@ -151,10 +218,13 @@ class ChecklistItem extends Equatable {
     int? sortOrder,
     bool? isCompleted,
     bool? isFree,
+    String? source,
     String? photoUrl,
     DateTime? completedAt,
-    double? latitude,
-    double? longitude,
+    double? spotLatitude,
+    double? spotLongitude,
+    double? checkinLatitude,
+    double? checkinLongitude,
     int? rating,
     String? notes,
   }) {
@@ -168,10 +238,13 @@ class ChecklistItem extends Equatable {
       sortOrder: sortOrder ?? this.sortOrder,
       isCompleted: isCompleted ?? this.isCompleted,
       isFree: isFree ?? this.isFree,
+      source: source ?? this.source,
       photoUrl: photoUrl ?? this.photoUrl,
       completedAt: completedAt ?? this.completedAt,
-      latitude: latitude ?? this.latitude,
-      longitude: longitude ?? this.longitude,
+      spotLatitude: spotLatitude ?? this.spotLatitude,
+      spotLongitude: spotLongitude ?? this.spotLongitude,
+      checkinLatitude: checkinLatitude ?? this.checkinLatitude,
+      checkinLongitude: checkinLongitude ?? this.checkinLongitude,
       rating: rating ?? this.rating,
       notes: notes ?? this.notes,
     );
@@ -179,6 +252,12 @@ class ChecklistItem extends Equatable {
 
   /// Alias for backward compatibility
   int get order => sortOrder;
+  double? get latitude => spotLatitude;
+  double? get longitude => spotLongitude;
+  bool get isCustom => source == AppConstants.checklistItemSourceCustom;
+  bool get hasSpotCoordinates => spotLatitude != null && spotLongitude != null;
+  bool get hasCheckinCoordinates =>
+      checkinLatitude != null && checkinLongitude != null;
 
   @override
   List<Object?> get props => [
@@ -191,10 +270,13 @@ class ChecklistItem extends Equatable {
         sortOrder,
         isCompleted,
         isFree,
+        source,
         photoUrl,
         completedAt,
-        latitude,
-        longitude,
+        spotLatitude,
+        spotLongitude,
+        checkinLatitude,
+        checkinLongitude,
         rating,
         notes,
       ];

@@ -26,6 +26,9 @@ class StorageService {
         'user_id': userId,
         'city_id': checklist.cityId,
         'language': checklist.language,
+        'source': checklist.source,
+        'title': checklist.title,
+        'description': checklist.description,
         'created_at': checklist.createdAt.toIso8601String(),
         'updated_at': DateTime.now().toIso8601String(),
       });
@@ -97,10 +100,15 @@ class StorageService {
           'sort_order': item.sortOrder,
           'is_completed': item.isCompleted,
           'is_free': item.isFree,
+          'source': item.source,
           'checkin_photo_url': item.photoUrl,
           'checked_at': item.completedAt?.toIso8601String(),
-          'latitude': item.latitude,
-          'longitude': item.longitude,
+          'spot_latitude': item.spotLatitude,
+          'spot_longitude': item.spotLongitude,
+          'checkin_latitude': item.checkinLatitude,
+          'checkin_longitude': item.checkinLongitude,
+          'latitude': item.checkinLatitude ?? item.spotLatitude,
+          'longitude': item.checkinLongitude ?? item.spotLongitude,
           'rating': item.rating,
           'notes': item.notes,
           'updated_at': DateTime.now().toIso8601String(),
@@ -260,10 +268,15 @@ class StorageService {
           sortOrder: itemData['sort_order'] as int? ?? 0,
           isCompleted: false,
           isFree: itemData['is_free'] as bool? ?? false,
-          latitude: itemData['latitude'] != null
+          source: itemData['source'] as String? ?? 'official',
+          spotLatitude: itemData['spot_latitude'] != null
+              ? (itemData['spot_latitude'] as num).toDouble()
+              : itemData['latitude'] != null
               ? (itemData['latitude'] as num).toDouble()
               : null,
-          longitude: itemData['longitude'] != null
+          spotLongitude: itemData['spot_longitude'] != null
+              ? (itemData['spot_longitude'] as num).toDouble()
+              : itemData['longitude'] != null
               ? (itemData['longitude'] as num).toDouble()
               : null,
         );
@@ -314,9 +327,9 @@ class StorageService {
   Checklist _parseChecklist(Map<String, dynamic> data) {
     // Parse city from joined data or from embedded city object
     final cityData = data['cities'] as Map<String, dynamic>?;
-    final cityId = data['city_id'] as int;
+    final cityId = data['city_id'] as int?;
 
-    City city;
+    City? city;
     if (cityData != null && cityData.isNotEmpty) {
       // Use joined city data
       city = City(
@@ -327,7 +340,7 @@ class StorageService {
         latitude: (cityData['latitude'] as num?)?.toDouble() ?? 0.0,
         longitude: (cityData['longitude'] as num?)?.toDouble() ?? 0.0,
       );
-    } else {
+    } else if (cityId != null) {
       // Fallback: create minimal city object with city_id
       AppLogger.warning(
           'No city data found for checklist ${data['id']}, using city_id: $cityId');
@@ -348,6 +361,9 @@ class StorageService {
       userId: data['user_id'] as String,
       createdAt: DateTime.parse(data['created_at'] as String),
       language: data['language'] as String? ?? 'en',
+      source: data['source'] as String? ?? 'city',
+      title: data['title'] as String? ?? city?.name ?? 'Custom Checklist',
+      description: data['description'] as String?,
     );
   }
 }

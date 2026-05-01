@@ -15,22 +15,33 @@ class ChecklistRepository {
   final LocalStorageService _localStorage = LocalStorageService();
   final AuthService _authService = AuthService();
 
+  Future<void> _ensureLocalUserContext() async {
+    final userId = _authService.currentUserId;
+    if (userId != null) {
+      await _localStorage.setUserId(userId);
+    }
+  }
+
   /// Save checklist (local + remote)
   Future<void> saveChecklist(Checklist checklist) async {
     try {
+      await _ensureLocalUserContext();
+
       // Save locally first
       await _localStorage.saveChecklist(checklist);
 
       // Get current user ID
       final userId = _authService.currentUserId;
       if (userId != null) {
-        // Save to remote (await for success before continuing)
+        // Keep checklist creation usable even if remote sync is temporarily broken.
         try {
           await _remoteStorage.saveChecklist(checklist, userId: userId);
           AppLogger.info('Checklist saved to remote: ${checklist.id}');
         } catch (e) {
-          AppLogger.error('Failed to save checklist to remote', error: e);
-          rethrow;
+          AppLogger.warning(
+            'Failed to save checklist to remote, keeping local copy only: ${checklist.id}',
+          );
+          AppLogger.error('Checklist remote save error', error: e);
         }
       }
 
@@ -45,6 +56,8 @@ class ChecklistRepository {
   /// Load checklist (local first, fallback to remote)
   Future<Checklist?> loadChecklist(String id) async {
     try {
+      await _ensureLocalUserContext();
+
       // Try local first
       var checklist = await _localStorage.loadChecklist(id);
       if (checklist != null) {
@@ -69,6 +82,8 @@ class ChecklistRepository {
   /// Get current checklist
   Future<Checklist?> getCurrentChecklist() async {
     try {
+      await _ensureLocalUserContext();
+
       final currentId = await _localStorage.getCurrentChecklistId();
       if (currentId == null) return null;
 
@@ -82,6 +97,10 @@ class ChecklistRepository {
   /// Get all checklists (from database first, fallback to local)
   Future<List<Checklist>> getAllChecklists() async {
     try {
+      await _ensureLocalUserContext();
+
+      final localChecklists = await _localStorage.getAllChecklists();
+
       // Get current user ID
       final userId = _authService.currentUserId;
       List<Checklist> remoteChecklists = [];
@@ -92,15 +111,27 @@ class ChecklistRepository {
       }
 
       if (remoteChecklists.isNotEmpty) {
-        // Cache locally
+        // Cache remote copies locally and merge with local-only checklists.
         for (final checklist in remoteChecklists) {
           await _localStorage.saveChecklist(checklist);
         }
-        return remoteChecklists;
+
+        final mergedById = <String, Checklist>{
+          for (final checklist in localChecklists) checklist.id: checklist,
+        };
+
+        for (final checklist in remoteChecklists) {
+          mergedById.putIfAbsent(checklist.id, () => checklist);
+        }
+
+        final merged = mergedById.values.toList()
+          ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
+        return merged;
       }
 
       // Fallback to local storage
-      return await _localStorage.getAllChecklists();
+      return localChecklists;
     } catch (e) {
       AppLogger.error('Failed to get all checklists from remote, trying local', error: e);
       try {
@@ -119,8 +150,9 @@ class ChecklistRepository {
 
       // Find checklists for this city
       final cityChecklists = allChecklists.where((checklist) {
-        return checklist.city.name == city.name &&
-            checklist.city.country == city.country;
+        return !checklist.isCustom &&
+            checklist.city?.name == city.name &&
+            checklist.city?.country == city.country;
       }).toList();
 
       if (cityChecklists.isEmpty) return null;
@@ -142,8 +174,9 @@ class ChecklistRepository {
 
       // Find all checklists for this city
       final cityChecklists = allChecklists.where((checklist) {
-        return checklist.city.name == city.name &&
-            checklist.city.country == city.country;
+        return !checklist.isCustom &&
+            checklist.city?.name == city.name &&
+            checklist.city?.country == city.country;
       }).toList();
 
       // Return most recent checklist if exists
@@ -164,6 +197,7 @@ class ChecklistRepository {
   /// Clear current checklist ID (call when checklist is completed)
   Future<void> clearCurrentChecklist() async {
     try {
+      await _ensureLocalUserContext();
       await _localStorage.clearCurrentChecklistId();
       AppLogger.info('Cleared current checklist');
     } catch (e) {
@@ -174,6 +208,8 @@ class ChecklistRepository {
   /// Load checklist items for a checklist
   Future<List<ChecklistItem>> loadChecklistItems(String checklistId) async {
     try {
+      await _ensureLocalUserContext();
+
       // Try local first
       var items = await _localStorage.loadChecklistItems(checklistId);
       if (items.isNotEmpty) {
@@ -198,20 +234,29 @@ class ChecklistRepository {
   /// Save checklist items (local + remote)
   Future<void> saveChecklistItems(String checklistId, List<ChecklistItem> items) async {
     try {
+      await _ensureLocalUserContext();
+
       // Save locally
       await _localStorage.saveChecklistItems(checklistId, items);
 
       // Get current user ID
       final userId = _authService.currentUserId;
       if (userId != null) {
-        // Save to remote (await for success)
-        // 重要：在保存前设置正确的 checklistId，防止 RLS 策略检查失败
-        for (final item in items) {
-          final itemWithChecklistId = item.copyWith(checklistId: checklistId);
-          await _remoteStorage.saveChecklistItems(checklistId, [itemWithChecklistId]);
-        }
+        // Keep local progress even if remote sync fails.
+        try {
+          // 重要：在保存前设置正确的 checklistId，防止 RLS 策略检查失败
+          for (final item in items) {
+            final itemWithChecklistId = item.copyWith(checklistId: checklistId);
+            await _remoteStorage.saveChecklistItems(checklistId, [itemWithChecklistId]);
+          }
 
-        AppLogger.info('Checklist items saved to remote: $checklistId (${items.length} items)');
+          AppLogger.info('Checklist items saved to remote: $checklistId (${items.length} items)');
+        } catch (e) {
+          AppLogger.warning(
+            'Failed to save checklist items to remote, keeping local copy only: $checklistId',
+          );
+          AppLogger.error('Checklist items remote save error', error: e);
+        }
       } else {
         // 用户未登录，只保存本地
         await _localStorage.saveChecklistItems(checklistId, items);
@@ -253,9 +298,16 @@ class ChecklistRepository {
       if (checklist != null) {
         final userId = _authService.currentUserId;
         if (userId != null) {
-          // Ensure checklist is saved to remote database before uploading photo
-          await _remoteStorage.saveChecklist(checklist, userId: userId);
-          AppLogger.info('Checklist ensured to be saved to remote: $checklistId');
+          try {
+            // Ensure checklist is saved to remote database before uploading photo.
+            await _remoteStorage.saveChecklist(checklist, userId: userId);
+            AppLogger.info('Checklist ensured to be saved to remote: $checklistId');
+          } catch (e) {
+            AppLogger.warning(
+              'Failed to ensure checklist remote state before photo upload: $checklistId',
+            );
+            AppLogger.error('Checklist ensure remote save error', error: e);
+          }
         }
       }
 
@@ -293,8 +345,8 @@ class ChecklistRepository {
         if (item.id == itemId) {
           return item.copyWith(
             photoUrl: photoUrl,
-            latitude: latitude,
-            longitude: longitude,
+            checkinLatitude: latitude,
+            checkinLongitude: longitude,
             rating: rating,
             isCompleted: true,
             completedAt: DateTime.now(),
@@ -326,6 +378,7 @@ class ChecklistRepository {
   /// Delete checklist
   Future<void> deleteChecklist(String id) async {
     try {
+      await _ensureLocalUserContext();
       await _localStorage.deleteChecklist(id);
       // Note: We keep remote data for backup
     } catch (e) {
@@ -337,6 +390,7 @@ class ChecklistRepository {
   /// Clear all local data
   Future<void> clearLocalData() async {
     try {
+      await _ensureLocalUserContext();
       await _localStorage.clearAll();
       AppLogger.info('Cleared all local data');
     } catch (e) {
@@ -348,6 +402,8 @@ class ChecklistRepository {
   /// Sync local data to remote
   Future<void> syncToRemote() async {
     try {
+      await _ensureLocalUserContext();
+
       final userId = _authService.currentUserId;
       if (userId == null) {
         AppLogger.warning('User not authenticated, skipping sync');

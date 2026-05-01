@@ -9,6 +9,7 @@ import '../../data/models/checklist_item.dart';
 import '../../data/repositories/checklist_repository.dart';
 import '../../data/services/subscription_status_service.dart';
 import '../../l10n/app_localizations.dart';
+import 'add_custom_spot_page.dart';
 import '../checkin/checkin_page.dart';
 import '../report/report_page.dart';
 import '../subscription/city_subscription_page.dart';
@@ -16,10 +17,12 @@ import '../subscription/city_subscription_page.dart';
 /// Checklist display page
 class ChecklistPage extends StatefulWidget {
   final Checklist checklist;
+  final bool openAddCustomSpotOnLoad;
 
   const ChecklistPage({
     super.key,
     required this.checklist,
+    this.openAddCustomSpotOnLoad = false,
   });
 
   @override
@@ -39,6 +42,7 @@ class _ChecklistPageState extends State<ChecklistPage>
   List<ChecklistItem> _items = [];
   bool _isLoadingItems = true;
   bool _isOpeningItem = false;
+  bool _hasHandledInitialCustomSpot = false;
 
   List<CategoryItem> _categories = [];
 
@@ -60,6 +64,15 @@ class _ChecklistPageState extends State<ChecklistPage>
         _items = items;
         _isLoadingItems = false;
       });
+
+      if (widget.openAddCustomSpotOnLoad && !_hasHandledInitialCustomSpot) {
+        _hasHandledInitialCustomSpot = true;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            _handleAddCustomSpot();
+          }
+        });
+      }
     }
   }
 
@@ -74,9 +87,19 @@ class _ChecklistPageState extends State<ChecklistPage>
   }
 
   Future<void> _checkSubscriptionStatus() async {
+    if (_checklist.isCustom) {
+      if (mounted) {
+        setState(() {
+          _hasPremiumSubscription = false;
+          _remainingFreeCheckIns = null;
+        });
+      }
+      return;
+    }
+
     final hasPremium = await _subscriptionService.hasPremiumSubscription();
     final remaining = await _subscriptionService.getRemainingFreeCheckIns(
-      _checklist.city,
+      _checklist.city!,
       _items,
     );
     if (mounted) {
@@ -198,9 +221,16 @@ class _ChecklistPageState extends State<ChecklistPage>
       floating: false,
       pinned: true,
       backgroundColor: AppColors.primary,
+      actions: [
+        IconButton(
+          onPressed: _handleAddCustomSpot,
+        icon: const Icon(Icons.add_location_alt_outlined),
+        tooltip: AppLocalizations.of(context).addSpot,
+      ),
+      ],
       flexibleSpace: FlexibleSpaceBar(
         title: Text(
-          _checklist.city.name,
+          _checklist.displayTitle,
           style: AppTextStyles.h4.copyWith(
             color: AppColors.textOnDark,
           ),
@@ -310,6 +340,12 @@ class _ChecklistPageState extends State<ChecklistPage>
       );
     }
 
+    if (_filteredItems.isEmpty) {
+      return SliverToBoxAdapter(
+        child: _buildEmptyChecklistState(l10n),
+      );
+    }
+
     return SliverPadding(
       padding: const EdgeInsets.all(AppSpacing.md),
       sliver: SliverList(
@@ -383,6 +419,10 @@ class _ChecklistPageState extends State<ChecklistPage>
                             ),
                           ],
                         ),
+                        if (item.isCustom) ...[
+                          const SizedBox(height: AppSpacing.xs),
+                          _buildSourceChip(l10n.get('customSpotBadge')),
+                        ],
                       ],
                     ),
                   ),
@@ -431,6 +471,25 @@ class _ChecklistPageState extends State<ChecklistPage>
           size: 20,
         ),
       );
+    } else if (item.isCustom) {
+      return Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.sm,
+          vertical: AppSpacing.xs,
+        ),
+        decoration: BoxDecoration(
+          color: AppColors.primary.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(AppBorderRadius.sm),
+        ),
+        child: Text(
+          l10n.get('customSpotBadge').toUpperCase(),
+          style: AppTextStyles.caption.copyWith(
+            color: AppColors.primary,
+            fontWeight: FontWeight.w700,
+            fontSize: 11,
+          ),
+        ),
+      );
     } else if (item.isFree) {
       // Free item - show FREE badge
       return Container(
@@ -455,7 +514,12 @@ class _ChecklistPageState extends State<ChecklistPage>
           ),
         ),
       );
-    } else if (_hasPremiumSubscription || _checklist.city.isFree) {
+    } else if (_checklist.isCustom) {
+      return const Icon(
+        Icons.edit_location_alt_outlined,
+        color: AppColors.primary,
+      );
+    } else if (_hasPremiumSubscription || (_checklist.city?.isFree ?? false)) {
       // Premium user - show unlock icon
       return Container(
         padding: const EdgeInsets.all(AppSpacing.sm),
@@ -476,6 +540,81 @@ class _ChecklistPageState extends State<ChecklistPage>
         color: AppColors.textTertiary,
       );
     }
+  }
+
+  Widget _buildEmptyChecklistState(AppLocalizations l10n) {
+    final title = _checklist.isCustom
+        ? l10n.get('customChecklistEmptyTitle')
+        : l10n.get('emptyChecklistTitle');
+    final description = _checklist.isCustom
+        ? l10n.get('customChecklistEmptyDesc')
+        : l10n.get('emptyChecklistDesc');
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.xl,
+        AppSpacing.lg,
+        AppSpacing.xl,
+      ),
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.xl),
+          child: Column(
+            children: [
+              const Icon(
+                Icons.playlist_add_circle_outlined,
+                size: 52,
+                color: AppColors.primary,
+              ),
+              const SizedBox(height: AppSpacing.md),
+              Text(
+                title,
+                style: AppTextStyles.h3,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                description,
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: _handleAddCustomSpot,
+                  icon: const Icon(Icons.add_location_alt_outlined),
+                  label: Text(l10n.get('addSpot')),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSourceChip(String label) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: 2,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.primary.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(AppBorderRadius.full),
+      ),
+      child: Text(
+        label,
+        style: AppTextStyles.caption.copyWith(
+          color: AppColors.primary,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
   }
 
   /// Build shimmer loading card
@@ -556,9 +695,14 @@ class _ChecklistPageState extends State<ChecklistPage>
         return;
       }
 
+      if (_checklist.isCustom) {
+        await _navigateToCheckin(item);
+        return;
+      }
+
       // Check if user can check in (either unlocked or within free tier)
       final canCheckIn = await _subscriptionService.canCheckIn(
-        _checklist.city,
+        _checklist.city!,
         Checklist.getCompletedItems(_items),
         item, // Pass the item to check if it's within free tier
       );
@@ -592,9 +736,49 @@ class _ChecklistPageState extends State<ChecklistPage>
     );
   }
 
+  Future<void> _handleAddCustomSpot() async {
+    final nextSortOrder = _items.isEmpty
+        ? 0
+        : _items
+                .map((item) => item.sortOrder)
+                .reduce((current, next) => current > next ? current : next) +
+            1;
+
+    final newItem = await Navigator.push<ChecklistItem>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AddCustomSpotPage(
+          checklist: _checklist,
+          nextSortOrder: nextSortOrder,
+        ),
+      ),
+    );
+
+    if (newItem == null || !mounted) return;
+
+    final updatedItems = [..._items, newItem]
+      ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+
+    setState(() {
+      _items = updatedItems;
+      _selectedCategory = newItem.category;
+    });
+
+    await _checklistRepo.saveChecklistItems(_checklist.id, updatedItems);
+    await _checkSubscriptionStatus();
+
+    if (mounted) {
+      await _navigateToCheckin(newItem);
+    }
+  }
+
   Future<void> _showPaywallDialog(AppLocalizations l10n) {
+    if (_checklist.city == null) {
+      return Future.value();
+    }
+
     final remaining = _remainingFreeCheckIns;
-    final cityPrice = _checklist.city.subscriptionPrice;
+    final cityPrice = _checklist.city!.subscriptionPrice;
 
     return showDialog(
       context: context,
@@ -604,7 +788,7 @@ class _ChecklistPageState extends State<ChecklistPage>
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
-              _checklist.city.isFree ? Icons.lock_open : Icons.lock,
+              _checklist.city!.isFree ? Icons.lock_open : Icons.lock,
               size: 48,
               color: AppColors.primary,
             ),
@@ -615,7 +799,7 @@ class _ChecklistPageState extends State<ChecklistPage>
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: AppSpacing.md),
-            if (_checklist.city.isFree)
+            if (_checklist.city!.isFree)
               Text(
                 l10n.get('freeCity'),
                 style: AppTextStyles.bodySmall,
@@ -659,11 +843,11 @@ class _ChecklistPageState extends State<ChecklistPage>
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => CitySubscriptionPage(city: _checklist.city),
+                  builder: (_) => CitySubscriptionPage(city: _checklist.city!),
                 ),
               ).then((_) => _checkSubscriptionStatus());
             },
-            child: Text(_checklist.city.isFree
+            child: Text(_checklist.city!.isFree
                 ? l10n.get('unlockFree')
                 : '${l10n.get('unlock')} \$${cityPrice.toStringAsFixed(2)}'),
           ),

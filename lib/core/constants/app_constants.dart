@@ -46,6 +46,13 @@ class AppConstants {
   // Report Configuration
   static const int reportPhotoGridColumns = 3;
   static const double reportMapZoom = 12.0;
+  static const double customSpotDistanceWarningMeters = 2000.0;
+
+  // Checklist item sources
+  static const String checklistItemSourceOfficial = 'official';
+  static const String checklistItemSourceCustom = 'custom';
+  static const String checklistSourceCity = 'city';
+  static const String checklistSourceCustom = 'custom';
 
   // Animation Durations
   static const int animationDurationMs = 300;

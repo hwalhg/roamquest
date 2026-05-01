@@ -54,7 +54,7 @@ class _CheckinPageState extends State<CheckinPage> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -292,7 +292,7 @@ class _CheckinPageState extends State<CheckinPage> {
                     borderRadius: BorderRadius.circular(AppBorderRadius.md),
                     child: isNetworkImage
                         ? Image.network(
-                            displayImage!,
+                            displayImage,
                             width: double.infinity,
                             height: double.infinity,
                             fit: BoxFit.cover,
@@ -482,8 +482,8 @@ class _CheckinPageState extends State<CheckinPage> {
 
     try {
       String? photoUrl = widget.item.photoUrl;
-      double? latitude = widget.item.latitude;
-      double? longitude = widget.item.longitude;
+      double? latitude = widget.item.checkinLatitude;
+      double? longitude = widget.item.checkinLongitude;
 
       // Only upload new photo if user selected one
       if (_imageFile != null) {
@@ -497,14 +497,34 @@ class _CheckinPageState extends State<CheckinPage> {
           AppLogger.warning('Could not get location: $e');
         }
 
+        if (!widget.checklist.isCustom &&
+            !widget.item.isCustom &&
+            widget.item.hasSpotCoordinates &&
+            latitude != null &&
+            longitude != null) {
+          final distance = _locationService.calculateDistance(
+            latitude,
+            longitude,
+            widget.item.spotLatitude!,
+            widget.item.spotLongitude!,
+          );
+
+          if (distance > AppConstants.customSpotDistanceWarningMeters) {
+            final shouldContinue = await _confirmDistanceOverride(distance);
+            if (!shouldContinue) {
+              return;
+            }
+          }
+        }
+
         // Upload photo
         photoUrl = await _repository.uploadPhoto(
           checklistId: widget.checklist.id,
           itemId: widget.item.id,
           itemIndex: widget.item.sortOrder,
           photoFile: _imageFile!,
-          latitude: latitude ?? widget.checklist.city.latitude,
-          longitude: longitude ?? widget.checklist.city.longitude,
+          latitude: latitude ?? widget.checklist.city?.latitude,
+          longitude: longitude ?? widget.checklist.city?.longitude,
           rating: _displayRating != null ? (_displayRating! * 2).toInt() : null,
         );
       }
@@ -515,8 +535,8 @@ class _CheckinPageState extends State<CheckinPage> {
       // Update checklist item
       final updatedItem = widget.item.copyWith(
         photoUrl: photoUrl,
-        latitude: latitude ?? widget.checklist.city.latitude,
-        longitude: longitude ?? widget.checklist.city.longitude,
+        checkinLatitude: latitude ?? widget.checklist.city?.latitude,
+        checkinLongitude: longitude ?? widget.checklist.city?.longitude,
         rating: storedRating,
         isCompleted: true,
         completedAt: _isEditMode && widget.item.completedAt != null
@@ -542,6 +562,33 @@ class _CheckinPageState extends State<CheckinPage> {
         });
       }
     }
+  }
+
+  Future<bool> _confirmDistanceOverride(double distanceMeters) async {
+    final l10n = AppLocalizations.of(context);
+    final distanceKm = (distanceMeters / 1000).toStringAsFixed(1);
+
+    final shouldContinue = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.get('farFromSpotTitle')),
+        content: Text(
+          '${l10n.get('farFromSpotPrefix')} $distanceKm km ${l10n.get('farFromSpotSuffix')}',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(l10n.get('cancel')),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(l10n.get('continueAnyway')),
+          ),
+        ],
+      ),
+    );
+
+    return shouldContinue ?? false;
   }
 
   void _showSuccessSnackbar() {

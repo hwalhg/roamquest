@@ -13,6 +13,7 @@ import '../../data/services/auth_service.dart';
 import '../../l10n/app_localizations.dart';
 import 'city_selection_bottom_sheet.dart';
 import '../checklist/checklist_page.dart';
+import '../checklist/create_custom_checklist_page.dart';
 import 'city_selection_dialog.dart' as selection;
 
 /// Home page - Main entry for city exploration
@@ -33,6 +34,7 @@ class _HomePageState extends State<HomePage> {
   bool _isGenerating = false;
   bool _isOpeningStartedCity = false;
   List<City> _startedCities = [];
+  List<Checklist> _customChecklists = [];
 
   @override
   void initState() {
@@ -46,7 +48,7 @@ class _HomePageState extends State<HomePage> {
     _loadStartedCities();
   }
 
-  /// Load cities the user has already started from checklist history.
+  /// Load cities and custom checklists from checklist history.
   Future<void> _loadStartedCities() async {
     final userId = _authService.currentUserId;
     if (userId == null) {
@@ -63,16 +65,22 @@ class _HomePageState extends State<HomePage> {
 
       // Extract unique cities from checklists
       final uniqueCities = <City>{};
+      final customChecklists = <Checklist>[];
       for (final checklist in allChecklists) {
-        AppLogger.info(
-            'Checklist: ${checklist.id}, 城市: ${checklist.city.name}');
-        uniqueCities.add(checklist.city);
+        AppLogger.info('Checklist: ${checklist.id}, 标题: ${checklist.displayTitle}');
+        if (checklist.isCustom) {
+          customChecklists.add(checklist);
+        } else if (checklist.city != null) {
+          uniqueCities.add(checklist.city!);
+        }
       }
 
       if (!mounted) return;
       setState(() {
         _startedCities = uniqueCities.toList()
           ..sort((a, b) => a.name.compareTo(b.name));
+        _customChecklists = customChecklists
+          ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
       });
 
       AppLogger.info(
@@ -100,17 +108,59 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-  Future<void> _openChecklistPage(Checklist checklist) async {
+  void _trackCustomChecklist(Checklist checklist) {
+    if (!checklist.isCustom || !mounted) return;
+
+    final exists = _customChecklists.any((item) => item.id == checklist.id);
+    if (exists) return;
+
+    setState(() {
+      _customChecklists = [checklist, ..._customChecklists]
+        ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    });
+  }
+
+  Future<void> _openChecklistPage(
+    Checklist checklist, {
+    bool openAddCustomSpot = false,
+  }) async {
     await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => ChecklistPage(checklist: checklist),
+        builder: (_) => ChecklistPage(
+          checklist: checklist,
+          openAddCustomSpotOnLoad: openAddCustomSpot,
+        ),
       ),
     );
 
     if (mounted) {
       await _loadStartedCities();
     }
+  }
+
+  Future<void> _createCustomChecklist() async {
+    final userId = _authService.currentUserId ?? 'anonymous';
+    final language = AppLocalizations.of(context).locale.languageCode;
+
+    final checklist = await Navigator.push<Checklist>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => CreateCustomChecklistPage(
+          userId: userId,
+          language: language,
+        ),
+      ),
+    );
+
+    if (checklist == null) return;
+
+    await _checklistRepo.saveChecklist(checklist);
+
+    if (!mounted) return;
+
+    _trackCustomChecklist(checklist);
+    await _openChecklistPage(checklist);
   }
 
   /// Auto-detect location and generate checklist
@@ -170,7 +220,10 @@ class _HomePageState extends State<HomePage> {
   }
 
   /// Generate checklist for selected city
-  Future<void> _generateChecklistForCity(City city) async {
+  Future<void> _generateChecklistForCity(
+    City city, {
+    bool openAddCustomSpot = false,
+  }) async {
     if (mounted && !_isGenerating) {
       setState(() {
         _isGenerating = true;
@@ -206,7 +259,10 @@ class _HomePageState extends State<HomePage> {
             _isGenerating = false;
           });
 
-          await _openChecklistPage(existingChecklist);
+          await _openChecklistPage(
+            existingChecklist,
+            openAddCustomSpot: openAddCustomSpot,
+          );
         }
         return;
       }
@@ -241,7 +297,10 @@ class _HomePageState extends State<HomePage> {
           _isGenerating = false;
         });
 
-        await _openChecklistPage(checklist);
+        await _openChecklistPage(
+          checklist,
+          openAddCustomSpot: openAddCustomSpot,
+        );
       }
     } on AIServiceException catch (e) {
       AppLogger.error('AI 生成失败', error: e);
@@ -274,6 +333,9 @@ class _HomePageState extends State<HomePage> {
             _generateChecklistForCity(city);
           },
         );
+      },
+      onCreateCustomChecklist: () {
+        _createCustomChecklist();
       },
     );
   }
@@ -387,7 +449,7 @@ class _HomePageState extends State<HomePage> {
                             ),
                             const SizedBox(height: 50),
                             Text(
-                              'Pull down to refresh your started cities',
+                              l10n.get('pullToRefreshLists'),
                               style: TextStyle(
                                 color: Colors.white.withValues(alpha: 0.82),
                                 fontSize: 13,
@@ -395,28 +457,45 @@ class _HomePageState extends State<HomePage> {
                               ),
                             ),
                             const SizedBox(height: 16),
-                            if (_startedCities.isNotEmpty)
-                              Column(
-                                children: [
-                                  Text(
-                                    '${l10n.get('startedCities')} (${_startedCities.length})',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w500,
+                            _buildChecklistSection(
+                              title:
+                                  '${l10n.get('startedCities')} (${_startedCities.length})',
+                              subtitle: l10n.get('startedCitiesHint'),
+                              icon: Icons.public_rounded,
+                              accentColor: const Color(0xFF7FDBFF),
+                              child: _startedCities.isEmpty
+                                  ? _buildEmptySectionHint(
+                                      l10n.get('noStartedCities'),
+                                    )
+                                  : Wrap(
+                                      spacing: 8,
+                                      runSpacing: 8,
+                                      alignment: WrapAlignment.center,
+                                      children: _startedCities.map((city) {
+                                        return _buildSimpleCityChip(city);
+                                      }).toList(),
                                     ),
-                                  ),
-                                  const SizedBox(height: 12),
-                                  Wrap(
-                                    spacing: 8,
-                                    runSpacing: 8,
-                                    alignment: WrapAlignment.center,
-                                    children: _startedCities.map((city) {
-                                      return _buildSimpleCityChip(city);
-                                    }).toList(),
-                                  ),
-                                ],
-                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            _buildChecklistSection(
+                              title:
+                                  '${l10n.get('customLists')} (${_customChecklists.length})',
+                              subtitle: l10n.get('customListsHint'),
+                              icon: Icons.edit_note_rounded,
+                              accentColor: const Color(0xFFFFD166),
+                              child: _customChecklists.isEmpty
+                                  ? _buildEmptySectionHint(
+                                      l10n.get('customListsHint'),
+                                    )
+                                  : Column(
+                                      children: _customChecklists.map((checklist) {
+                                        return Padding(
+                                          padding: const EdgeInsets.only(bottom: 10),
+                                          child: _buildCustomChecklistCard(checklist),
+                                        );
+                                      }).toList(),
+                                    ),
+                            ),
                           ],
                         ),
                       ),
@@ -512,6 +591,94 @@ class _HomePageState extends State<HomePage> {
   }
 
   /// Build simple city chip - minimal design with click to navigate
+  Widget _buildChecklistSection({
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required Color accentColor,
+    required Widget child,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.14),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: accentColor.withValues(alpha: 0.18),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  icon,
+                  color: Colors.white,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.74),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          child,
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptySectionHint(String text) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: Colors.white.withValues(alpha: 0.8),
+          fontSize: 13,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+    );
+  }
+
   Widget _buildSimpleCityChip(City city) {
     return Opacity(
       opacity: _isOpeningStartedCity ? 0.65 : 1,
@@ -519,10 +686,13 @@ class _HomePageState extends State<HomePage> {
         onTap:
             _isOpeningStartedCity ? null : () => _navigateToCityChecklist(city),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.15),
+            color: Colors.white.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.16),
+            ),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -549,6 +719,80 @@ class _HomePageState extends State<HomePage> {
                   fontSize: 13,
                   fontWeight: FontWeight.w500,
                 ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCustomChecklistCard(Checklist checklist) {
+    return Opacity(
+      opacity: _isOpeningStartedCity ? 0.65 : 1,
+      child: GestureDetector(
+        onTap: _isOpeningStartedCity
+            ? null
+            : () => _navigateToCustomChecklist(checklist),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.11),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.12),
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFD166).withValues(alpha: 0.18),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: const Icon(
+                  Icons.edit_note_rounded,
+                  color: Colors.white,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      checklist.displayTitle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      checklist.displaySubtitle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.74),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 10),
+              Icon(
+                Icons.arrow_forward_ios_rounded,
+                color: Colors.white.withValues(alpha: 0.7),
+                size: 16,
               ),
             ],
           ),
@@ -596,6 +840,36 @@ class _HomePageState extends State<HomePage> {
       }
     } catch (e) {
       AppLogger.error('导航到城市清单失败', error: e);
+      if (mounted) {
+        _showErrorDialog('Failed to open checklist. Please try again.');
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isOpeningStartedCity = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _navigateToCustomChecklist(Checklist checklist) async {
+    if (_isOpeningStartedCity) return;
+
+    if (mounted) {
+      setState(() {
+        _isOpeningStartedCity = true;
+      });
+    }
+
+    try {
+      final loadedChecklist = await _checklistRepo.loadChecklist(checklist.id);
+      final checklistToOpen = loadedChecklist ?? checklist;
+
+      if (mounted) {
+        await _openChecklistPage(checklistToOpen);
+      }
+    } catch (e) {
+      AppLogger.error('打开自定义清单失败', error: e);
       if (mounted) {
         _showErrorDialog('Failed to open checklist. Please try again.');
       }

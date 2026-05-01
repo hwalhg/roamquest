@@ -120,6 +120,11 @@ class SubscriptionStatusService {
     List<ChecklistItem> completedItems,
     ChecklistItem? itemToCheck,
   ) async {
+    if (itemToCheck != null && itemToCheck.isCustom) {
+      AppLogger.info('Custom item detected: ${itemToCheck.title}');
+      return true;
+    }
+
     // Free items: always allowed
     if (itemToCheck != null && itemToCheck.isFree) {
       AppLogger.info('Free item detected: ${itemToCheck.title}');
@@ -151,19 +156,27 @@ class SubscriptionStatusService {
 
     // Free tier: count remaining
     final landmarkCount = completedItems
-        .where((item) => item.category == 'landmark' && item.isCompleted)
+        .where((item) =>
+            item.category == 'landmark' &&
+            item.isCompleted &&
+            !item.isCustom)
         .length;
 
     final foodCount = completedItems
-        .where((item) => item.category == 'food' && item.isCompleted)
+        .where((item) =>
+            item.category == 'food' && item.isCompleted && !item.isCustom)
         .length;
 
     final experienceCount = completedItems
-        .where((item) => item.category == 'experience' && item.isCompleted)
+        .where((item) =>
+            item.category == 'experience' &&
+            item.isCompleted &&
+            !item.isCustom)
         .length;
 
     final hiddenCount = completedItems
-        .where((item) => item.category == 'hidden' && item.isCompleted)
+        .where((item) =>
+            item.category == 'hidden' && item.isCompleted && !item.isCustom)
         .length;
 
     return {

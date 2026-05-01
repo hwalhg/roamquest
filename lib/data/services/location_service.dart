@@ -245,7 +245,7 @@ class LocationService {
       startLatitude,
       startLongitude,
       endLatitude,
-      endLatitude,
+      endLongitude,
     );
   }
 }

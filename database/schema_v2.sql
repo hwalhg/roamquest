@@ -54,6 +54,9 @@ CREATE TABLE checklists (
   user_id UUID NOT NULL,
   city_id INTEGER REFERENCES cities(id) ON DELETE CASCADE,
   language VARCHAR(10) NOT NULL,
+  source VARCHAR(32) NOT NULL DEFAULT 'city',
+  title VARCHAR(255),
+  description TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -68,10 +71,15 @@ CREATE TABLE checklist_items (
   category VARCHAR(50) NOT NULL,
   sort_order INTEGER DEFAULT 0,
   is_completed BOOLEAN DEFAULT false,
+  source VARCHAR(32) NOT NULL DEFAULT 'official',
   checkin_photo_url TEXT,
   checked_at TIMESTAMP WITH TIME ZONE,
   latitude DECIMAL(11, 8),
   longitude DECIMAL(11, 8),
+  spot_latitude DECIMAL(11, 8),
+  spot_longitude DECIMAL(11, 8),
+  checkin_latitude DECIMAL(11, 8),
+  checkin_longitude DECIMAL(11, 8),
   rating INTEGER,
   notes TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -242,12 +250,14 @@ CREATE INDEX IF NOT EXISTS idx_attractions_category ON attractions(category);
 -- checklists 表索引
 CREATE INDEX IF NOT EXISTS idx_checklists_user_city ON checklists(user_id, city_id);
 CREATE INDEX IF NOT EXISTS idx_checklists_created_at ON checklists(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_checklists_source ON checklists(source);
 
 -- checklist_items 表索引
 CREATE INDEX IF NOT EXISTS idx_checklist_items_checklist ON checklist_items(checklist_id);
 CREATE INDEX IF NOT EXISTS idx_checklist_items_attraction ON checklist_items(attraction_id);
 CREATE INDEX IF NOT EXISTS idx_checklist_items_completed ON checklist_items(is_completed);
 CREATE INDEX IF NOT EXISTS idx_checklist_items_checked_at ON checklist_items(checked_at DESC);
+CREATE INDEX IF NOT EXISTS idx_checklist_items_source ON checklist_items(source);
 
 -- subscriptions 表索引
 CREATE INDEX IF NOT EXISTS idx_subscriptions_user ON subscriptions(user_id);
@@ -274,15 +284,21 @@ CREATE INDEX IF NOT EXISTS idx_profiles_user ON profiles(user_id);
 -- checklists 表：存储用户的清单头部信息
 --   - id: UUID 主键，与 auth.uid() 类型匹配
 --   - user_id: 关联到 Supabase Auth 用户
---   - city_id: 外键关联到城市
+--   - city_id: 外键关联到城市，可为空（自定义清单）
+--   - source: city 或 custom
+--   - title: 清单标题
+--   - description: 可选说明
 
 -- checklist_items 表：存储用户清单的具体项目
 --   - id: UUID 主键
 --   - checklist_id: 外键关联到 checklists 表
 --   - attraction_id: 可选外键，关联到 attractions 模板
+--   - source: official 或 custom，用于区分官方景点和用户自定义景点
 --   - is_completed: 标记项目是否已完成
 --   - checkin_photo_url: 打卡照片
 --   - checked_at: 打卡时间
+--   - spot_latitude/spot_longitude: 景点本身的位置
+--   - checkin_latitude/checkin_longitude: 用户实际打卡时的位置
 --   - rating: 用户评分 (1-20，显示时除以2得到0.5-10)
 --   - notes: 用户备注
 

@@ -46,6 +46,9 @@ class _ReportPageState extends State<ReportPage> {
   Checklist get checklist => widget.checklist;
   List<ChecklistItem> get _completedItems =>
       Checklist.getCompletedItems(_items);
+  String get _reportTitle => checklist.displayTitle;
+  String get _reportRegion =>
+      checklist.displayCountry.isEmpty ? checklist.displaySubtitle : checklist.displayCountry;
 
   @override
   void initState() {
@@ -173,7 +176,7 @@ class _ReportPageState extends State<ReportPage> {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      checklist.city.name,
+                      _reportTitle,
                       style: AppTextStyles.h1.copyWith(
                         color: _reportInk,
                         fontSize: 38,
@@ -182,7 +185,9 @@ class _ReportPageState extends State<ReportPage> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'A visual diary for ${checklist.city.country} with photos, ratings, and the moments worth keeping.',
+                      checklist.isCustom
+                          ? 'A visual diary for your custom route with photos, ratings, and the moments worth keeping.'
+                          : 'A visual diary for $_reportRegion with photos, ratings, and the moments worth keeping.',
                       style: AppTextStyles.bodyMedium.copyWith(
                         color: _reportMuted,
                         height: 1.65,
@@ -829,6 +834,12 @@ class _ShareCardPreviewPageState extends State<ShareCardPreviewPage> {
   Checklist get checklist => widget.checklist;
   List<ChecklistItem> get _completedItems =>
       Checklist.getCompletedItems(_items);
+  String get _reportTitle => checklist.displayTitle;
+  String get _reportRegion =>
+      checklist.displayCountry.isEmpty ? checklist.displaySubtitle : checklist.displayCountry;
+  String get _shareSlug =>
+      _reportTitle.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]+'), '_');
+  String get _userNickname => widget.userNickname;
 
   @override
   void initState() {
@@ -944,7 +955,7 @@ class _ShareCardPreviewPageState extends State<ShareCardPreviewPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  checklist.city.name.toUpperCase(),
+                  _reportTitle.toUpperCase(),
                   style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w800,
@@ -958,7 +969,9 @@ class _ShareCardPreviewPageState extends State<ShareCardPreviewPage> {
                   children: [
                     Expanded(
                       child: Text(
-                        '${widget.userNickname} captured ${_completedItems.length} moments in ${checklist.city.country}',
+                        checklist.isCustom
+                            ? '$_userNickname captured ${_completedItems.length} moments in a custom checklist'
+                            : '$_userNickname captured ${_completedItems.length} moments in $_reportRegion',
                         style: AppTextStyles.bodyMedium.copyWith(
                           color: Colors.white.withValues(alpha: 0.82),
                         ),
@@ -1290,7 +1303,7 @@ class _ShareCardPreviewPageState extends State<ShareCardPreviewPage> {
         html.AnchorElement()
           ..href = url
           ..download =
-              'roamquest_${checklist.city.name}_${DateTime.now().millisecondsSinceEpoch}.png'
+              'roamquest_${_shareSlug}_${DateTime.now().millisecondsSinceEpoch}.png'
           ..click();
         html.Url.revokeObjectUrl(url);
         _showSuccess('Poster downloaded');
@@ -1303,12 +1316,16 @@ class _ShareCardPreviewPageState extends State<ShareCardPreviewPage> {
               pngBytes,
               mimeType: 'image/png',
               name:
-                  'roamquest_${checklist.city.name}_${DateTime.now().millisecondsSinceEpoch}.png',
+                  'roamquest_${_shareSlug}_${DateTime.now().millisecondsSinceEpoch}.png',
             ),
           ],
-          subject: 'My Journey in ${checklist.city.name}',
+          subject: checklist.isCustom
+              ? 'My Custom Checklist Journey'
+              : 'My Journey in $_reportTitle',
           text:
-              '${widget.userNickname} explored ${Checklist.getCompletedCount(_items)} amazing places in ${checklist.city.name}.',
+              checklist.isCustom
+                  ? '$_userNickname explored ${Checklist.getCompletedCount(_items)} amazing places in $_reportTitle.'
+                  : '$_userNickname explored ${Checklist.getCompletedCount(_items)} amazing places in $_reportTitle.',
         );
       }
     } catch (e) {
