@@ -150,6 +150,17 @@ class StorageService {
     }
   }
 
+  /// Delete a single checklist item.
+  Future<void> deleteChecklistItem(String itemId) async {
+    try {
+      await _client.from(ApiConstants.tableChecklistItems).delete().eq('id', itemId);
+      AppLogger.info('Checklist item deleted: $itemId');
+    } catch (e) {
+      AppLogger.error('Failed to delete checklist item', error: e);
+      throw StorageException('Failed to delete checklist item: $e');
+    }
+  }
+
   /// Load checklist items for a specific checklist
   Future<List<ChecklistItem>> loadChecklistItems(String checklistId) async {
     try {

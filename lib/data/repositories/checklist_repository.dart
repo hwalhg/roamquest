@@ -53,6 +53,10 @@ class ChecklistRepository {
     }
   }
 
+  Future<void> updateChecklist(Checklist checklist) async {
+    await saveChecklist(checklist);
+  }
+
   /// Load checklist (local first, fallback to remote)
   Future<Checklist?> loadChecklist(String id) async {
     try {
@@ -379,10 +383,58 @@ class ChecklistRepository {
   Future<void> deleteChecklist(String id) async {
     try {
       await _ensureLocalUserContext();
+      await _localStorage.deleteChecklistItems(id);
       await _localStorage.deleteChecklist(id);
-      // Note: We keep remote data for backup
+
+      final currentChecklistId = await _localStorage.getCurrentChecklistId();
+      if (currentChecklistId == id) {
+        await _localStorage.clearCurrentChecklistId();
+      }
+
+      final userId = _authService.currentUserId;
+      if (userId != null) {
+        try {
+          await _remoteStorage.deleteChecklist(id);
+          AppLogger.info('Checklist deleted from remote: $id');
+        } catch (e) {
+          AppLogger.warning(
+            'Failed to delete checklist from remote, local copy removed: $id',
+          );
+          AppLogger.error('Checklist remote delete error', error: e);
+        }
+      }
     } catch (e) {
       AppLogger.error('Failed to delete checklist', error: e);
+      rethrow;
+    }
+  }
+
+  Future<void> deleteChecklistItem({
+    required String checklistId,
+    required String itemId,
+  }) async {
+    try {
+      await _ensureLocalUserContext();
+
+      final currentItems = await _localStorage.loadChecklistItems(checklistId);
+      final updatedItems =
+          currentItems.where((item) => item.id != itemId).toList();
+      await _localStorage.saveChecklistItems(checklistId, updatedItems);
+
+      final userId = _authService.currentUserId;
+      if (userId != null) {
+        try {
+          await _remoteStorage.deleteChecklistItem(itemId);
+          AppLogger.info('Checklist item deleted from remote: $itemId');
+        } catch (e) {
+          AppLogger.warning(
+            'Failed to delete checklist item from remote, local copy removed: $itemId',
+          );
+          AppLogger.error('Checklist item remote delete error', error: e);
+        }
+      }
+    } catch (e) {
+      AppLogger.error('Failed to delete checklist item', error: e);
       rethrow;
     }
   }

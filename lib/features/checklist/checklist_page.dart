@@ -10,6 +10,7 @@ import '../../data/repositories/checklist_repository.dart';
 import '../../data/services/subscription_status_service.dart';
 import '../../l10n/app_localizations.dart';
 import 'add_custom_spot_page.dart';
+import 'create_custom_checklist_page.dart';
 import '../checkin/checkin_page.dart';
 import '../report/report_page.dart';
 import '../subscription/city_subscription_page.dart';
@@ -43,6 +44,8 @@ class _ChecklistPageState extends State<ChecklistPage>
   bool _isLoadingItems = true;
   bool _isOpeningItem = false;
   bool _hasHandledInitialCustomSpot = false;
+  String? _feedbackMessage;
+  int _feedbackMessageVersion = 0;
 
   List<CategoryItem> _categories = [];
 
@@ -167,6 +170,10 @@ class _ChecklistPageState extends State<ChecklistPage>
           CustomScrollView(
             slivers: [
               _buildAppBar(),
+              if (_feedbackMessage != null)
+                SliverToBoxAdapter(
+                  child: _buildFeedbackBanner(_feedbackMessage!),
+                ),
               SliverToBoxAdapter(
                 child: _buildProgressHeader(l10n),
               ),
@@ -196,6 +203,31 @@ class _ChecklistPageState extends State<ChecklistPage>
             ),
         ],
       ),
+      bottomNavigationBar: _checklist.isCustom
+          ? SafeArea(
+              top: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.lg,
+                  AppSpacing.sm,
+                  AppSpacing.lg,
+                  AppSpacing.lg,
+                ),
+                child: SizedBox(
+                  height: 54,
+                  child: ElevatedButton.icon(
+                    onPressed: _handleAddCustomSpot,
+                    icon: const Icon(Icons.add_location_alt_outlined),
+                    label: Text(
+                      _items.isEmpty
+                          ? l10n.get('addFirstSpot')
+                          : l10n.get('addSpot'),
+                    ),
+                  ),
+                ),
+              ),
+            )
+          : null,
       floatingActionButton: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.end,
@@ -221,13 +253,35 @@ class _ChecklistPageState extends State<ChecklistPage>
       floating: false,
       pinned: true,
       backgroundColor: AppColors.primary,
-      actions: [
-        IconButton(
-          onPressed: _handleAddCustomSpot,
-        icon: const Icon(Icons.add_location_alt_outlined),
-        tooltip: AppLocalizations.of(context).addSpot,
-      ),
-      ],
+      actions: _checklist.isCustom
+          ? [
+              PopupMenuButton<String>(
+                onSelected: (value) {
+                  if (value == 'edit') {
+                    _handleEditChecklist();
+                  } else if (value == 'delete') {
+                    _handleDeleteChecklist();
+                  }
+                },
+                itemBuilder: (context) => [
+                  PopupMenuItem(
+                    value: 'edit',
+                    child: Text(AppLocalizations.of(context).get('editChecklist')),
+                  ),
+                  PopupMenuItem(
+                    value: 'delete',
+                    child: Text(AppLocalizations.of(context).get('deleteChecklist')),
+                  ),
+                ],
+              ),
+            ]
+          : [
+              IconButton(
+                onPressed: _handleAddCustomSpot,
+                icon: const Icon(Icons.add_location_alt_outlined),
+                tooltip: AppLocalizations.of(context).addSpot,
+              ),
+            ],
       flexibleSpace: FlexibleSpaceBar(
         title: Text(
           _checklist.displayTitle,
@@ -246,6 +300,62 @@ class _ChecklistPageState extends State<ChecklistPage>
         ),
       ),
     );
+  }
+
+  Widget _buildFeedbackBanner(String message) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.md,
+        AppSpacing.lg,
+        0,
+      ),
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.md,
+        ),
+        decoration: BoxDecoration(
+          color: AppColors.success.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(AppBorderRadius.md),
+          border: Border.all(
+            color: AppColors.success.withValues(alpha: 0.25),
+          ),
+        ),
+        child: Row(
+          children: [
+            const Icon(
+              Icons.check_circle_outline,
+              color: AppColors.success,
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: Text(
+                message,
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: AppColors.success,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showInlineFeedback(String message) {
+    final version = ++_feedbackMessageVersion;
+    setState(() {
+      _feedbackMessage = message;
+    });
+
+    Future.delayed(const Duration(seconds: 2), () {
+      if (!mounted || version != _feedbackMessageVersion) return;
+      setState(() {
+        _feedbackMessage = null;
+      });
+    });
   }
 
   Widget _buildProgressHeader(AppLocalizations l10n) {
@@ -427,7 +537,38 @@ class _ChecklistPageState extends State<ChecklistPage>
                     ),
                   ),
                   const SizedBox(width: AppSpacing.sm),
-                  _buildCompletionBadge(item, l10n),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _buildCompletionBadge(item, l10n),
+                      if (_checklist.isCustom && item.isCustom) ...[
+                        const SizedBox(width: 4),
+                        PopupMenuButton<String>(
+                          icon: const Icon(
+                            Icons.more_horiz_rounded,
+                            color: AppColors.textTertiary,
+                          ),
+                          onSelected: (value) {
+                            if (value == 'edit') {
+                              _handleEditSpot(item);
+                            } else if (value == 'delete') {
+                              _handleDeleteSpot(item);
+                            }
+                          },
+                          itemBuilder: (context) => [
+                            PopupMenuItem(
+                              value: 'edit',
+                              child: Text(l10n.get('editSpot')),
+                            ),
+                            PopupMenuItem(
+                              value: 'delete',
+                              child: Text(l10n.get('deleteSpot')),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ],
+                  ),
                 ],
               ),
             ),
@@ -581,15 +722,17 @@ class _ChecklistPageState extends State<ChecklistPage>
                 ),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: AppSpacing.lg),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: _handleAddCustomSpot,
-                  icon: const Icon(Icons.add_location_alt_outlined),
-                  label: Text(l10n.get('addSpot')),
+              if (!_checklist.isCustom) ...[
+                const SizedBox(height: AppSpacing.lg),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: _handleAddCustomSpot,
+                    icon: const Icon(Icons.add_location_alt_outlined),
+                    label: Text(l10n.get('addSpot')),
+                  ),
                 ),
-              ),
+              ],
             ],
           ),
         ),
@@ -770,6 +913,120 @@ class _ChecklistPageState extends State<ChecklistPage>
     if (mounted) {
       await _navigateToCheckin(newItem);
     }
+  }
+
+  Future<void> _handleEditChecklist() async {
+    final updatedChecklist = await Navigator.push<Checklist>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => CreateCustomChecklistPage(
+          userId: _checklist.userId,
+          language: _checklist.language,
+          initialChecklist: _checklist,
+        ),
+      ),
+    );
+
+    if (updatedChecklist == null || !mounted) return;
+
+    await _checklistRepo.updateChecklist(updatedChecklist);
+    setState(() {
+      _checklist = updatedChecklist;
+    });
+  }
+
+  Future<void> _handleDeleteChecklist() async {
+    final l10n = AppLocalizations.of(context);
+    final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: Text(l10n.get('deleteChecklist')),
+            content: Text(l10n.get('deleteChecklistConfirm')),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: Text(l10n.get('cancel')),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: Text(l10n.get('delete')),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+
+    if (!confirmed || !mounted) return;
+
+    await _checklistRepo.deleteChecklist(_checklist.id);
+    if (!mounted) return;
+
+    _showInlineFeedback(l10n.get('checklistDeleted'));
+    Navigator.pop(context);
+  }
+
+  Future<void> _handleEditSpot(ChecklistItem item) async {
+    final updatedItem = await Navigator.push<ChecklistItem>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AddCustomSpotPage(
+          checklist: _checklist,
+          nextSortOrder: item.sortOrder,
+          initialItem: item,
+        ),
+      ),
+    );
+
+    if (updatedItem == null || !mounted) return;
+
+    final updatedItems = Checklist.updateItemInList(_items, updatedItem)
+      ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+
+    setState(() {
+      _items = updatedItems;
+    });
+
+    await _checklistRepo.saveChecklistItems(_checklist.id, updatedItems);
+  }
+
+  Future<void> _handleDeleteSpot(ChecklistItem item) async {
+    final l10n = AppLocalizations.of(context);
+    final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: Text(l10n.get('deleteSpot')),
+            content: Text(l10n.get('deleteSpotConfirm')),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: Text(l10n.get('cancel')),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: Text(l10n.get('delete')),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+
+    if (!confirmed || !mounted) return;
+
+    await _checklistRepo.deleteChecklistItem(
+      checklistId: _checklist.id,
+      itemId: item.id,
+    );
+
+    if (!mounted) return;
+
+    setState(() {
+      _items = _items.where((current) => current.id != item.id).toList();
+      if (_selectedCategory != 'all' && _filteredItems.isEmpty) {
+        _selectedCategory = 'all';
+      }
+    });
+
+    _showInlineFeedback(l10n.get('spotDeleted'));
   }
 
   Future<void> _showPaywallDialog(AppLocalizations l10n) {

@@ -35,6 +35,7 @@ class _HomePageState extends State<HomePage> {
   bool _isOpeningStartedCity = false;
   List<City> _startedCities = [];
   List<Checklist> _customChecklists = [];
+  Map<String, int> _customChecklistSpotCounts = {};
 
   @override
   void initState() {
@@ -66,10 +67,13 @@ class _HomePageState extends State<HomePage> {
       // Extract unique cities from checklists
       final uniqueCities = <City>{};
       final customChecklists = <Checklist>[];
+      final customChecklistSpotCounts = <String, int>{};
       for (final checklist in allChecklists) {
         AppLogger.info('Checklist: ${checklist.id}, 标题: ${checklist.displayTitle}');
         if (checklist.isCustom) {
           customChecklists.add(checklist);
+          final items = await _checklistRepo.loadChecklistItems(checklist.id);
+          customChecklistSpotCounts[checklist.id] = items.length;
         } else if (checklist.city != null) {
           uniqueCities.add(checklist.city!);
         }
@@ -81,6 +85,7 @@ class _HomePageState extends State<HomePage> {
           ..sort((a, b) => a.name.compareTo(b.name));
         _customChecklists = customChecklists
           ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+        _customChecklistSpotCounts = customChecklistSpotCounts;
       });
 
       AppLogger.info(
@@ -117,6 +122,10 @@ class _HomePageState extends State<HomePage> {
     setState(() {
       _customChecklists = [checklist, ..._customChecklists]
         ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      _customChecklistSpotCounts = {
+        ..._customChecklistSpotCounts,
+        checklist.id: _customChecklistSpotCounts[checklist.id] ?? 0,
+      };
     });
   }
 
@@ -728,6 +737,15 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildCustomChecklistCard(Checklist checklist) {
+    final l10n = AppLocalizations.of(context);
+    final spotCount = _customChecklistSpotCounts[checklist.id] ?? 0;
+    final spotCountLabel = spotCount == 1
+        ? l10n.get('spotCountSingle')
+        : l10n.get('spotCountPlural').replaceAll('{count}', '$spotCount');
+    final subtitle = checklist.description?.trim().isNotEmpty == true
+        ? checklist.description!.trim()
+        : l10n.get('customListsHint');
+
     return Opacity(
       opacity: _isOpeningStartedCity ? 0.65 : 1,
       child: GestureDetector(
@@ -765,7 +783,9 @@ class _HomePageState extends State<HomePage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      checklist.displayTitle,
+                      checklist.displayTitle.isEmpty
+                          ? l10n.get('untitledChecklist')
+                          : checklist.displayTitle,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
@@ -776,7 +796,7 @@ class _HomePageState extends State<HomePage> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      checklist.displaySubtitle,
+                      subtitle,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -786,6 +806,22 @@ class _HomePageState extends State<HomePage> {
                       ),
                     ),
                   ],
+                ),
+              ),
+              const SizedBox(width: 10),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(
+                  spotCountLabel,
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.9),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
               const SizedBox(width: 10),

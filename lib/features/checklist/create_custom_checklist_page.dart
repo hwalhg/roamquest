@@ -7,11 +7,13 @@ import '../../l10n/app_localizations.dart';
 class CreateCustomChecklistPage extends StatefulWidget {
   final String userId;
   final String language;
+  final Checklist? initialChecklist;
 
   const CreateCustomChecklistPage({
     super.key,
     required this.userId,
     required this.language,
+    this.initialChecklist,
   });
 
   @override
@@ -32,6 +34,15 @@ class _CreateCustomChecklistPageState extends State<CreateCustomChecklistPage> {
     super.dispose();
   }
 
+  bool get _isEditing => widget.initialChecklist != null;
+
+  @override
+  void initState() {
+    super.initState();
+    _titleController.text = widget.initialChecklist?.title ?? '';
+    _descriptionController.text = widget.initialChecklist?.description ?? '';
+  }
+
   void _saveChecklist() {
     if (!_formKey.currentState!.validate()) {
       setState(() {
@@ -40,14 +51,22 @@ class _CreateCustomChecklistPageState extends State<CreateCustomChecklistPage> {
       return;
     }
 
-    final checklist = Checklist.custom(
-      title: _titleController.text.trim(),
-      description: _descriptionController.text.trim().isEmpty
-          ? null
-          : _descriptionController.text.trim(),
-      userId: widget.userId,
-      language: widget.language,
-    );
+    final description = _descriptionController.text.trim().isEmpty
+        ? null
+        : _descriptionController.text.trim();
+
+    final checklist = _isEditing
+        ? widget.initialChecklist!.copyWith(
+            title: _titleController.text.trim(),
+            description: description,
+            clearDescription: description == null,
+          )
+        : Checklist.custom(
+            title: _titleController.text.trim(),
+            description: description,
+            userId: widget.userId,
+            language: widget.language,
+          );
 
     Navigator.pop(context, checklist);
   }
@@ -58,7 +77,11 @@ class _CreateCustomChecklistPageState extends State<CreateCustomChecklistPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(l10n.get('createCustomChecklist')),
+        title: Text(
+          _isEditing
+              ? l10n.get('editChecklist')
+              : l10n.get('createCustomChecklist'),
+        ),
       ),
       body: SafeArea(
         child: Form(
@@ -67,7 +90,9 @@ class _CreateCustomChecklistPageState extends State<CreateCustomChecklistPage> {
             padding: const EdgeInsets.all(AppSpacing.lg),
             children: [
               Text(
-                l10n.get('createCustomChecklistDesc'),
+                _isEditing
+                    ? l10n.get('customChecklistDescriptionHint')
+                    : l10n.get('createCustomChecklistDesc'),
                 style: Theme.of(context).textTheme.bodyLarge,
               ),
               const SizedBox(height: AppSpacing.lg),
@@ -110,7 +135,7 @@ class _CreateCustomChecklistPageState extends State<CreateCustomChecklistPage> {
           ),
           child: SizedBox(
             height: 52,
-            child: ElevatedButton(
+              child: ElevatedButton(
               onPressed: _isSaving
                   ? null
                   : () {
@@ -119,7 +144,11 @@ class _CreateCustomChecklistPageState extends State<CreateCustomChecklistPage> {
                       });
                       _saveChecklist();
                     },
-              child: Text(l10n.get('saveChecklistAndAddSpot')),
+              child: Text(
+                _isEditing
+                    ? l10n.get('saveChecklistChanges')
+                    : l10n.get('saveChecklistAndAddSpot'),
+              ),
             ),
           ),
         ),

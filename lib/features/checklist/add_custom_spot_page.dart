@@ -12,11 +12,13 @@ import '../../l10n/app_localizations.dart';
 class AddCustomSpotPage extends StatefulWidget {
   final Checklist checklist;
   final int nextSortOrder;
+  final ChecklistItem? initialItem;
 
   const AddCustomSpotPage({
     super.key,
     required this.checklist,
     required this.nextSortOrder,
+    this.initialItem,
   });
 
   @override
@@ -34,13 +36,20 @@ class _AddCustomSpotPageState extends State<AddCustomSpotPage> {
   bool _isCapturingLocation = false;
   double? _spotLatitude;
   double? _spotLongitude;
+  String? _locationStatusMessage;
+  bool _locationStatusIsError = false;
+
+  bool get _isEditing => widget.initialItem != null;
 
   @override
   void initState() {
     super.initState();
-    _locationController.text = widget.checklist.isCustom
-        ? ''
-        : widget.checklist.city?.name ?? '';
+    _titleController.text = widget.initialItem?.title ?? '';
+    _locationController.text = widget.initialItem?.location ??
+        (widget.checklist.isCustom ? '' : widget.checklist.city?.name ?? '');
+    _selectedCategory = widget.initialItem?.category ?? AppConstants.categories.first;
+    _spotLatitude = widget.initialItem?.spotLatitude;
+    _spotLongitude = widget.initialItem?.spotLongitude;
   }
 
   @override
@@ -55,6 +64,7 @@ class _AddCustomSpotPageState extends State<AddCustomSpotPage> {
 
     setState(() {
       _isCapturingLocation = true;
+      _locationStatusMessage = null;
     });
 
     try {
@@ -64,16 +74,15 @@ class _AddCustomSpotPageState extends State<AddCustomSpotPage> {
       setState(() {
         _spotLatitude = position.latitude;
         _spotLongitude = position.longitude;
+        _locationStatusMessage = l10n.get('currentLocationSaved');
+        _locationStatusIsError = false;
       });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.get('currentLocationSaved'))),
-      );
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.get('currentLocationUnavailable'))),
-      );
+      setState(() {
+        _locationStatusMessage = l10n.get('currentLocationUnavailable');
+        _locationStatusIsError = true;
+      });
     } finally {
       if (mounted) {
         setState(() {
@@ -91,17 +100,27 @@ class _AddCustomSpotPageState extends State<AddCustomSpotPage> {
       return;
     }
 
-    final customItem = ChecklistItem.customSpot(
-      checklistId: widget.checklist.id,
-      title: _titleController.text.trim(),
-      location: _locationController.text.trim().isEmpty
-          ? widget.checklist.displayTitle
-          : _locationController.text.trim(),
-      category: _selectedCategory,
-      sortOrder: widget.nextSortOrder,
-      spotLatitude: _spotLatitude,
-      spotLongitude: _spotLongitude,
-    );
+    final location = _locationController.text.trim().isEmpty
+        ? widget.checklist.displayTitle
+        : _locationController.text.trim();
+
+    final customItem = _isEditing
+        ? widget.initialItem!.copyWith(
+            title: _titleController.text.trim(),
+            location: location,
+            category: _selectedCategory,
+            spotLatitude: _spotLatitude,
+            spotLongitude: _spotLongitude,
+          )
+        : ChecklistItem.customSpot(
+            checklistId: widget.checklist.id,
+            title: _titleController.text.trim(),
+            location: location,
+            category: _selectedCategory,
+            sortOrder: widget.nextSortOrder,
+            spotLatitude: _spotLatitude,
+            spotLongitude: _spotLongitude,
+          );
 
     Navigator.pop(context, customItem);
   }
@@ -112,7 +131,9 @@ class _AddCustomSpotPageState extends State<AddCustomSpotPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(l10n.addCustomSpot),
+        title: Text(
+          _isEditing ? l10n.get('editSpot') : l10n.addCustomSpot,
+        ),
       ),
       body: SafeArea(
         child: Form(
@@ -133,7 +154,9 @@ class _AddCustomSpotPageState extends State<AddCustomSpotPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      l10n.get('addCustomSpotDesc'),
+                      _isEditing
+                          ? l10n.get('addCustomSpotDesc')
+                          : l10n.get('addCustomSpotDesc'),
                       style: AppTextStyles.bodyMedium.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
@@ -203,14 +226,67 @@ class _AddCustomSpotPageState extends State<AddCustomSpotPage> {
                     : const Icon(Icons.my_location_outlined),
                 label: Text(l10n.get('useCurrentLocation')),
               ),
-              if (_spotLatitude != null && _spotLongitude != null) ...[
+              if (_locationStatusMessage != null) ...[
                 const SizedBox(height: AppSpacing.sm),
-                Text(
-                  '${_spotLatitude!.toStringAsFixed(5)}, ${_spotLongitude!.toStringAsFixed(5)}',
-                  style: AppTextStyles.bodySmall.copyWith(
-                    color: AppColors.textSecondary,
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.md,
+                    vertical: AppSpacing.sm,
                   ),
-                ),
+                  decoration: BoxDecoration(
+                    color: (_locationStatusIsError
+                            ? Colors.red
+                            : AppColors.success)
+                        .withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(AppBorderRadius.md),
+                    border: Border.all(
+                      color: (_locationStatusIsError
+                              ? Colors.red
+                              : AppColors.success)
+                          .withValues(alpha: 0.16),
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            _locationStatusIsError
+                                ? Icons.info_outline
+                                : Icons.check_circle_outline,
+                            size: 16,
+                            color: _locationStatusIsError
+                                ? Colors.red.shade400
+                                : AppColors.success,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              _locationStatusMessage!,
+                              style: AppTextStyles.bodySmall.copyWith(
+                                color: _locationStatusIsError
+                                    ? Colors.red.shade400
+                                    : AppColors.success,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (_spotLatitude != null && _spotLongitude != null) ...[
+                        const SizedBox(height: AppSpacing.xs),
+                        Text(
+                          '${_spotLatitude!.toStringAsFixed(5)}, ${_spotLongitude!.toStringAsFixed(5)}',
+                          style: AppTextStyles.bodySmall.copyWith(
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                )
               ],
             ],
           ),
@@ -236,7 +312,11 @@ class _AddCustomSpotPageState extends State<AddCustomSpotPage> {
                       });
                       _saveSpot();
                     },
-              child: Text(l10n.get('saveAndCheckin')),
+              child: Text(
+                _isEditing
+                    ? l10n.get('saveChecklistChanges')
+                    : l10n.get('saveAndCheckin'),
+              ),
             ),
           ),
         ),
