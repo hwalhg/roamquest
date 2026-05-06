@@ -48,23 +48,15 @@
 
 	<!-- Location Permissions -->
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>RoamQuest needs your location to generate a personalized checklist for your current city.</string>
-	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>RoamQuest needs your location to generate a personalized checklist for your current city.</string>
+	<string>We need your location to recommend exciting places to explore in your current city.</string>
 
 	<!-- Camera & Photo Library Permissions -->
 	<key>NSCameraUsageDescription</key>
-	<string>RoamQuest needs camera access to capture photos during your check-ins.</string>
+	<string>We need camera access so you can take photos to check in and capture your moments.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>RoamQuest needs photo library access to let you choose photos for your check-ins.</string>
+	<string>We need photo library access so you can pick existing photos for your check-ins.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
-	<string>RoamQuest needs permission to save photos to your library.</string>
-	<key>NSAppTransparency</key>
-	<true/>
-	<key>NSPrivacyPolicyLocationUsageDescription</key>
-	<string>Visit our privacy policy to learn how we use your location data: https://roamquest.xyz/privacy</string>
-	<key>NSUserTrackingUsageDescription</key>
-	<string>We do not use your data for cross-app tracking.</string>
+	<string>We need to save your check-in photos to your photo library so you can revisit them anytime.</string>
 
 	<!-- URL Schemes for OAuth Callbacks -->
 	<key>CFBundleURLTypes</key>
