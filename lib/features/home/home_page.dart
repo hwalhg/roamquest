@@ -33,9 +33,9 @@ class _HomePageState extends State<HomePage> {
 
   bool _isGenerating = false;
   bool _isOpeningStartedCity = false;
-  List<City> _startedCities = [];
-  List<Checklist> _customChecklists = [];
-  Map<String, int> _customChecklistSpotCounts = {};
+  int _currentTab = 0; // 0: all, 1: city, 2: custom
+  List<Checklist> _allChecklists = [];
+  Map<String, int> _checklistSpotCounts = {};
 
   @override
   void initState() {
@@ -64,32 +64,23 @@ class _HomePageState extends State<HomePage> {
       final allChecklists = await _checklistRepo.getAllChecklists();
       AppLogger.info('从数据库获取到 ${allChecklists.length} 个 checklists');
 
-      // Extract unique cities from checklists
-      final uniqueCities = <City>{};
-      final customChecklists = <Checklist>[];
-      final customChecklistSpotCounts = <String, int>{};
+      // Load spot counts for all checklists
+      final spotCounts = <String, int>{};
       for (final checklist in allChecklists) {
         AppLogger.info('Checklist: ${checklist.id}, 标题: ${checklist.displayTitle}');
-        if (checklist.isCustom) {
-          customChecklists.add(checklist);
-          final items = await _checklistRepo.loadChecklistItems(checklist.id);
-          customChecklistSpotCounts[checklist.id] = items.length;
-        } else if (checklist.city != null) {
-          uniqueCities.add(checklist.city!);
-        }
+        final items = await _checklistRepo.loadChecklistItems(checklist.id);
+        spotCounts[checklist.id] = items.length;
       }
 
       if (!mounted) return;
       setState(() {
-        _startedCities = uniqueCities.toList()
-          ..sort((a, b) => a.name.compareTo(b.name));
-        _customChecklists = customChecklists
+        _allChecklists = allChecklists
           ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
-        _customChecklistSpotCounts = customChecklistSpotCounts;
+        _checklistSpotCounts = spotCounts;
       });
 
       AppLogger.info(
-        '成功加载 ${_startedCities.length} 个已开始城市: ${_startedCities.map((c) => c.name).join(', ')}',
+        '成功加载 ${_allChecklists.length} 个清单',
       );
     } catch (e, stackTrace) {
       AppLogger.error('加载已开始城市失败', error: e, stackTrace: stackTrace);
@@ -101,30 +92,32 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _trackStartedCity(City city) {
-    final exists = _startedCities.any(
-      (startedCity) =>
-          startedCity.name == city.name && startedCity.country == city.country,
+    final exists = _allChecklists.any(
+      (cl) =>
+          !cl.isCustom &&
+          cl.city?.name == city.name &&
+          cl.city?.country == city.country,
     );
     if (exists || !mounted) return;
 
     setState(() {
-      _startedCities = [..._startedCities, city]
-        ..sort((a, b) => a.name.compareTo(b.name));
+      _allChecklists = [..._allChecklists]
+        ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
     });
   }
 
   void _trackCustomChecklist(Checklist checklist) {
     if (!checklist.isCustom || !mounted) return;
 
-    final exists = _customChecklists.any((item) => item.id == checklist.id);
+    final exists = _allChecklists.any((item) => item.id == checklist.id);
     if (exists) return;
 
     setState(() {
-      _customChecklists = [checklist, ..._customChecklists]
+      _allChecklists = [checklist, ..._allChecklists]
         ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
-      _customChecklistSpotCounts = {
-        ..._customChecklistSpotCounts,
-        checklist.id: _customChecklistSpotCounts[checklist.id] ?? 0,
+      _checklistSpotCounts = {
+        ..._checklistSpotCounts,
+        checklist.id: _checklistSpotCounts[checklist.id] ?? 0,
       };
     });
   }
@@ -382,135 +375,102 @@ class _HomePageState extends State<HomePage> {
         child: SafeArea(
           child: Stack(
             children: [
-              RefreshIndicator(
-                onRefresh: _refreshStartedCities,
-                child: SingleChildScrollView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                      minHeight: MediaQuery.of(context).size.height -
-                          MediaQuery.of(context).padding.top,
+              Column(
+                children: [
+                  // Fixed header area
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 24,
                     ),
-                    child: Center(
-                      child: Padding(
+                    child: Column(
+                      children: [
+                        Text(
+                          l10n.appName,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 48,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          l10n.appSlogan,
+                          style: const TextStyle(
+                            color: Color(0xFFE0E0E0),
+                            fontSize: 16,
+                          ),
+                        ),
+                        const SizedBox(height: 40),
+                        GestureDetector(
+                          onTap: _showCitySelection,
+                          child: Container(
+                            width: 160,
+                            height: 160,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF4CAF50),
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color:
+                                      Colors.black.withValues(alpha: 0.2),
+                                  blurRadius: 20,
+                                  offset: const Offset(0, 10),
+                                ),
+                              ],
+                            ),
+                            child: Center(
+                              child: _isGenerating
+                                  ? const SizedBox(
+                                      width: 30,
+                                      height: 30,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 3,
+                                        color: Color(0xFF6A11CB),
+                                      ),
+                                    )
+                                  : Text(
+                                      l10n.createChecklist,
+                                      style: const TextStyle(
+                                        color: Color(0xFF6A11CB),
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        Text(
+                          l10n.get('pullToRefreshLists'),
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.82),
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        _buildTabBar(l10n),
+                      ],
+                    ),
+                  ),
+                  // Scrollable checklist area
+                  Expanded(
+                    child: RefreshIndicator(
+                      onRefresh: _refreshStartedCities,
+                      child: ListView(
+                        physics: const AlwaysScrollableScrollPhysics(),
                         padding: const EdgeInsets.symmetric(
                           horizontal: 24,
-                          vertical: 24,
-                        ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              l10n.appName,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 48,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              l10n.appSlogan,
-                              style: const TextStyle(
-                                color: Color(0xFFE0E0E0),
-                                fontSize: 16,
-                              ),
-                            ),
-                            const SizedBox(height: 60),
-                            GestureDetector(
-                              onTap: _showCitySelection,
-                              child: Container(
-                                width: 200,
-                                height: 200,
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF4CAF50),
-                                  shape: BoxShape.circle,
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color:
-                                          Colors.black.withValues(alpha: 0.2),
-                                      blurRadius: 20,
-                                      offset: const Offset(0, 10),
-                                    ),
-                                  ],
-                                ),
-                                child: Center(
-                                  child: _isGenerating
-                                      ? const SizedBox(
-                                          width: 30,
-                                          height: 30,
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 3,
-                                            color: Color(0xFF6A11CB),
-                                          ),
-                                        )
-                                      : Text(
-                                          l10n.createChecklist,
-                                          style: const TextStyle(
-                                            color: Color(0xFF6A11CB),
-                                            fontSize: 24,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                          textAlign: TextAlign.center,
-                                        ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 50),
-                            Text(
-                              l10n.get('pullToRefreshLists'),
-                              style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.82),
-                                fontSize: 13,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            _buildChecklistSection(
-                              title:
-                                  '${l10n.get('startedCities')} (${_startedCities.length})',
-                              subtitle: l10n.get('startedCitiesHint'),
-                              icon: Icons.public_rounded,
-                              accentColor: const Color(0xFF7FDBFF),
-                              child: _startedCities.isEmpty
-                                  ? _buildEmptySectionHint(
-                                      l10n.get('noStartedCities'),
-                                    )
-                                  : Wrap(
-                                      spacing: 8,
-                                      runSpacing: 8,
-                                      alignment: WrapAlignment.center,
-                                      children: _startedCities.map((city) {
-                                        return _buildSimpleCityChip(city);
-                                      }).toList(),
-                                    ),
-                            ),
-                            const SizedBox(height: 16),
-                            _buildChecklistSection(
-                              title:
-                                  '${l10n.get('customLists')} (${_customChecklists.length})',
-                              subtitle: l10n.get('customListsHint'),
-                              icon: Icons.edit_note_rounded,
-                              accentColor: const Color(0xFFFFD166),
-                              child: _customChecklists.isEmpty
-                                  ? _buildEmptySectionHint(
-                                      l10n.get('customListsHint'),
-                                    )
-                                  : Column(
-                                      children: _customChecklists.map((checklist) {
-                                        return Padding(
-                                          padding: const EdgeInsets.only(bottom: 10),
-                                          child: _buildCustomChecklistCard(checklist),
-                                        );
-                                      }).toList(),
-                                    ),
-                            ),
-                          ],
-                        ),
+                        ).copyWith(bottom: 24),
+                        children: [
+                          _buildTabContent(l10n),
+                        ],
                       ),
                     ),
                   ),
-                ),
+                ],
               ),
               if (_isGenerating)
                 Positioned.fill(
@@ -579,158 +539,111 @@ class _HomePageState extends State<HomePage> {
   }
 
   /// Build simple city chip - minimal design with click to navigate
-  Widget _buildChecklistSection({
-    required String title,
-    required String subtitle,
-    required IconData icon,
-    required Color accentColor,
-    required Widget child,
-  }) {
+  List<Checklist> get _cityChecklists =>
+      _allChecklists.where((c) => !c.isCustom).toList();
+
+  List<Checklist> get _customChecklists =>
+      _allChecklists.where((c) => c.isCustom).toList();
+
+  List<Checklist> get _filteredChecklists {
+    switch (_currentTab) {
+      case 1:
+        return _cityChecklists;
+      case 2:
+        return _customChecklists;
+      default:
+        return _allChecklists;
+    }
+  }
+
+  Widget _buildTabBar(AppLocalizations l10n) {
+    final tabs = [
+      l10n.get('all'),
+      l10n.get('startedCities'),
+      l10n.get('customLists'),
+    ];
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.14),
-        ),
+        color: Colors.white.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 38,
-                height: 38,
+      child: Row(
+        children: List.generate(tabs.length, (index) {
+          final selected = _currentTab == index;
+          return Expanded(
+            child: GestureDetector(
+              onTap: () => setState(() => _currentTab = index),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.symmetric(vertical: 8),
                 decoration: BoxDecoration(
-                  color: accentColor.withValues(alpha: 0.18),
-                  borderRadius: BorderRadius.circular(12),
+                  color: selected
+                      ? Colors.white.withValues(alpha: 0.2)
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(
-                  icon,
-                  color: Colors.white,
-                  size: 20,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitle,
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.74),
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
+                child: Text(
+                  tabs[index],
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: selected
+                        ? Colors.white
+                        : Colors.white.withValues(alpha: 0.6),
+                    fontSize: 13,
+                    fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                  ),
                 ),
               ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          child,
-        ],
-      ),
-    );
-  }
-
-  Widget _buildEmptySectionHint(String text) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Text(
-        text,
-        style: TextStyle(
-          color: Colors.white.withValues(alpha: 0.8),
-          fontSize: 13,
-          fontWeight: FontWeight.w500,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSimpleCityChip(City city) {
-    return Opacity(
-      opacity: _isOpeningStartedCity ? 0.65 : 1,
-      child: GestureDetector(
-        onTap:
-            _isOpeningStartedCity ? null : () => _navigateToCityChecklist(city),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.16),
             ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Small flag
-              ClipRRect(
-                borderRadius: BorderRadius.circular(3),
-                child: Image.network(
-                  'https://flagcdn.com/w20/${city.countryCode.toLowerCase()}.png',
-                  width: 20,
-                  height: 15,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return const SizedBox.shrink();
-                  },
-                ),
-              ),
-              const SizedBox(width: 6),
-              // City name only
-              Text(
-                city.name,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-        ),
+          );
+        }),
       ),
     );
   }
 
-  Widget _buildCustomChecklistCard(Checklist checklist) {
-    final l10n = AppLocalizations.of(context);
-    final spotCount = _customChecklistSpotCounts[checklist.id] ?? 0;
+  Widget _buildTabContent(AppLocalizations l10n) {
+    final items = _filteredChecklists;
+    if (items.isEmpty) {
+      final hint = _currentTab == 1
+          ? l10n.get('noStartedCities')
+          : _currentTab == 2
+              ? l10n.get('customListsHint')
+              : l10n.get('noStartedCities');
+      return _buildEmptySectionHint(hint);
+    }
+    return Column(
+      children: items.map((checklist) {
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: _buildChecklistCard(checklist, l10n),
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _buildChecklistCard(Checklist checklist, AppLocalizations l10n) {
+    final spotCount = _checklistSpotCounts[checklist.id] ?? 0;
     final spotCountLabel = spotCount == 1
         ? l10n.get('spotCountSingle')
         : l10n.get('spotCountPlural').replaceAll('{count}', '$spotCount');
-    final subtitle = checklist.description?.trim().isNotEmpty == true
-        ? checklist.description!.trim()
-        : l10n.get('customListsHint');
+    final subtitle = checklist.isCustom
+        ? (checklist.description?.trim().isNotEmpty == true
+            ? checklist.description!.trim()
+            : l10n.get('customListsHint'))
+        : (checklist.city?.country ?? '');
+    final accentColor =
+        checklist.isCustom ? const Color(0xFFFFD166) : const Color(0xFF7FDBFF);
+    final icon = Icons.public_rounded;
 
     return Opacity(
       opacity: _isOpeningStartedCity ? 0.65 : 1,
       child: GestureDetector(
         onTap: _isOpeningStartedCity
             ? null
-            : () => _navigateToCustomChecklist(checklist),
+            : () => checklist.isCustom
+                ? _navigateToCustomChecklist(checklist)
+                : _navigateToCityChecklist(checklist.city!),
         child: Container(
           width: double.infinity,
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
@@ -747,11 +660,11 @@ class _HomePageState extends State<HomePage> {
                 width: 42,
                 height: 42,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFFD166).withValues(alpha: 0.18),
+                  color: accentColor.withValues(alpha: 0.18),
                   borderRadius: BorderRadius.circular(14),
                 ),
-                child: const Icon(
-                  Icons.edit_note_rounded,
+                child: Icon(
+                  icon,
                   color: Colors.white,
                   size: 20,
                 ),
@@ -761,17 +674,37 @@ class _HomePageState extends State<HomePage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      checklist.displayTitle.isEmpty
-                          ? l10n.get('untitledChecklist')
-                          : checklist.displayTitle,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                      ),
+                    Row(
+                      children: [
+                        if (!checklist.isCustom && checklist.city != null) ...[
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(3),
+                            child: Image.network(
+                              'https://flagcdn.com/w20/${checklist.city!.countryCode.toLowerCase()}.png',
+                              width: 18,
+                              height: 13,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) =>
+                                  const SizedBox.shrink(),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                        ],
+                        Expanded(
+                          child: Text(
+                            checklist.displayTitle.isEmpty
+                                ? l10n.get('untitledChecklist')
+                                : checklist.displayTitle,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 4),
                     Text(
@@ -789,7 +722,8 @@ class _HomePageState extends State<HomePage> {
               ),
               const SizedBox(width: 10),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(999),
@@ -811,6 +745,25 @@ class _HomePageState extends State<HomePage> {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptySectionHint(String text) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: Colors.white.withValues(alpha: 0.8),
+          fontSize: 13,
+          fontWeight: FontWeight.w500,
         ),
       ),
     );

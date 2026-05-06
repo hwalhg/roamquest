@@ -655,11 +655,6 @@ class _ChecklistPageState extends State<ChecklistPage>
           ),
         ),
       );
-    } else if (_checklist.isCustom) {
-      return const Icon(
-        Icons.edit_location_alt_outlined,
-        color: AppColors.primary,
-      );
     } else if (_hasPremiumSubscription || (_checklist.city?.isFree ?? false)) {
       // Premium user - show unlock icon
       return Container(
