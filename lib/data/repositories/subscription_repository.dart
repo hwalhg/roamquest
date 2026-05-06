@@ -12,6 +12,11 @@ import '../../core/constants/app_constants.dart';
 import '../../core/constants/api_constants.dart';
 import '../../core/utils/app_logger.dart';
 
+/// Timeout for waiting on StoreKit purchase stream after buyNonConsumable.
+/// If no purchase update arrives within this window, reset the purchasing flag
+/// so the user is not permanently stuck.
+const Duration _purchaseTimeout = Duration(seconds: 30);
+
 /// Repository for managing subscriptions
 class SubscriptionRepository {
   factory SubscriptionRepository() => _instance;
@@ -25,6 +30,7 @@ class SubscriptionRepository {
   final Uuid _uuid = const Uuid();
   StreamSubscription<List<PurchaseDetails>>? _subscription;
   final Set<String> _processingTransactionIds = <String>{};
+  Timer? _purchaseTimeoutTimer;
 
   // Subscription state
   final ValueNotifier<SubscriptionStatus> status = ValueNotifier(
@@ -184,6 +190,8 @@ class SubscriptionRepository {
     }
     // Reset purchasing flag after all purchases are processed
     _isPurchasing = false;
+    _purchaseTimeoutTimer?.cancel();
+    _purchaseTimeoutTimer = null;
   }
 
   /// Handle individual purchase
@@ -515,8 +523,19 @@ class SubscriptionRepository {
 
       if (!result) {
         _isPurchasing = false;
+      } else {
+        // Start a timeout timer – if StoreKit never fires a purchase update
+        // (e.g. the user dismissed the sheet without confirming or cancelling
+        // through the normal path), auto-reset so the user isn't stuck.
+        _purchaseTimeoutTimer?.cancel();
+        _purchaseTimeoutTimer = Timer(_purchaseTimeout, () {
+          if (_isPurchasing) {
+            AppLogger.warning(
+                'Purchase timed out with no StoreKit response, resetting flag');
+            _isPurchasing = false;
+          }
+        });
       }
-      // If result is true, keep _isPurchasing = true until purchaseStream fires
 
       return result;
     } catch (e) {

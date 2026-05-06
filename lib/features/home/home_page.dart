@@ -512,27 +512,6 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ),
               ),
-              // Auto-detect floating button (optional, small)
-              if (!kIsWeb)
-                Positioned(
-                  top: 20,
-                  right: 20,
-                  child: GestureDetector(
-                    onTap: _isGenerating ? null : _detectLocation,
-                    child: Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.2),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.my_location,
-                        color: Colors.white,
-                        size: 24,
-                      ),
-                    ),
-                  ),
-                ),
               if (_isGenerating)
                 Positioned.fill(
                   child: AbsorbPointer(

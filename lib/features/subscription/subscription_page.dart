@@ -26,7 +26,10 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
   final SubscriptionRepository _subscriptionRepo = SubscriptionRepository();
   ProductDetails? _selectedProduct;
   bool _isPurchasing = false;
+  bool _isRestoring = false;
   VoidCallback? _purchaseStatusListener;
+  String? _feedbackMessage;
+  int _feedbackMessageVersion = 0;
 
   // Debug: Track loading state
   DateTime? _loadingStartTime;
@@ -200,13 +203,50 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
 
   Future<void> _restorePurchase() async {
     final l10n = AppLocalizations.of(context);
-    await _subscriptionRepo.restorePurchases();
-    await _refreshCurrentSubscription();
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.get('restorePurchaseCompleted'))),
-      );
+    if (_isRestoring) return;
+
+    setState(() => _isRestoring = true);
+
+    try {
+      await _subscriptionRepo.restorePurchases();
+      await Future.delayed(const Duration(seconds: 2));
+      await _subscriptionRepo.checkSubscriptionStatus();
+      await _refreshCurrentSubscription();
+
+      if (!mounted) return;
+
+      final status = _subscriptionRepo.status.value;
+      if (status == SubscriptionStatus.premium) {
+        _showInlineFeedback(l10n.get('restorePurchaseCompleted'));
+      } else if (status == SubscriptionStatus.expired) {
+        _showErrorDialog(
+          _subscriptionRepo.lastError.value ??
+              l10n.get('restorePurchaseExpired'),
+        );
+      } else if (status == SubscriptionStatus.error) {
+        _showErrorDialog(_subscriptionRepo.lastError.value);
+      } else {
+        _showInlineFeedback(l10n.get('noPurchasesToRestore'));
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isRestoring = false);
+      }
     }
+  }
+
+  void _showInlineFeedback(String message) {
+    final version = ++_feedbackMessageVersion;
+    setState(() {
+      _feedbackMessage = message;
+    });
+
+    Future.delayed(const Duration(seconds: 2), () {
+      if (!mounted || version != _feedbackMessageVersion) return;
+      setState(() {
+        _feedbackMessage = null;
+      });
+    });
   }
 
   void _showSuccessDialog() {
@@ -308,6 +348,10 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                   children: [
                     _buildHeader(l10n),
                     const SizedBox(height: AppSpacing.md),
+                    if (_feedbackMessage != null) ...[
+                      _buildFeedbackBanner(_feedbackMessage!),
+                      const SizedBox(height: AppSpacing.md),
+                    ],
                     _buildSubscriptionStatus(),
                     const SizedBox(height: AppSpacing.xl),
                     _buildSubscriptionPlans(l10n),
@@ -458,6 +502,37 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                   ),
                 ],
               ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFeedbackBanner(String message) {
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: AppColors.success.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+        border: Border.all(
+          color: AppColors.success.withValues(alpha: 0.35),
+        ),
+      ),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.check_circle_outline,
+            color: AppColors.success,
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Text(
+              message,
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: AppColors.textOnDark,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
         ],
@@ -1179,13 +1254,22 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
 
   Widget _buildRestoreButton(AppLocalizations l10n) {
     return TextButton(
-      onPressed: _restorePurchase,
-      child: Text(
-        l10n.get('restorePurchase'),
-        style: AppTextStyles.bodyMedium.copyWith(
-          color: AppColors.textOnDark,
-        ),
-      ),
+      onPressed: _isRestoring ? null : _restorePurchase,
+      child: _isRestoring
+          ? const SizedBox(
+              width: 18,
+              height: 18,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: AppColors.textOnDark,
+              ),
+            )
+          : Text(
+              l10n.get('restorePurchase'),
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: AppColors.textOnDark,
+              ),
+            ),
     );
   }
 

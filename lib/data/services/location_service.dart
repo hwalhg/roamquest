@@ -234,6 +234,28 @@ class LocationService {
     }
   }
 
+  /// Reverse geocode coordinates into a readable address string.
+  Future<String?> getAddressFromCoordinates(
+      double latitude, double longitude) async {
+    try {
+      if (_debugMode) return null;
+      final placemarks =
+          await placemarkFromCoordinates(latitude, longitude);
+      if (placemarks.isEmpty) return null;
+      final p = placemarks.first;
+      final parts = <String>[
+        if (p.name != null && p.name!.isNotEmpty) p.name!,
+        if (p.subLocality != null && p.subLocality!.isNotEmpty)
+          p.subLocality!,
+        if (p.locality != null && p.locality!.isNotEmpty) p.locality!,
+      ];
+      return parts.where((s) => s.isNotEmpty).join(', ');
+    } catch (e) {
+      AppLogger.warning('Reverse geocoding failed: $e');
+      return null;
+    }
+  }
+
   /// Calculate distance between two coordinates in meters
   double calculateDistance(
     double startLatitude,

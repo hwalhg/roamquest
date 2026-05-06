@@ -45,8 +45,7 @@ class _AddCustomSpotPageState extends State<AddCustomSpotPage> {
   void initState() {
     super.initState();
     _titleController.text = widget.initialItem?.title ?? '';
-    _locationController.text = widget.initialItem?.location ??
-        (widget.checklist.isCustom ? '' : widget.checklist.city?.name ?? '');
+    _locationController.text = widget.initialItem?.location ?? '';
     _selectedCategory = widget.initialItem?.category ?? AppConstants.categories.first;
     _spotLatitude = widget.initialItem?.spotLatitude;
     _spotLongitude = widget.initialItem?.spotLongitude;
@@ -71,11 +70,21 @@ class _AddCustomSpotPageState extends State<AddCustomSpotPage> {
       final position = await _locationService.getCurrentPosition();
       if (!mounted) return;
 
+      final address = await _locationService.getAddressFromCoordinates(
+        position.latitude,
+        position.longitude,
+      );
+
+      if (!mounted) return;
+
       setState(() {
         _spotLatitude = position.latitude;
         _spotLongitude = position.longitude;
         _locationStatusMessage = l10n.get('currentLocationSaved');
         _locationStatusIsError = false;
+        if (address != null && address.isNotEmpty) {
+          _locationController.text = address;
+        }
       });
     } catch (_) {
       if (!mounted) return;
@@ -100,9 +109,7 @@ class _AddCustomSpotPageState extends State<AddCustomSpotPage> {
       return;
     }
 
-    final location = _locationController.text.trim().isEmpty
-        ? widget.checklist.displayTitle
-        : _locationController.text.trim();
+    final location = _locationController.text.trim();
 
     final customItem = _isEditing
         ? widget.initialItem!.copyWith(

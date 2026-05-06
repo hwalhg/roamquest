@@ -148,6 +148,9 @@ class AppLocalizations {
       'unlockUnlimited': 'Unlock unlimited city exploration',
       'premiumFeatures': 'Premium Features',
       'restorePurchaseCompleted': 'Purchase restored',
+      'noPurchasesToRestore': 'No purchases were available to restore.',
+      'restorePurchaseExpired':
+          'The App Store returned an expired subscription for this account.',
 
       // Terms & Privacy
       'agreeToTerms': 'I agree to the Terms of Service and Privacy Policy',
@@ -395,6 +398,8 @@ class AppLocalizations {
       'unlockUnlimited': '解锁无限城市探索',
       'premiumFeatures': '高级版功能',
       'restorePurchaseCompleted': '购买已恢复',
+      'noPurchasesToRestore': '没有可恢复的购买记录。',
+      'restorePurchaseExpired': '当前账号返回的是一条已过期的订阅记录。',
 
       // Terms & Privacy
       'agreeToTerms': '我同意服务条款和隐私政策',
