@@ -13,7 +13,7 @@ import 'add_custom_spot_page.dart';
 import 'create_custom_checklist_page.dart';
 import '../checkin/checkin_page.dart';
 import '../report/report_page.dart';
-import '../subscription/city_subscription_page.dart';
+import '../subscription/subscription_page.dart';
 
 /// Checklist display page
 class ChecklistPage extends StatefulWidget {
@@ -203,31 +203,29 @@ class _ChecklistPageState extends State<ChecklistPage>
             ),
         ],
       ),
-      bottomNavigationBar: _checklist.isCustom
-          ? SafeArea(
-              top: false,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.lg,
-                  AppSpacing.sm,
-                  AppSpacing.lg,
-                  AppSpacing.lg,
-                ),
-                child: SizedBox(
-                  height: 54,
-                  child: ElevatedButton.icon(
-                    onPressed: _handleAddCustomSpot,
-                    icon: const Icon(Icons.add_location_alt_outlined),
-                    label: Text(
-                      _items.isEmpty
-                          ? l10n.get('addFirstSpot')
-                          : l10n.get('addSpot'),
-                    ),
-                  ),
-                ),
+      bottomNavigationBar: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.lg,
+            AppSpacing.sm,
+            AppSpacing.lg,
+            AppSpacing.lg,
+          ),
+          child: SizedBox(
+            height: 54,
+            child: ElevatedButton.icon(
+              onPressed: _handleAddCustomSpot,
+              icon: const Icon(Icons.add_location_alt_outlined),
+              label: Text(
+                _items.isEmpty
+                    ? l10n.get('addFirstSpot')
+                    : l10n.get('addSpot'),
               ),
-            )
-          : null,
+            ),
+          ),
+        ),
+      ),
       floatingActionButton: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.end,
@@ -266,22 +264,18 @@ class _ChecklistPageState extends State<ChecklistPage>
                 itemBuilder: (context) => [
                   PopupMenuItem(
                     value: 'edit',
-                    child: Text(AppLocalizations.of(context).get('editChecklist')),
+                    child:
+                        Text(AppLocalizations.of(context).get('editChecklist')),
                   ),
                   PopupMenuItem(
                     value: 'delete',
-                    child: Text(AppLocalizations.of(context).get('deleteChecklist')),
+                    child: Text(
+                        AppLocalizations.of(context).get('deleteChecklist')),
                   ),
                 ],
               ),
             ]
-          : [
-              IconButton(
-                onPressed: _handleAddCustomSpot,
-                icon: const Icon(Icons.add_location_alt_outlined),
-                tooltip: AppLocalizations.of(context).addSpot,
-              ),
-            ],
+          : null,
       flexibleSpace: FlexibleSpaceBar(
         title: Text(
           _checklist.displayTitle,
@@ -717,17 +711,6 @@ class _ChecklistPageState extends State<ChecklistPage>
                 ),
                 textAlign: TextAlign.center,
               ),
-              if (!_checklist.isCustom) ...[
-                const SizedBox(height: AppSpacing.lg),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    onPressed: _handleAddCustomSpot,
-                    icon: const Icon(Icons.add_location_alt_outlined),
-                    label: Text(l10n.get('addSpot')),
-                  ),
-                ),
-              ],
             ],
           ),
         ),
@@ -1030,8 +1013,6 @@ class _ChecklistPageState extends State<ChecklistPage>
     }
 
     final remaining = _remainingFreeCheckIns;
-    final cityPrice = _checklist.city!.subscriptionPrice;
-
     return showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -1058,8 +1039,9 @@ class _ChecklistPageState extends State<ChecklistPage>
               )
             else
               Text(
-                '\$$cityPrice - ${l10n.get('oneTimePurchase')}',
+                l10n.get('premiumAccessInactiveDesc'),
                 style: AppTextStyles.bodySmall,
+                textAlign: TextAlign.center,
               ),
             if (remaining != null) ...[
               const SizedBox(height: AppSpacing.sm),
@@ -1095,13 +1077,13 @@ class _ChecklistPageState extends State<ChecklistPage>
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => CitySubscriptionPage(city: _checklist.city!),
+                  builder: (_) => const SubscriptionPage(),
                 ),
               ).then((_) => _checkSubscriptionStatus());
             },
             child: Text(_checklist.city!.isFree
                 ? l10n.get('unlockFree')
-                : '${l10n.get('unlock')} \$${cityPrice.toStringAsFixed(2)}'),
+                : l10n.get('viewSubscriptionPlans')),
           ),
         ],
       ),
