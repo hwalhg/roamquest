@@ -49,6 +49,8 @@
 	<!-- Location Permissions -->
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>We need your location to recommend exciting places to explore in your current city.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>We use your location to recommend nearby cities and places to explore when you choose location-based features.</string>
 
 	<!-- Camera & Photo Library Permissions -->
 	<key>NSCameraUsageDescription</key>
