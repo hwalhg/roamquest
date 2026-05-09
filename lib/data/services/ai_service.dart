@@ -1,8 +1,7 @@
-import 'dart:convert';
-import 'package:dio/dio.dart';
 import '../models/checklist_item.dart';
 import '../models/city.dart';
 import '../../core/constants/api_constants.dart';
+import '../../core/config/supabase_config.dart';
 import '../../core/utils/app_logger.dart';
 
 /// Result of AI generation with items
@@ -18,13 +17,6 @@ class AIGenerationResult {
 
 /// Service for AI-powered checklist generation
 class AIService {
-  final Dio _dio = Dio();
-
-  AIService() {
-    _dio.options.connectTimeout = ApiConstants.apiTimeout;
-    _dio.options.receiveTimeout = ApiConstants.apiTimeout;
-  }
-
   /// Generate a checklist for a city
   Future<AIGenerationResult> generateChecklist(
     City city,
@@ -33,50 +25,39 @@ class AIService {
     try {
       AppLogger.info('Generating checklist for ${city.name}');
 
-      final prompt = PromptTemplates.generateChecklist(
-        city.name,
-        city.country,
-        language,
-      );
-
-      // 使用 DeepSeek API
-      final response = await _dio.post(
-        ApiConstants.deepSeekBaseUrl,
-        options: Options(
-          headers: {
-            'Authorization': 'Bearer ${ApiConstants.deepSeekApiKey}',
-            'Content-Type': 'application/json',
-          },
-        ),
-        data: {
-          'model': ApiConstants.deepSeekModel,
-          'messages': [
-            {
-              'role': 'user',
-              'content': prompt,
-            }
-          ],
-          'temperature': 0.7,
-          'max_tokens': 2048,
+      final response = await SupabaseConfig.client.functions.invoke(
+        ApiConstants.fnGenerateChecklist,
+        body: {
+          'city_id': city.id,
+          'city': city.name,
+          'country': city.country,
+          'language': language,
         },
       );
 
-      // Parse DeepSeek response (OpenAI-compatible format)
-      final content =
-          response.data['choices'][0]['message']['content'] as String;
-      final jsonStr = _extractJson(content);
+      AppLogger.info(
+        'Checklist generation response received: status=${response.status}',
+      );
 
-      if (jsonStr == null) {
-        throw AIServiceException('Failed to parse AI response');
+      final payload = response.data;
+      if (payload is! Map) {
+        throw AIServiceException('AI response is not a JSON object');
       }
 
-      final jsonData = json.decode(jsonStr) as Map<String, dynamic>;
-      final items = jsonData['items'] as List<dynamic>;
+      final responseItems = payload['items'];
+      if (responseItems is! List) {
+        final errorMessage = payload['error'] ??
+            payload['message'] ??
+            'Failed to generate checklist';
+        throw AIServiceException(errorMessage.toString());
+      }
 
-      AppLogger.info('Generated ${items.length} items for ${city.name}');
+      AppLogger.info(
+        'Generated ${responseItems.length} items for ${city.name}',
+      );
 
       // Validate items (no longer enforcing 20 items)
-      final validatedItems = _validateItems(items);
+      final validatedItems = _validateItems(responseItems);
 
       // Convert to ChecklistItem objects
       final checklistItems = validatedItems
@@ -92,28 +73,10 @@ class AIService {
         items: itemsWithFreeStatus,
         city: city,
       );
-    } on DioException catch (e) {
-      AppLogger.error('AI request failed', error: e);
-      throw AIServiceException(
-        'Failed to generate checklist: ${e.message}',
-      );
     } catch (e) {
       AppLogger.error('AI generation failed', error: e);
       throw AIServiceException('Failed to generate checklist: $e');
     }
-  }
-
-  /// Extract JSON from AI response
-  String? _extractJson(String text) {
-    // Find JSON in the response
-    final jsonPattern = RegExp(r'\{[\s\S]*\}');
-    final match = jsonPattern.firstMatch(text);
-
-    if (match != null) {
-      return match.group(0);
-    }
-
-    return null;
   }
 
   /// Validate and normalize items
@@ -138,9 +101,13 @@ class AIService {
       }
 
       result.add({
+        'attraction_id': item['attraction_id'],
         'title': title.trim(),
         'location': location.trim(),
         'category': category,
+        'sort_order': item['sort_order'],
+        'is_free': item['is_free'],
+        'source': item['source'],
       });
     }
 

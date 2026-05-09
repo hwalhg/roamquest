@@ -153,7 +153,10 @@ class StorageService {
   /// Delete a single checklist item.
   Future<void> deleteChecklistItem(String itemId) async {
     try {
-      await _client.from(ApiConstants.tableChecklistItems).delete().eq('id', itemId);
+      await _client
+          .from(ApiConstants.tableChecklistItems)
+          .delete()
+          .eq('id', itemId);
       AppLogger.info('Checklist item deleted: $itemId');
     } catch (e) {
       AppLogger.error('Failed to delete checklist item', error: e);
@@ -283,13 +286,13 @@ class StorageService {
           spotLatitude: itemData['spot_latitude'] != null
               ? (itemData['spot_latitude'] as num).toDouble()
               : itemData['latitude'] != null
-              ? (itemData['latitude'] as num).toDouble()
-              : null,
+                  ? (itemData['latitude'] as num).toDouble()
+                  : null,
           spotLongitude: itemData['spot_longitude'] != null
               ? (itemData['spot_longitude'] as num).toDouble()
               : itemData['longitude'] != null
-              ? (itemData['longitude'] as num).toDouble()
-              : null,
+                  ? (itemData['longitude'] as num).toDouble()
+                  : null,
         );
         items.add(checklistItem);
       }
@@ -299,38 +302,6 @@ class StorageService {
     } catch (e) {
       AppLogger.error('Failed to get attractions', error: e);
       return null;
-    }
-  }
-
-  /// Save attractions (after AI generation) - inserts each attraction as a separate row
-  Future<void> saveAttractions({
-    required int cityId,
-    required List<ChecklistItem> items,
-    required String language,
-  }) async {
-    try {
-      AppLogger.info('Saving ${items.length} attractions for city_id: $cityId');
-
-      // Insert each attraction as a separate row
-      for (int i = 0; i < items.length; i++) {
-        final item = items[i];
-
-        await _client.from(ApiConstants.tableAttractions).insert({
-          'city_id': cityId,
-          'title': item.title,
-          'location': item.location,
-          'category': item.category,
-          'language': language,
-          'is_active': true,
-          'is_free': item.isFree,
-          'sort_order': i,
-        });
-      }
-
-      AppLogger.info('Attractions saved successfully');
-    } catch (e) {
-      AppLogger.error('Failed to save attractions', error: e);
-      throw StorageException('Failed to save attractions: $e');
     }
   }
 

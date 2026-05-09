@@ -7,7 +7,8 @@ import '../../core/constants/app_constants.dart';
 class ChecklistItem extends Equatable {
   final String id;
   final String checklistId; // Foreign key to checklists table
-  final int? attractionId; // Foreign key to attractions table (nullable for custom items)
+  final int?
+      attractionId; // Foreign key to attractions table (nullable for custom items)
   final String title;
   final String location;
   final String category; // landmark, food, experience, hidden
@@ -57,7 +58,8 @@ class ChecklistItem extends Equatable {
       sortOrder: json['sort_order'] as int,
       isCompleted: json['is_completed'] as bool? ?? false,
       isFree: json['is_free'] as bool? ?? false,
-      source: json['source'] as String? ?? AppConstants.checklistItemSourceOfficial,
+      source:
+          json['source'] as String? ?? AppConstants.checklistItemSourceOfficial,
       photoUrl: json['checkin_photo_url'] as String?,
       completedAt: json['checked_at'] != null
           ? DateTime.parse(json['checked_at'] as String)
@@ -123,11 +125,14 @@ class ChecklistItem extends Equatable {
     return ChecklistItem(
       id: itemId,
       checklistId: '', // Placeholder, will be set when saving to checklist
-      attractionId: null,
+      attractionId: json['attraction_id'] as int?,
       title: json['title'] as String,
       location: json['location'] as String,
       category: json['category'] as String,
-      sortOrder: order,
+      sortOrder: json['sort_order'] as int? ?? order,
+      isFree: json['is_free'] as bool? ?? false,
+      source:
+          json['source'] as String? ?? AppConstants.checklistItemSourceOfficial,
     );
   }
 
@@ -148,8 +153,8 @@ class ChecklistItem extends Equatable {
       category: attraction['category'] as String,
       sortOrder: sortOrder,
       isFree: attraction['is_free'] as bool? ?? false,
-      source:
-          attraction['source'] as String? ?? AppConstants.checklistItemSourceOfficial,
+      source: attraction['source'] as String? ??
+          AppConstants.checklistItemSourceOfficial,
       spotLatitude: attraction['spot_latitude'] != null
           ? (attraction['spot_latitude'] as num).toDouble()
           : attraction['latitude'] != null

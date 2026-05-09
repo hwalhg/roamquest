@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:io';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
+import '../../core/utils/app_logger.dart';
 import '../../data/services/auth_service.dart';
 
 /// Profile edit page
@@ -91,26 +92,27 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
       // Generate unique file name
       final fileExt = imageFile.path.split('.').last.toLowerCase();
-      final fileName = '$userId/avatar_${DateTime.now().millisecondsSinceEpoch}.$fileExt';
+      final fileName =
+          '$userId/avatar_${DateTime.now().millisecondsSinceEpoch}.$fileExt';
 
       // Read file bytes
       final bytes = await imageFile.readAsBytes();
 
       // Upload to Supabase Storage
       await _supabase.storage.from('avatars').uploadBinary(
-        fileName,
-        bytes,
-        fileOptions: FileOptions(
-          cacheControl: '3600',
-          upsert: true,
-        ),
-      );
+            fileName,
+            bytes,
+            fileOptions: FileOptions(
+              cacheControl: '3600',
+              upsert: true,
+            ),
+          );
 
       // Get public URL
       final imageUrl = _supabase.storage.from('avatars').getPublicUrl(fileName);
       return imageUrl;
     } catch (e) {
-      print('Error uploading avatar: $e');
+      AppLogger.error('Error uploading avatar', error: e);
       return null;
     }
   }
@@ -187,8 +189,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
   @override
   Widget build(BuildContext context) {
-    final user = _auth.currentUser;
-
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
@@ -238,7 +238,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
                                 width: 100,
                                 height: 100,
                                 decoration: BoxDecoration(
-                                  color: AppColors.textOnDark.withValues(alpha:0.2),
+                                  color: AppColors.textOnDark
+                                      .withValues(alpha: 0.2),
                                   shape: BoxShape.circle,
                                 ),
                                 child: Stack(
@@ -300,11 +301,13 @@ class _EditProfilePageState extends State<EditProfilePage> {
                           decoration: InputDecoration(
                             labelText: 'Nickname',
                             labelStyle: AppTextStyles.bodyMedium.copyWith(
-                              color: AppColors.textOnDark.withValues(alpha:0.7),
+                              color:
+                                  AppColors.textOnDark.withValues(alpha: 0.7),
                             ),
                             hintText: 'Enter your nickname',
                             filled: true,
-                            fillColor: AppColors.textOnDark.withValues(alpha:0.15),
+                            fillColor:
+                                AppColors.textOnDark.withValues(alpha: 0.15),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                               borderSide: BorderSide.none,
@@ -339,7 +342,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                           Container(
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: AppColors.error.withValues(alpha:0.2),
+                              color: AppColors.error.withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Row(
@@ -374,7 +377,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                               backgroundColor: AppColors.textOnDark,
                               foregroundColor: AppColors.primary,
                               disabledBackgroundColor:
-                                  AppColors.textOnDark.withValues(alpha:0.5),
+                                  AppColors.textOnDark.withValues(alpha: 0.5),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),

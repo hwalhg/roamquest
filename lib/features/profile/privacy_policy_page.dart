@@ -92,7 +92,7 @@ We may share data with:
 
 Third-party services we use:
 • Supabase: Database and authentication
-• DeepSeek AI: Checklist generation
+• DeepSeek AI via Supabase Edge Functions: Checklist generation
 • Apple: In-app purchases (if you subscribe)
 ''',
                 ),

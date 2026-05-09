@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter/foundation.dart';
 import '../constants/api_constants.dart';
 
 /// Supabase configuration and initialization
@@ -15,7 +16,7 @@ class SupabaseConfig {
     await Supabase.initialize(
       url: ApiConstants.supabaseUrl,
       anonKey: ApiConstants.supabaseAnonKey,
-      debug: true,
+      debug: kDebugMode,
     );
 
     _isInitialized = true;

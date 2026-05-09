@@ -2,19 +2,6 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 /// API endpoints and configuration
 class ApiConstants {
-  // DeepSeek AI Configuration (国产大模型)
-  static const String deepSeekBaseUrl =
-      'https://api.deepseek.com/v1/chat/completions';
-  static const String deepSeekModel = 'deepseek-chat';
-
-  static String get deepSeekApiKey => dotenv.env['DEEPSEEK_API_KEY'] ?? '';
-
-  // Claude AI Configuration (已停用，改用DeepSeek)
-  // static const String claudeBaseUrl = 'https://api.anthropic.com/v1';
-  // static const String claudeApiVersion = '2023-06-01';
-  // static const String claudeModel = 'claude-3-5-sonnet-20241022';
-  // static String get claudeApiKey => dotenv.env['CLAUDE_API_KEY'] ?? '';
-
   // Supabase Configuration
   static String get supabaseUrl => dotenv.env['SUPABASE_URL'] ?? '';
 
@@ -27,6 +14,7 @@ class ApiConstants {
   static const String tableAttractions = 'attractions';
 
   // Supabase Edge Functions
+  static const String fnGenerateChecklist = 'generate-checklist';
   static const String fnVerifyAppStoreSubscription =
       'verify-app-store-subscription';
 
@@ -47,45 +35,4 @@ class ApiConstants {
   // Pagination
   static const int defaultPageSize = 20;
   static const int maxPageSize = 100;
-}
-
-/// AI Prompt Templates
-class PromptTemplates {
-  static String generateChecklist(
-      String city, String country, String language) {
-    final lang = language == 'zh' ? 'Chinese' : 'English';
-
-    return '''
-You are a local travel expert. Generate a list of must-do things in $city, $country.
-
-Include following categories:
-- Famous landmarks/attractions
-- Local food/dishes to try
-- Cultural experiences
-- Hidden gems/secret spots (lesser-known, authentic local places)
-
-Requirements:
-- Generate as many items as appropriate for the city (not all cities have the same number of attractions)
-- Each title: maximum 8 words
-- Each location: specific name of the place
-- Make it exciting and actionable
-- Avoid overly touristy traps when possible
-- Mix of free and paid activities
-- Only include REAL attractions that actually exist in this city
-
-Language: $lang
-
-Output ONLY valid JSON in this exact format:
-{
-  "items": [
-    {"title": "Visit the Eiffel Tower", "location": "Eiffel Tower", "category": "landmark"},
-    {"title": "Try authentic croissants", "location": "Du Pain et des Idées", "category": "food"},
-    {"title": "Take a Seine river cruise", "location": "Seine River", "category": "experience"},
-    {"title": "Explore covered passages", "location": "Passages couverts", "category": "hidden"}
-  ]
-}
-
-Return as many items as are genuinely relevant for this city.
-''';
-  }
 }

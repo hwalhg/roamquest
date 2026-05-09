@@ -1,4 +1,5 @@
 import 'dart:developer' as developer;
+import 'package:flutter/foundation.dart';
 
 /// Simple logger for the application
 class AppLogger {
@@ -21,7 +22,7 @@ class AppLogger {
   static void error(String message, {Object? error, StackTrace? stackTrace}) {
     final errorSuffix = error != null ? ' | Error: $error' : '';
     _log('ERROR', '$message$errorSuffix', null);
-    if (error != null) {
+    if (!kReleaseMode && error != null) {
       developer.log(
         'Error: $error',
         name: 'RoamQuest',
@@ -34,6 +35,8 @@ class AppLogger {
   }
 
   static void _log(String level, String message, String? tag) {
+    if (kReleaseMode) return;
+
     final timestamp = DateTime.now().toIso8601String();
     final tagStr = tag != null ? '[$tag] ' : '';
     // ignore: avoid_print

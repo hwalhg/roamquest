@@ -17,14 +17,6 @@ import UIKit
     open url: URL,
     options: [UIApplication.OpenURLOptionsKey : Any] = [:]
   ) -> Bool {
-    // Log the incoming URL for debugging
-    print("🔗 Deep link received: \(url.absoluteString)")
-
-    // Check if this is a Supabase auth callback
-    if url.absoluteString.contains("auth/callback") {
-      print("✅ Detected Supabase auth callback")
-    }
-
     // Always call super to ensure proper handling
     return super.application(app, open: url, options: options)
   }

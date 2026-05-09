@@ -1,13 +1,15 @@
 -- ========================================
 -- 修复 profiles 表 RLS 策略 - 版本 2
--- 问题：auth.uid() 可能在某些情况下评估为 null
--- 解决：允许 user_id 匹配的插入（认证用户的 own profile）
+-- 旧版本曾使用 `user_id = user_id`，该条件恒为 true，不安全。
+-- 请优先使用 database/migrations/20260509_harden_profiles_rls.sql。
 -- ========================================
+
+ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 
 -- 删除旧的 INSERT 策略
 DROP POLICY IF EXISTS "Users can insert own profile" ON profiles;
 
--- 重新创建 INSERT 策略：只要 user_id 匹配就允许
+-- 重新创建 INSERT 策略：只能创建自己的 profile
 CREATE POLICY "Users can insert own profile" ON profiles
 FOR INSERT
-WITH CHECK (user_id = user_id);
+WITH CHECK (auth.uid() = user_id);

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:uuid/uuid.dart';
 import '../../core/utils/app_logger.dart';
 import '../../data/models/checklist.dart';
@@ -67,7 +66,8 @@ class _HomePageState extends State<HomePage> {
       // Load spot counts for all checklists
       final spotCounts = <String, int>{};
       for (final checklist in allChecklists) {
-        AppLogger.info('Checklist: ${checklist.id}, 标题: ${checklist.displayTitle}');
+        AppLogger.info(
+            'Checklist: ${checklist.id}, 标题: ${checklist.displayTitle}');
         final items = await _checklistRepo.loadChecklistItems(checklist.id);
         spotCounts[checklist.id] = items.length;
       }
@@ -412,8 +412,7 @@ class _HomePageState extends State<HomePage> {
                               shape: BoxShape.circle,
                               boxShadow: [
                                 BoxShadow(
-                                  color:
-                                      Colors.black.withValues(alpha: 0.2),
+                                  color: Colors.black.withValues(alpha: 0.2),
                                   blurRadius: 20,
                                   offset: const Offset(0, 10),
                                 ),
@@ -874,13 +873,6 @@ class _HomePageState extends State<HomePage> {
         language,
       );
       items = result.items;
-
-      // Save as template for future use
-      await _checklistRepo.saveChecklistTemplate(
-        cityId: city.id,
-        items: items,
-        language: language,
-      );
     }
 
     // Save checklist items

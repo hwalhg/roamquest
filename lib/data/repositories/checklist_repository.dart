@@ -111,7 +111,8 @@ class ChecklistRepository {
 
       if (userId != null) {
         // Try to get from database first (only current user's data)
-        remoteChecklists = await _remoteStorage.getRecentChecklists(userId: userId, limit: 100);
+        remoteChecklists = await _remoteStorage.getRecentChecklists(
+            userId: userId, limit: 100);
       }
 
       if (remoteChecklists.isNotEmpty) {
@@ -137,7 +138,8 @@ class ChecklistRepository {
       // Fallback to local storage
       return localChecklists;
     } catch (e) {
-      AppLogger.error('Failed to get all checklists from remote, trying local', error: e);
+      AppLogger.error('Failed to get all checklists from remote, trying local',
+          error: e);
       try {
         return await _localStorage.getAllChecklists();
       } catch (e2) {
@@ -186,7 +188,8 @@ class ChecklistRepository {
       // Return most recent checklist if exists
       if (cityChecklists.isNotEmpty) {
         cityChecklists.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-        AppLogger.info('Found existing checklist for city: ${city.name} (${cityChecklists.first.id})');
+        AppLogger.info(
+            'Found existing checklist for city: ${city.name} (${cityChecklists.first.id})');
         return cityChecklists.first;
       }
 
@@ -236,7 +239,8 @@ class ChecklistRepository {
   }
 
   /// Save checklist items (local + remote)
-  Future<void> saveChecklistItems(String checklistId, List<ChecklistItem> items) async {
+  Future<void> saveChecklistItems(
+      String checklistId, List<ChecklistItem> items) async {
     try {
       await _ensureLocalUserContext();
 
@@ -251,10 +255,12 @@ class ChecklistRepository {
           // 重要：在保存前设置正确的 checklistId，防止 RLS 策略检查失败
           for (final item in items) {
             final itemWithChecklistId = item.copyWith(checklistId: checklistId);
-            await _remoteStorage.saveChecklistItems(checklistId, [itemWithChecklistId]);
+            await _remoteStorage
+                .saveChecklistItems(checklistId, [itemWithChecklistId]);
           }
 
-          AppLogger.info('Checklist items saved to remote: $checklistId (${items.length} items)');
+          AppLogger.info(
+              'Checklist items saved to remote: $checklistId (${items.length} items)');
         } catch (e) {
           AppLogger.warning(
             'Failed to save checklist items to remote, keeping local copy only: $checklistId',
@@ -272,12 +278,14 @@ class ChecklistRepository {
   }
 
   /// Update checklist item (mark as completed)
-  Future<void> updateItem(Checklist checklist, ChecklistItem updatedItem) async {
+  Future<void> updateItem(
+      Checklist checklist, ChecklistItem updatedItem) async {
     try {
       // Load current items
       final currentItems = await loadChecklistItems(checklist.id);
       // Update item in list
-      final updatedItems = Checklist.updateItemInList(currentItems, updatedItem);
+      final updatedItems =
+          Checklist.updateItemInList(currentItems, updatedItem);
       // Save updated items
       await saveChecklistItems(checklist.id, updatedItems);
     } catch (e) {
@@ -305,7 +313,8 @@ class ChecklistRepository {
           try {
             // Ensure checklist is saved to remote database before uploading photo.
             await _remoteStorage.saveChecklist(checklist, userId: userId);
-            AppLogger.info('Checklist ensured to be saved to remote: $checklistId');
+            AppLogger.info(
+                'Checklist ensured to be saved to remote: $checklistId');
           } catch (e) {
             AppLogger.warning(
               'Failed to ensure checklist remote state before photo upload: $checklistId',
@@ -487,24 +496,6 @@ class ChecklistRepository {
     } catch (e) {
       AppLogger.error('Failed to get checklist template', error: e);
       return null;
-    }
-  }
-
-  /// Save checklist template (after AI generation)
-  Future<void> saveChecklistTemplate({
-    required int cityId,
-    required List<ChecklistItem> items,
-    required String language,
-  }) async {
-    try {
-      await _remoteStorage.saveAttractions(
-        cityId: cityId,
-        items: items,
-        language: language,
-      );
-    } catch (e) {
-      AppLogger.error('Failed to save checklist template', error: e);
-      rethrow;
     }
   }
 }
