@@ -69,7 +69,8 @@ class _CheckinPageState extends State<CheckinPage> {
                 _buildItemInfo(),
                 const SizedBox(height: AppSpacing.md),
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
                   child: Text(
                     l10n.captureMoment,
                     style: AppTextStyles.bodyMedium.copyWith(
@@ -79,7 +80,8 @@ class _CheckinPageState extends State<CheckinPage> {
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
                   child: Text(
                     l10n.captureMomentDesc,
                     style: AppTextStyles.bodySmall,
@@ -92,7 +94,8 @@ class _CheckinPageState extends State<CheckinPage> {
                     child: AspectRatio(
                       aspectRatio: 1,
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.lg),
                         child: _buildPhotoPreview(),
                       ),
                     ),
@@ -109,7 +112,7 @@ class _CheckinPageState extends State<CheckinPage> {
               color: AppColors.surface,
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.shadow.withValues(alpha:0.1),
+                  color: AppColors.shadow.withValues(alpha: 0.1),
                   blurRadius: 4,
                   offset: const Offset(0, -2),
                 ),
@@ -219,8 +222,11 @@ class _CheckinPageState extends State<CheckinPage> {
         mainAxisSize: MainAxisSize.min,
         children: List.generate(10, (index) {
           final starValue = (index + 1).toDouble();
-          final isHalfSelected = _displayRating != null && _displayRating! >= starValue - 0.5 && _displayRating! < starValue;
-          final isFullSelected = _displayRating != null && _displayRating! >= starValue;
+          final isHalfSelected = _displayRating != null &&
+              _displayRating! >= starValue - 0.5 &&
+              _displayRating! < starValue;
+          final isFullSelected =
+              _displayRating != null && _displayRating! >= starValue;
 
           return Icon(
             isFullSelected
@@ -238,7 +244,8 @@ class _CheckinPageState extends State<CheckinPage> {
 
   void _updateRatingFromPosition(Offset globalPosition) {
     // Get the render box of the stars row
-    final RenderBox? renderBox = _starsKey.currentContext?.findRenderObject() as RenderBox?;
+    final RenderBox? renderBox =
+        _starsKey.currentContext?.findRenderObject() as RenderBox?;
     if (renderBox == null) return;
 
     // Get the position of the stars row in global coordinates
@@ -269,125 +276,130 @@ class _CheckinPageState extends State<CheckinPage> {
   }
 
   Widget _buildPhotoPreview() {
-    final hasExistingPhoto = _isEditMode && widget.item.photoUrl != null && widget.item.photoUrl!.isNotEmpty;
+    final hasExistingPhoto = _isEditMode &&
+        widget.item.photoUrl != null &&
+        widget.item.photoUrl!.isNotEmpty;
     final isValidNetworkUrl = hasExistingPhoto &&
         (widget.item.photoUrl!.startsWith('http://') ||
-         widget.item.photoUrl!.startsWith('https://'));
-    final displayImage = _imageFile != null ? _imageFile!.path : (isValidNetworkUrl ? widget.item.photoUrl : null);
+            widget.item.photoUrl!.startsWith('https://'));
+    final displayImage = _imageFile != null
+        ? _imageFile!.path
+        : (isValidNetworkUrl ? widget.item.photoUrl : null);
     final isNetworkImage = _imageFile == null && isValidNetworkUrl;
 
     return Container(
-        decoration: BoxDecoration(
-          color: AppColors.surfaceVariant,
-          borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-          border: Border.all(
-            color: AppColors.border,
-            width: 2,
-          ),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceVariant,
+        borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+        border: Border.all(
+          color: AppColors.border,
+          width: 2,
         ),
-        child: displayImage != null
-            ? Stack(
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(AppBorderRadius.md),
-                    child: isNetworkImage
-                        ? Image.network(
-                            displayImage,
-                            width: double.infinity,
-                            height: double.infinity,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) {
-                              return Container(
-                                width: double.infinity,
-                                height: double.infinity,
-                                decoration: BoxDecoration(
-                                  color: AppColors.primary.withValues(alpha:0.2),
-                                ),
-                                child: const Center(
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(
-                                        Icons.broken_image,
-                                        size: 48,
-                                        color: AppColors.primary,
-                                      ),
-                                      SizedBox(height: 8),
-                                      Text(
-                                        'Failed to load image',
-                                        style: TextStyle(
-                                          color: AppColors.primary,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              );
-                            },
-                            loadingBuilder: (context, child, loadingProgress) {
-                              if (loadingProgress == null) return child;
-                              return Center(
-                                child: CircularProgressIndicator(
-                                  value: loadingProgress.expectedTotalBytes != null
-                                      ? loadingProgress.cumulativeBytesLoaded /
-                                          loadingProgress.expectedTotalBytes!
-                                      : null,
-                                  color: AppColors.primary,
-                                ),
-                              );
-                            },
-                          )
-                        : kIsWeb
-                            ? Image.memory(
-                                _imageBytes!,
-                                width: double.infinity,
-                                height: double.infinity,
-                                fit: BoxFit.cover,
-                              )
-                            : Image.file(
-                                File(_imageFile!.path),
-                                width: double.infinity,
-                                height: double.infinity,
-                                fit: BoxFit.cover,
+      ),
+      child: displayImage != null
+          ? Stack(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(AppBorderRadius.md),
+                  child: isNetworkImage
+                      ? Image.network(
+                          displayImage,
+                          width: double.infinity,
+                          height: double.infinity,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              width: double.infinity,
+                              height: double.infinity,
+                              decoration: BoxDecoration(
+                                color: AppColors.primary.withValues(alpha: 0.2),
                               ),
-                  ),
-                  Positioned(
-                    top: AppSpacing.sm,
-                    right: AppSpacing.sm,
-                    child: IconButton(
-                      onPressed: () {
-                        setState(() {
-                          _imageFile = null;
-                          _imageBytes = null;
-                        });
-                      },
-                      icon: const Icon(Icons.close),
-                      style: IconButton.styleFrom(
-                        backgroundColor: AppColors.overlay,
-                        foregroundColor: AppColors.textOnDark,
-                      ),
+                              child: const Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.broken_image,
+                                      size: 48,
+                                      color: AppColors.primary,
+                                    ),
+                                    SizedBox(height: 8),
+                                    Text(
+                                      'Failed to load image',
+                                      style: TextStyle(
+                                        color: AppColors.primary,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                          loadingBuilder: (context, child, loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return Center(
+                              child: CircularProgressIndicator(
+                                value: loadingProgress.expectedTotalBytes !=
+                                        null
+                                    ? loadingProgress.cumulativeBytesLoaded /
+                                        loadingProgress.expectedTotalBytes!
+                                    : null,
+                                color: AppColors.primary,
+                              ),
+                            );
+                          },
+                        )
+                      : kIsWeb
+                          ? Image.memory(
+                              _imageBytes!,
+                              width: double.infinity,
+                              height: double.infinity,
+                              fit: BoxFit.cover,
+                            )
+                          : Image.file(
+                              File(_imageFile!.path),
+                              width: double.infinity,
+                              height: double.infinity,
+                              fit: BoxFit.cover,
+                            ),
+                ),
+                Positioned(
+                  top: AppSpacing.sm,
+                  right: AppSpacing.sm,
+                  child: IconButton(
+                    onPressed: () {
+                      setState(() {
+                        _imageFile = null;
+                        _imageBytes = null;
+                      });
+                    },
+                    icon: const Icon(Icons.close),
+                    style: IconButton.styleFrom(
+                      backgroundColor: AppColors.overlay,
+                      foregroundColor: AppColors.textOnDark,
                     ),
                   ),
-                ],
-              )
-            : Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.camera_alt_outlined,
-                    size: 64,
+                ),
+              ],
+            )
+          : Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.camera_alt_outlined,
+                  size: 64,
+                  color: AppColors.textTertiary,
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                Text(
+                  'No photo selected',
+                  style: AppTextStyles.bodyMedium.copyWith(
                     color: AppColors.textTertiary,
                   ),
-                  const SizedBox(height: AppSpacing.sm),
-                  Text(
-                    'No photo selected',
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      color: AppColors.textTertiary,
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
+            ),
     );
   }
 
@@ -416,10 +428,14 @@ class _CheckinPageState extends State<CheckinPage> {
             child: OutlinedButton.icon(
               onPressed: () => _pickImage(ImageSource.gallery),
               icon: const Icon(Icons.photo_library, size: 20),
-              label: Text(l10n.selectFromGallery, style: const TextStyle(fontSize: 15)),
+              label: Text(l10n.selectFromGallery,
+                  style: const TextStyle(fontSize: 15)),
             ),
           ),
-          if (_imageFile != null || (_isEditMode && widget.item.photoUrl != null && widget.item.photoUrl!.isNotEmpty)) ...[
+          if (_imageFile != null ||
+              (_isEditMode &&
+                  widget.item.photoUrl != null &&
+                  widget.item.photoUrl!.isNotEmpty)) ...[
             const SizedBox(height: AppSpacing.md),
             SizedBox(
               width: double.infinity,
@@ -439,7 +455,8 @@ class _CheckinPageState extends State<CheckinPage> {
                           color: AppColors.textOnDark,
                         ),
                       )
-                    : Text(_isEditMode ? 'Save Changes' : l10n.completeCheckin, style: const TextStyle(fontSize: 15)),
+                    : Text(_isEditMode ? 'Save Changes' : l10n.completeCheckin,
+                        style: const TextStyle(fontSize: 15)),
               ),
             ),
           ],
@@ -530,7 +547,8 @@ class _CheckinPageState extends State<CheckinPage> {
       }
 
       // Convert display rating to stored rating (multiply by 2)
-      final int? storedRating = _displayRating != null ? (_displayRating! * 2).toInt() : null;
+      final int? storedRating =
+          _displayRating != null ? (_displayRating! * 2).toInt() : null;
 
       // Update checklist item
       final updatedItem = widget.item.copyWith(
@@ -619,12 +637,12 @@ class _CheckinPageState extends State<CheckinPage> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('错误'),
+        title: const Text('Error'),
         content: Text(message),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('确定'),
+            child: const Text('OK'),
           ),
         ],
       ),

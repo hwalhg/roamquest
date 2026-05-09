@@ -48,7 +48,7 @@ class _ReportPageState extends State<ReportPage> {
       Checklist.getCompletedItems(_items);
   String get _reportTitle => checklist.displayTitle;
   String get _reportRegion =>
-      checklist.displayCountry.isEmpty ? checklist.displaySubtitle : checklist.displayCountry;
+      checklist.isCustom ? checklist.displaySubtitle : checklist.displayTitle;
 
   @override
   void initState() {
@@ -836,7 +836,7 @@ class _ShareCardPreviewPageState extends State<ShareCardPreviewPage> {
       Checklist.getCompletedItems(_items);
   String get _reportTitle => checklist.displayTitle;
   String get _reportRegion =>
-      checklist.displayCountry.isEmpty ? checklist.displaySubtitle : checklist.displayCountry;
+      checklist.isCustom ? checklist.displaySubtitle : checklist.displayTitle;
   String get _shareSlug =>
       _reportTitle.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]+'), '_');
   String get _userNickname => widget.userNickname;
@@ -1322,10 +1322,9 @@ class _ShareCardPreviewPageState extends State<ShareCardPreviewPage> {
           subject: checklist.isCustom
               ? 'My Custom Checklist Journey'
               : 'My Journey in $_reportTitle',
-          text:
-              checklist.isCustom
-                  ? '$_userNickname explored ${Checklist.getCompletedCount(_items)} amazing places in $_reportTitle.'
-                  : '$_userNickname explored ${Checklist.getCompletedCount(_items)} amazing places in $_reportTitle.',
+          text: checklist.isCustom
+              ? '$_userNickname explored ${Checklist.getCompletedCount(_items)} amazing places in $_reportTitle.'
+              : '$_userNickname explored ${Checklist.getCompletedCount(_items)} amazing places in $_reportTitle.',
         );
       }
     } catch (e) {

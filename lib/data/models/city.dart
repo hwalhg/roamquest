@@ -34,7 +34,8 @@ class City {
       latitude: (json['latitude'] as num?)?.toDouble() ?? 0.0,
       longitude: (json['longitude'] as num?)?.toDouble() ?? 0.0,
       isFree: json['is_free'] as bool? ?? false,
-      subscriptionPrice: (json['subscription_price'] as num?)?.toDouble() ?? 2.99,
+      subscriptionPrice:
+          (json['subscription_price'] as num?)?.toDouble() ?? 2.99,
       isActive: json['is_active'] as bool? ?? false,
       sortOrder: json['sort_order'] as int? ?? 0,
     );
@@ -54,7 +55,7 @@ class City {
   }
 
   /// Get display name
-  String get displayName => '$name, $country';
+  String get displayName => name;
 
   /// Create copy with modified fields
   City copyWith({
@@ -95,7 +96,8 @@ class City {
   }
 
   @override
-  int get hashCode => id.hashCode ^ name.hashCode ^ country.hashCode ^ countryCode.hashCode;
+  int get hashCode =>
+      id.hashCode ^ name.hashCode ^ country.hashCode ^ countryCode.hashCode;
 
   @override
   String toString() => displayName;

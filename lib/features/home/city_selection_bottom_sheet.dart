@@ -143,7 +143,8 @@ class _CitySelectionPageState extends State<CitySelectionPage> {
     try {
       final results = await _locationService.searchCity(query);
       final existingKeys = _allCities
-          .map((city) => '${city.name.toLowerCase()}_${city.country.toLowerCase()}')
+          .map((city) =>
+              '${city.name.toLowerCase()}_${city.country.toLowerCase()}')
           .toSet();
       final dedupedResults = results.where((city) {
         final key = '${city.name.toLowerCase()}_${city.country.toLowerCase()}';
@@ -164,7 +165,7 @@ class _CitySelectionPageState extends State<CitySelectionPage> {
       }
 
       setState(() {
-        _remoteError = '搜索在线城市失败';
+        _remoteError = 'Failed to search online cities';
       });
     } finally {
       if (mounted && _searchController.text.trim().toLowerCase() == query) {
@@ -199,7 +200,8 @@ class _CitySelectionPageState extends State<CitySelectionPage> {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('无法添加该城市，请稍后重试')),
+        const SnackBar(
+            content: Text('Unable to add this city. Please try again later.')),
       );
     } finally {
       if (mounted) {
@@ -222,7 +224,7 @@ class _CitySelectionPageState extends State<CitySelectionPage> {
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
-          '选择城市',
+          'Select City',
           style: TextStyle(
             color: Colors.black,
             fontSize: 18,
@@ -243,7 +245,7 @@ class _CitySelectionPageState extends State<CitySelectionPage> {
               child: TextField(
                 controller: _searchController,
                 decoration: const InputDecoration(
-                  hintText: '搜索城市...',
+                  hintText: 'Search cities...',
                   hintStyle: TextStyle(color: Color(0xFF999999)),
                   border: InputBorder.none,
                   contentPadding:
@@ -292,7 +294,7 @@ class _CitySelectionPageState extends State<CitySelectionPage> {
                 backgroundColor: const Color(0xFF6A11CB),
                 foregroundColor: Colors.white,
               ),
-              child: const Text('重试'),
+              child: const Text('Retry'),
             ),
           ],
         ),
@@ -318,7 +320,7 @@ class _CitySelectionPageState extends State<CitySelectionPage> {
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 8),
             child: Text(
-              '在线搜索结果',
+              'Online Search Results',
               style: TextStyle(
                 color: Color(0xFF666666),
                 fontSize: 13,
@@ -349,7 +351,7 @@ class _CitySelectionPageState extends State<CitySelectionPage> {
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 8, vertical: 12),
               child: Text(
-                '没有更多匹配城市',
+                'No more matching cities',
                 style: TextStyle(
                   color: Color(0xFF999999),
                   fontSize: 14,
@@ -371,13 +373,13 @@ class _CitySelectionPageState extends State<CitySelectionPage> {
           const Icon(Icons.search_off, size: 48, color: Color(0xFFCCCCCC)),
           const SizedBox(height: 16),
           const Text(
-            '未找到城市',
+            'No cities found',
             style: TextStyle(color: Color(0xFF666666), fontSize: 16),
           ),
           if (_searchController.text.trim().isNotEmpty) ...[
             const SizedBox(height: 8),
             const Text(
-              '继续输入可以尝试在线搜索并添加城市',
+              'Keep typing to search online and add a city',
               style: TextStyle(color: Color(0xFF999999), fontSize: 13),
             ),
           ],
@@ -399,7 +401,7 @@ class _CitySelectionPageState extends State<CitySelectionPage> {
           padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
           child: Row(
             children: [
-              // Country flag
+              // City icon
               Container(
                 width: 32,
                 height: 32,
@@ -407,36 +409,24 @@ class _CitySelectionPageState extends State<CitySelectionPage> {
                   color: const Color(0xFFF5F5F5),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Center(
-                  child: Text(
-                    _getCityFlag(city.countryCode),
-                    style: const TextStyle(fontSize: 18),
+                child: const Center(
+                  child: Icon(
+                    Icons.location_city_rounded,
+                    color: Color(0xFF6A11CB),
+                    size: 18,
                   ),
                 ),
               ),
               const SizedBox(width: 12),
-              // City name and country
+              // City name
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      city.name,
-                      style: const TextStyle(
-                        color: Color(0xFF333333),
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      city.country,
-                      style: const TextStyle(
-                        color: Color(0xFF999999),
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
+                child: Text(
+                  city.name,
+                  style: const TextStyle(
+                    color: Color(0xFF333333),
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
               // Right arrow
@@ -484,26 +474,13 @@ class _CitySelectionPageState extends State<CitySelectionPage> {
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        city.name,
-                        style: const TextStyle(
-                          color: Color(0xFF333333),
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        city.country,
-                        style: const TextStyle(
-                          color: Color(0xFF999999),
-                          fontSize: 14,
-                        ),
-                      ),
-                    ],
+                  child: Text(
+                    city.name,
+                    style: const TextStyle(
+                      color: Color(0xFF333333),
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ),
                 if (_isSelectingRemoteCity)
@@ -517,7 +494,7 @@ class _CitySelectionPageState extends State<CitySelectionPage> {
                   )
                 else
                   const Text(
-                    '添加',
+                    'Add',
                     style: TextStyle(
                       color: Color(0xFF6A11CB),
                       fontSize: 14,
@@ -530,58 +507,5 @@ class _CitySelectionPageState extends State<CitySelectionPage> {
         ),
       ),
     );
-  }
-
-  String _getCityFlag(String countryCode) {
-    // Simple flag emoji mapping for common countries
-    final flags = {
-      'AE': '🇦🇪',
-      'AR': '🇦🇷',
-      'AT': '🇦🇹',
-      'AU': '🇦🇺',
-      'BR': '🇧🇷',
-      'CA': '🇨🇦',
-      'CH': '🇨🇭',
-      'CL': '🇨🇱',
-      'CN': '🇨🇳',
-      'CU': '🇨🇺',
-      'CZ': '🇨🇿',
-      'DE': '🇩🇪',
-      'DK': '🇩🇰',
-      'EC': '🇪🇨',
-      'EG': '🇪🇬',
-      'ES': '🇪🇸',
-      'FI': '🇫🇮',
-      'FR': '🇫🇷',
-      'GB': '🇬🇧',
-      'GR': '🇬🇷',
-      'HK': '🇭🇰',
-      'HU': '🇭🇺',
-      'ID': '🇮🇩',
-      'IE': '🇮🇪',
-      'IS': '🇮🇸',
-      'IT': '🇮🇹',
-      'JP': '🇯🇵',
-      'KR': '🇰🇷',
-      'MA': '🇲🇦',
-      'MX': '🇲🇽',
-      'MY': '🇲🇾',
-      'NL': '🇳🇱',
-      'NO': '🇳🇴',
-      'NZ': '🇳🇿',
-      'PE': '🇵🇪',
-      'PT': '🇵🇹',
-      'RU': '🇷🇺',
-      'SE': '🇸🇪',
-      'SG': '🇸🇬',
-      'TH': '🇹🇭',
-      'TR': '🇹🇷',
-      'TW': '🇹🇼',
-      'UA': '🇺🇦',
-      'UK': '🇬🇧',
-      'US': '🇺🇸',
-      'ZA': '🇿🇦',
-    };
-    return flags[countryCode] ?? '🌍';
   }
 }

@@ -9,17 +9,25 @@ class LocationService {
   // Debug mode flag - set to true to use mock data
   // Automatically enabled on Web platform due to location API limitations
   static bool _debugMode = kIsWeb; // Enable debug mode on Web
+  static bool _englishGeocoderConfigured = false;
 
   /// Enable/disable debug mode
   /// When enabled, returns mock data instead of actual GPS
   static setDebugMode(bool enabled) {
     _debugMode = enabled;
-    AppLogger.info('LocationService debug mode: ${enabled ? "ENABLED" : "DISABLED"}');
+    AppLogger.info(
+        'LocationService debug mode: ${enabled ? "ENABLED" : "DISABLED"}');
   }
 
   /// Get debug mode status
   static bool isDebugMode() {
     return _debugMode;
+  }
+
+  Future<void> _ensureEnglishGeocoder() async {
+    if (_englishGeocoderConfigured || kIsWeb) return;
+    await setLocaleIdentifier('en_US');
+    _englishGeocoderConfigured = true;
   }
 
   /// Check location permissions
@@ -87,7 +95,8 @@ class LocationService {
       );
     }
 
-    AppLogger.info('获取GPS坐标 - 纬度: ${position.latitude}, 经度: ${position.longitude}');
+    AppLogger.info(
+        '获取GPS坐标 - 纬度: ${position.latitude}, 经度: ${position.longitude}');
 
     // 验证坐标范围
     if (position.latitude.abs() > 90) {
@@ -120,6 +129,7 @@ class LocationService {
           longitude: -122.4194,
         );
       } else {
+        await _ensureEnglishGeocoder();
         placemarks = await placemarkFromCoordinates(
           position.latitude,
           position.longitude,
@@ -169,9 +179,11 @@ class LocationService {
       if (e.toString().contains('NOT_FOUND')) {
         errorMessage += ': GPS location unavailable. Please check:';
         errorMessage += '\n1. Ensure Location Services are enabled';
-        errorMessage += '\n2. Set a custom location in the simulator (Features → Location → Custom Location)';
+        errorMessage +=
+            '\n2. Set a custom location in the simulator (Features → Location → Custom Location)';
       } else if (e.toString().contains('timed out')) {
-        errorMessage += ': Request timed out. Please check your internet connection.';
+        errorMessage +=
+            ': Request timed out. Please check your internet connection.';
       }
 
       throw LocationException(errorMessage);
@@ -181,6 +193,7 @@ class LocationService {
   /// Search for a city by name
   Future<List<City>> searchCity(String query) async {
     try {
+      await _ensureEnglishGeocoder();
       // Get coordinates from address
       final locations = await locationFromAddress(query);
 
@@ -188,6 +201,7 @@ class LocationService {
 
       for (final loc in locations) {
         // Use reverse geocoding to get placemark details
+        await _ensureEnglishGeocoder();
         final placemarks = await placemarkFromCoordinates(
           loc.latitude,
           loc.longitude,
@@ -239,14 +253,13 @@ class LocationService {
       double latitude, double longitude) async {
     try {
       if (_debugMode) return null;
-      final placemarks =
-          await placemarkFromCoordinates(latitude, longitude);
+      await _ensureEnglishGeocoder();
+      final placemarks = await placemarkFromCoordinates(latitude, longitude);
       if (placemarks.isEmpty) return null;
       final p = placemarks.first;
       final parts = <String>[
         if (p.name != null && p.name!.isNotEmpty) p.name!,
-        if (p.subLocality != null && p.subLocality!.isNotEmpty)
-          p.subLocality!,
+        if (p.subLocality != null && p.subLocality!.isNotEmpty) p.subLocality!,
         if (p.locality != null && p.locality!.isNotEmpty) p.locality!,
       ];
       return parts.where((s) => s.isNotEmpty).join(', ');

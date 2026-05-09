@@ -77,7 +77,6 @@ class _RoamQuestAppState extends State<RoamQuestApp> {
       ],
       supportedLocales: const [
         Locale('en'), // English
-        Locale('zh'), // Chinese
       ],
       locale: const Locale('en'), // Default to English
       localeResolutionCallback: (locale, supportedLocales) {

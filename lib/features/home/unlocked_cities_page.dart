@@ -205,29 +205,17 @@ class _UnlockedCitiesPageState extends State<UnlockedCitiesPage> {
             ),
             child: Row(
               children: [
-                // Flag
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: Image.network(
-                    'https://flagcdn.com/w40/${city.countryCode.toLowerCase()}.png',
-                    width: 40,
-                    height: 26,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        width: 40,
-                        height: 26,
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Icon(
-                          Icons.location_city,
-                          size: 18,
-                          color: Colors.white,
-                        ),
-                      );
-                    },
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.location_city_rounded,
+                    size: 20,
+                    color: Colors.white,
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -242,15 +230,6 @@ class _UnlockedCitiesPageState extends State<UnlockedCitiesPage> {
                           color: Colors.white,
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        city.country,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w400,
                         ),
                       ),
                     ],

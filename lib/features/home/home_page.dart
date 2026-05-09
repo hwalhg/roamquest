@@ -630,7 +630,7 @@ class _HomePageState extends State<HomePage> {
         ? (checklist.description?.trim().isNotEmpty == true
             ? checklist.description!.trim()
             : l10n.get('customListsHint'))
-        : (checklist.city?.country ?? '');
+        : '';
     final accentColor =
         checklist.isCustom ? const Color(0xFFFFD166) : const Color(0xFF7FDBFF);
     final icon = Icons.public_rounded;
@@ -675,20 +675,6 @@ class _HomePageState extends State<HomePage> {
                   children: [
                     Row(
                       children: [
-                        if (!checklist.isCustom && checklist.city != null) ...[
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(3),
-                            child: Image.network(
-                              'https://flagcdn.com/w20/${checklist.city!.countryCode.toLowerCase()}.png',
-                              width: 18,
-                              height: 13,
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) =>
-                                  const SizedBox.shrink(),
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                        ],
                         Expanded(
                           child: Text(
                             checklist.displayTitle.isEmpty
@@ -706,16 +692,17 @@ class _HomePageState extends State<HomePage> {
                       ],
                     ),
                     const SizedBox(height: 4),
-                    Text(
-                      subtitle,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.74),
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
+                    if (subtitle.trim().isNotEmpty)
+                      Text(
+                        subtitle,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.74),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
-                    ),
                   ],
                 ),
               ),

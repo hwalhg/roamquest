@@ -140,7 +140,6 @@ class Checklist {
   bool get isCustom => source == AppConstants.checklistSourceCustom;
   bool get hasCity => cityId != null && city != null;
   String get displayTitle => title;
-  String get displayCountry => city?.country ?? '';
   String get displaySubtitle {
     if (description != null && description!.trim().isNotEmpty) {
       return description!.trim();
@@ -148,7 +147,7 @@ class Checklist {
     if (isCustom) {
       return 'Custom Checklist';
     }
-    return city?.country ?? '';
+    return '';
   }
 
   static List<ChecklistItem> getItemsByCategory(
