@@ -595,16 +595,41 @@ class _LoginPageState extends State<LoginPage> {
     return Container(
       height: 56,
       constraints: const BoxConstraints(minWidth: 250),
-      child: SignInWithAppleButton(
-        onPressed: () {
-          if (!_isLoading) {
-            _handleAppleSignIn();
-          }
-        },
-        text: AppLocalizations.of(context).continueWithApple,
-        height: 56,
-        style: SignInWithAppleButtonStyle.black,
-      ),
+      child: _isLoading
+          ? Container(
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.72),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.2,
+                      color: Colors.white,
+                    ),
+                  ),
+                  SizedBox(width: 12),
+                  Text(
+                    'Signing in...',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            )
+          : SignInWithAppleButton(
+              onPressed: _handleAppleSignIn,
+              text: AppLocalizations.of(context).continueWithApple,
+              height: 56,
+              style: SignInWithAppleButtonStyle.black,
+            ),
     );
   }
 
@@ -662,10 +687,6 @@ class _LoginPageState extends State<LoginPage> {
     if (!mounted) {
       return;
     }
-
-    setState(() {
-      _isLoading = false;
-    });
 
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(
