@@ -103,40 +103,29 @@ class ChecklistRepository {
     try {
       await _ensureLocalUserContext();
 
-      final localChecklists = await _localStorage.getAllChecklists();
-
       // Get current user ID
       final userId = _authService.currentUserId;
-      List<Checklist> remoteChecklists = [];
 
       if (userId != null) {
-        // Try to get from database first (only current user's data)
-        remoteChecklists = await _remoteStorage.getRecentChecklists(
-            userId: userId, limit: 100);
+        try {
+          // Logged-in users should see the latest database state. If the
+          // server returns an empty list, clear stale local checklist cache too.
+          final remoteChecklists = await _remoteStorage.getRecentChecklists(
+              userId: userId, limit: 100);
+          await _localStorage.replaceChecklists(remoteChecklists);
+
+          return remoteChecklists
+            ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+        } catch (e) {
+          AppLogger.warning(
+            'Failed to get checklists from remote, falling back to local cache',
+          );
+          AppLogger.error('Checklist remote load error', error: e);
+        }
       }
 
-      if (remoteChecklists.isNotEmpty) {
-        // Cache remote copies locally and merge with local-only checklists.
-        for (final checklist in remoteChecklists) {
-          await _localStorage.saveChecklist(checklist);
-        }
-
-        final mergedById = <String, Checklist>{
-          for (final checklist in localChecklists) checklist.id: checklist,
-        };
-
-        for (final checklist in remoteChecklists) {
-          mergedById.putIfAbsent(checklist.id, () => checklist);
-        }
-
-        final merged = mergedById.values.toList()
-          ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
-
-        return merged;
-      }
-
-      // Fallback to local storage
-      return localChecklists;
+      // Anonymous users, or temporary remote failures, use local storage.
+      return await _localStorage.getAllChecklists();
     } catch (e) {
       AppLogger.error('Failed to get all checklists from remote, trying local',
           error: e);

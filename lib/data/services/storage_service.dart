@@ -77,7 +77,7 @@ class StorageService {
       return response.map<Checklist>((data) => _parseChecklist(data)).toList();
     } catch (e) {
       AppLogger.error('Failed to load recent checklists', error: e);
-      return [];
+      throw StorageException('Failed to load recent checklists: $e');
     }
   }
 

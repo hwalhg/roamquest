@@ -102,6 +102,35 @@ class LocalStorageService {
     }
   }
 
+  /// Replace local checklist cache with the latest remote state.
+  Future<void> replaceChecklists(List<Checklist> checklists) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final checklistsKey = await _getUserKey(_keyChecklists);
+      final checklistItemsKey = await _getUserKey(_keyChecklistItems);
+      final currentChecklistKey = await _getUserKey(_keyCurrentChecklistId);
+
+      final checklistsById = <String, dynamic>{
+        for (final checklist in checklists) checklist.id: checklist.toJson(),
+      };
+
+      await prefs.setString(checklistsKey, json.encode(checklistsById));
+      await prefs.remove(checklistItemsKey);
+
+      final currentChecklistId = prefs.getString(currentChecklistKey);
+      if (currentChecklistId != null &&
+          !checklistsById.containsKey(currentChecklistId)) {
+        await prefs.remove(currentChecklistKey);
+      }
+
+      AppLogger.info(
+        'Replaced local checklist cache with ${checklists.length} remote checklists',
+      );
+    } catch (e) {
+      AppLogger.error('Failed to replace checklist cache', error: e);
+    }
+  }
+
   /// Delete checklist from local storage
   Future<void> deleteChecklist(String id) async {
     try {
@@ -196,9 +225,11 @@ class LocalStorageService {
     try {
       final prefs = await SharedPreferences.getInstance();
       final checklistsKey = await _getUserKey(_keyChecklists);
+      final checklistItemsKey = await _getUserKey(_keyChecklistItems);
       final currentChecklistKey = await _getUserKey(_keyCurrentChecklistId);
       final photosKey = await _getUserKey(_keyCheckinPhotos);
       await prefs.remove(checklistsKey);
+      await prefs.remove(checklistItemsKey);
       await prefs.remove(currentChecklistKey);
       await prefs.remove(photosKey);
       AppLogger.info('Cleared all local storage');
@@ -244,7 +275,8 @@ class LocalStorageService {
   }
 
   /// Save checklist items to local storage
-  Future<void> saveChecklistItems(String checklistId, List<ChecklistItem> items) async {
+  Future<void> saveChecklistItems(
+      String checklistId, List<ChecklistItem> items) async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final key = await _getUserKey(_keyChecklistItems);
