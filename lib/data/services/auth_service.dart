@@ -7,6 +7,7 @@ import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/profile.dart';
 import '../../core/config/supabase_config.dart';
+import '../../core/constants/api_constants.dart';
 import '../../core/utils/app_logger.dart';
 import 'local_storage_service.dart';
 
@@ -207,7 +208,8 @@ class AuthService {
         return null;
       }
 
-      AppLogger.info('getCurrentProfile: 查询 profile, userId: ${currentUserId!}');
+      AppLogger.info(
+          'getCurrentProfile: 查询 profile, userId: ${currentUserId!}');
 
       final response = await _client
           .from('profiles')
@@ -231,11 +233,8 @@ class AuthService {
   /// Get profile by user ID
   Future<Profile?> getProfile(String userId) async {
     try {
-      final response = await _client
-          .from('profiles')
-          .select()
-          .eq('id', userId)
-          .single();
+      final response =
+          await _client.from('profiles').select().eq('id', userId).single();
 
       if (response.isEmpty) return null;
 
@@ -254,7 +253,8 @@ class AuthService {
         throw Exception('No user logged in');
       }
 
-      AppLogger.info('updateProfile: 开始更新 profile, userId: ${currentUserId!}, data: $data');
+      AppLogger.info(
+          'updateProfile: 开始更新 profile, userId: ${currentUserId!}, data: $data');
 
       // 先检查 profile 是否存在
       final existingProfile = await getCurrentProfile();
@@ -271,10 +271,7 @@ class AuthService {
       } else {
         // Profile 存在，更新记录
         AppLogger.info('updateProfile: Profile 已存在，更新记录');
-        await _client
-            .from('profiles')
-            .update(data)
-            .eq('id', currentUserId!);
+        await _client.from('profiles').update(data).eq('id', currentUserId!);
         AppLogger.info('updateProfile: Profile 更新成功');
       }
 
@@ -362,6 +359,48 @@ class AuthService {
       return true;
     } catch (e) {
       AppLogger.error('Sign out failed', error: e);
+      return false;
+    }
+  }
+
+  /// Permanently delete the current account and its app data.
+  Future<bool> deleteAccount() async {
+    try {
+      final userId = currentUserId;
+      if (userId == null) {
+        AppLogger.error('deleteAccount: No user logged in');
+        return false;
+      }
+
+      AppLogger.info('Deleting account for user: $userId');
+
+      final response = await _client.functions.invoke(
+        ApiConstants.fnDeleteAccount,
+        body: {'confirm': true},
+      );
+
+      final payload = response.data;
+      if (response.status < 200 || response.status >= 300) {
+        throw Exception('Delete account failed with status ${response.status}');
+      }
+
+      if (payload is Map && payload['deleted'] != true) {
+        throw Exception(payload['error'] ?? 'Account deletion failed');
+      }
+
+      await _localStorage.clearAll();
+      await _localStorage.clearUserId();
+      try {
+        await _client.auth.signOut();
+      } catch (e) {
+        AppLogger.warning(
+            'Supabase sign out after account deletion failed: $e');
+      }
+
+      AppLogger.info('Account deleted successfully');
+      return true;
+    } catch (e) {
+      AppLogger.error('deleteAccount failed', error: e);
       return false;
     }
   }

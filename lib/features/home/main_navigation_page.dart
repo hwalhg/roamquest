@@ -115,6 +115,7 @@ class _ProfilePageState extends State<ProfilePage> {
   final SubscriptionRepository _subscriptionRepo = SubscriptionRepository();
   Map<String, dynamic>? _profileData;
   Subscription? _currentSubscription;
+  bool _isDeletingAccount = false;
 
   @override
   void initState() {
@@ -240,7 +241,9 @@ class _ProfilePageState extends State<ProfilePage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      hasPremium ? '$planName Premium' : l10n.get('premiumAccess'),
+                      hasPremium
+                          ? '$planName Premium'
+                          : l10n.get('premiumAccess'),
                       style: AppTextStyles.h4.copyWith(
                         color: AppColors.textOnDark,
                       ),
@@ -266,23 +269,23 @@ class _ProfilePageState extends State<ProfilePage> {
               color: AppColors.textOnDark.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(AppBorderRadius.lg),
             ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
                 _buildPremiumMetaRow(
                   l10n.get('statusLabel'),
                   hasPremium
                       ? l10n.get('activeStatus')
                       : l10n.get('notSubscribedStatus'),
                 ),
-                  const SizedBox(height: AppSpacing.sm),
+                const SizedBox(height: AppSpacing.sm),
                 _buildPremiumMetaRow(
                   l10n.get('planLabel'),
                   hasPremium ? planName : l10n.get('premiumAccess'),
                 ),
                 if (renewalText != null) ...[
                   const SizedBox(height: AppSpacing.sm),
-                    _buildPremiumMetaRow(l10n.get('renewalLabel'), renewalText),
+                  _buildPremiumMetaRow(l10n.get('renewalLabel'), renewalText),
                 ],
               ],
             ),
@@ -302,7 +305,8 @@ class _ProfilePageState extends State<ProfilePage> {
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.textOnDark,
-                foregroundColor: hasPremium ? AppColors.success : AppColors.primary,
+                foregroundColor:
+                    hasPremium ? AppColors.success : AppColors.primary,
               ),
               child: Text(
                 hasPremium
@@ -414,7 +418,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   right: 0,
                   child: Container(
                     padding: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(
+                    decoration: const BoxDecoration(
                       color: AppColors.primary,
                       shape: BoxShape.circle,
                     ),
@@ -479,7 +483,17 @@ class _ProfilePageState extends State<ProfilePage> {
             },
           ),
           const Divider(height: 1, color: AppColors.textOnDark),
-          // 3. 退出登录
+          // 3. 删除账号
+          _buildMenuItem(
+            icon: Icons.delete_forever_outlined,
+            iconColor: AppColors.error,
+            title: l10n.get('deleteAccount'),
+            titleColor: AppColors.error,
+            onTap:
+                _isDeletingAccount ? () {} : () => _showDeleteAccountDialog(),
+          ),
+          const Divider(height: 1, color: AppColors.textOnDark),
+          // 4. 退出登录
           _buildMenuItem(
             icon: Icons.logout,
             iconColor: AppColors.error,
@@ -508,6 +522,83 @@ class _ProfilePageState extends State<ProfilePage> {
         ),
       ),
       onTap: onTap,
+    );
+  }
+
+  void _showDeleteAccountDialog() {
+    final l10n = AppLocalizations.of(context);
+    showDialog(
+      context: context,
+      barrierDismissible: !_isDeletingAccount,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: Text(l10n.get('deleteAccount')),
+          content: Text(l10n.get('deleteAccountConfirm')),
+          actions: [
+            TextButton(
+              onPressed: _isDeletingAccount
+                  ? null
+                  : () => Navigator.pop(dialogContext),
+              child: Text(l10n.get('cancel')),
+            ),
+            ElevatedButton(
+              onPressed: _isDeletingAccount
+                  ? null
+                  : () async {
+                      setDialogState(() {
+                        _isDeletingAccount = true;
+                      });
+                      if (mounted) {
+                        setState(() {
+                          _isDeletingAccount = true;
+                        });
+                      }
+
+                      final navigator = Navigator.of(context);
+                      final dialogNavigator = Navigator.of(dialogContext);
+                      final messenger = ScaffoldMessenger.of(context);
+                      final success = await _auth.deleteAccount();
+
+                      if (!mounted) return;
+
+                      setState(() {
+                        _isDeletingAccount = false;
+                      });
+                      dialogNavigator.pop();
+
+                      if (success) {
+                        navigator.pushAndRemoveUntil(
+                          MaterialPageRoute(
+                            builder: (_) => const LoginPage(),
+                          ),
+                          (route) => false,
+                        );
+                      } else {
+                        messenger.showSnackBar(
+                          SnackBar(
+                            content: Text(l10n.get('deleteAccountFailed')),
+                          ),
+                        );
+                      }
+                    },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.error,
+                foregroundColor: AppColors.textOnDark,
+              ),
+              child: _isDeletingAccount
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: AppColors.textOnDark,
+                      ),
+                    )
+                  : Text(l10n.get('deleteAccountConfirmButton')),
+            ),
+          ],
+        ),
+      ),
     );
   }
 

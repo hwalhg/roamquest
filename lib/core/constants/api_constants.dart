@@ -17,6 +17,7 @@ class ApiConstants {
   static const String fnGenerateChecklist = 'generate-checklist';
   static const String fnVerifyAppStoreSubscription =
       'verify-app-store-subscription';
+  static const String fnDeleteAccount = 'delete-account';
 
   // Supabase Storage
   static const String storagePhotos = 'photos';

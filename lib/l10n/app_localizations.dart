@@ -54,7 +54,8 @@ class AppLocalizations {
       'recentExplorations': 'Recent Explorations',
       'startedCities': 'City Checklists',
       'customLists': 'Custom Checklists',
-      'customListsHint': 'Keep your own routes, themes, and free-form spot lists here.',
+      'customListsHint':
+          'Keep your own routes, themes, and free-form spot lists here.',
       'noStartedCities': 'No city checklists yet',
       'startedCitiesHint': 'Create a city checklist to start tracking places.',
       'pullToRefreshLists': 'Pull down to refresh your lists',
@@ -192,8 +193,7 @@ class AppLocalizations {
       'notSubscribedStatus': 'Not subscribed',
       'allCitiesUnlockedShort': 'All cities unlocked',
       'premiumAccess': 'Premium Access',
-      'premiumAccessInactiveDesc':
-          'Unlock all cities and unlimited check-ins.',
+      'premiumAccessInactiveDesc': 'Unlock all cities and unlimited check-ins.',
       'viewPremium': 'View Premium',
       'managePremium': 'Manage Premium',
       'privacyPolicy': 'Privacy Policy',
@@ -261,6 +261,12 @@ class AppLocalizations {
       'saveChanges': 'Save Changes',
       'logout': 'Logout',
       'logoutConfirm': 'Are you sure you want to logout?',
+      'deleteAccount': 'Delete Account',
+      'deleteAccountConfirm':
+          'This will permanently delete your account, profile, checklists, check-ins, subscription records, and uploaded photos. This cannot be undone.',
+      'deleteAccountConfirmButton': 'Delete Account',
+      'deleteAccountFailed':
+          'Account deletion failed. Please check your connection and try again.',
 
       // City Selection
       'selectCity': 'Select City',
@@ -504,6 +510,10 @@ class AppLocalizations {
       'saveChanges': '保存更改',
       'logout': '退出登录',
       'logoutConfirm': '确定要退出登录吗？',
+      'deleteAccount': '删除账号',
+      'deleteAccountConfirm': '这将永久删除你的账号、个人资料、清单、打卡记录、订阅记录和已上传照片。此操作不可撤销。',
+      'deleteAccountConfirmButton': '删除账号',
+      'deleteAccountFailed': '账号删除失败，请检查网络后重试。',
 
       // City Selection
       'selectCity': '选择城市',
