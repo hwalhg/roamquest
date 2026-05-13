@@ -192,31 +192,39 @@ class _LoginPageState extends State<LoginPage> {
         // Privacy policy checkbox (only for signup)
         if (!_isLogin) _buildTermsCheckbox(l10n),
         const SizedBox(height: 24),
-        SizedBox(
-          width: double.infinity,
-          height: 56,
-          child: ElevatedButton(
-            onPressed: _isLoading ? null : () => _handleSubmit(l10n),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.textOnDark,
-              foregroundColor: AppColors.primary,
-              disabledBackgroundColor:
-                  AppColors.textOnDark.withValues(alpha: 0.5),
-            ),
-            child: _isLoading
-                ? const SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: AppColors.primary,
+        ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 56),
+          child: SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: _isLoading ? null : () => _handleSubmit(l10n),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.textOnDark,
+                foregroundColor: AppColors.primary,
+                disabledBackgroundColor:
+                    AppColors.textOnDark.withValues(alpha: 0.5),
+              ),
+              child: _isLoading
+                  ? const SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: AppColors.primary,
+                      ),
+                    )
+                  : Text(
+                      _isLogin ? l10n.signIn : l10n.signUp,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        height: 1.2,
+                      ),
                     ),
-                  )
-                : Text(
-                    _isLogin ? l10n.signIn : l10n.signUp,
-                    style: const TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.w600),
-                  ),
+            ),
           ),
         ),
         const SizedBox(height: 24),
@@ -592,8 +600,10 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Widget _buildAppleSignInButton() {
+    final label = AppLocalizations.of(context).continueWithApple;
+
     return Container(
-      height: 56,
+      height: 60,
       constraints: const BoxConstraints(minWidth: 250),
       child: _isLoading
           ? Container(
@@ -601,34 +611,73 @@ class _LoginPageState extends State<LoginPage> {
                 color: Colors.black.withValues(alpha: 0.72),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2.2,
-                      color: Colors.white,
-                    ),
+              child: const Center(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.2,
+                          color: Colors.white,
+                        ),
+                      ),
+                      SizedBox(width: 12),
+                      Text(
+                        'Signing in...',
+                        maxLines: 1,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          height: 1.2,
+                          letterSpacing: 0,
+                        ),
+                      ),
+                    ],
                   ),
-                  SizedBox(width: 12),
-                  Text(
-                    'Signing in...',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
+                ),
               ),
             )
-          : SignInWithAppleButton(
-              onPressed: _handleAppleSignIn,
-              text: AppLocalizations.of(context).continueWithApple,
-              height: 56,
-              style: SignInWithAppleButtonStyle.black,
+          : Semantics(
+              button: true,
+              label: label,
+              child: ElevatedButton(
+                onPressed: _handleAppleSignIn,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.black,
+                  foregroundColor: Colors.white,
+                  disabledBackgroundColor: Colors.black.withValues(alpha: 0.6),
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(horizontal: 18),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.apple, size: 30),
+                      const SizedBox(width: 12),
+                      Text(
+                        label,
+                        maxLines: 1,
+                        style: const TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w500,
+                          height: 1.1,
+                          letterSpacing: 0,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ),
     );
   }

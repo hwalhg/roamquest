@@ -93,7 +93,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
         width: 100,
         height: 100,
         decoration: BoxDecoration(
-          color: AppColors.textOnDark.withValues(alpha:0.2),
+          color: AppColors.textOnDark.withValues(alpha: 0.2),
           shape: BoxShape.circle,
         ),
         child: avatarUrl != null
@@ -137,7 +137,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
         Text(
           'Let\'s set up your profile',
           style: AppTextStyles.bodyMedium.copyWith(
-            color: AppColors.textOnDark.withValues(alpha:0.9),
+            color: AppColors.textOnDark.withValues(alpha: 0.9),
           ),
         ),
       ],
@@ -157,9 +157,9 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
           decoration: InputDecoration(
             labelText: 'Display Name',
             filled: true,
-            fillColor: AppColors.textOnDark.withValues(alpha:0.15),
+            fillColor: AppColors.textOnDark.withValues(alpha: 0.15),
             labelStyle: AppTextStyles.bodyMedium.copyWith(
-              color: AppColors.textOnDark.withValues(alpha:0.8),
+              color: AppColors.textOnDark.withValues(alpha: 0.8),
             ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppBorderRadius.lg),
@@ -187,9 +187,9 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
           decoration: InputDecoration(
             labelText: 'Username (optional)',
             filled: true,
-            fillColor: AppColors.textOnDark.withValues(alpha:0.15),
+            fillColor: AppColors.textOnDark.withValues(alpha: 0.15),
             labelStyle: AppTextStyles.bodyMedium.copyWith(
-              color: AppColors.textOnDark.withValues(alpha:0.8),
+              color: AppColors.textOnDark.withValues(alpha: 0.8),
             ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppBorderRadius.lg),
@@ -239,7 +239,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
         Text(
           'Choose a unique username so others can find you',
           style: AppTextStyles.bodySmall.copyWith(
-            color: AppColors.textOnDark.withValues(alpha:0.7),
+            color: AppColors.textOnDark.withValues(alpha: 0.7),
           ),
         ),
       ],
@@ -250,10 +250,10 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        color: AppColors.error.withValues(alpha:0.2),
+        color: AppColors.error.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(AppBorderRadius.md),
         border: Border.all(
-          color: AppColors.error.withValues(alpha:0.5),
+          color: AppColors.error.withValues(alpha: 0.5),
         ),
       ),
       child: Row(
@@ -278,29 +278,39 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
   }
 
   Widget _buildContinueButton() {
-    return SizedBox(
-      width: double.infinity,
-      height: 56,
-      child: ElevatedButton(
-        onPressed: _isLoading ? null : _handleContinue,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.textOnDark,
-          foregroundColor: AppColors.primary,
-          disabledBackgroundColor: AppColors.textOnDark.withValues(alpha:0.5),
-        ),
-        child: _isLoading
-            ? const SizedBox(
-                width: 24,
-                height: 24,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: AppColors.primary,
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: 56),
+      child: SizedBox(
+        width: double.infinity,
+        child: ElevatedButton(
+          onPressed: _isLoading ? null : _handleContinue,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.textOnDark,
+            foregroundColor: AppColors.primary,
+            disabledBackgroundColor:
+                AppColors.textOnDark.withValues(alpha: 0.5),
+          ),
+          child: _isLoading
+              ? const SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: AppColors.primary,
+                  ),
+                )
+              : const Text(
+                  'Continue',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    height: 1.2,
+                  ),
                 ),
-              )
-            : const Text(
-                'Continue',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-              ),
+        ),
       ),
     );
   }
@@ -311,7 +321,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
       child: Text(
         'Skip for now',
         style: AppTextStyles.bodyMedium.copyWith(
-          color: AppColors.textOnDark.withValues(alpha:0.8),
+          color: AppColors.textOnDark.withValues(alpha: 0.8),
         ),
       ),
     );

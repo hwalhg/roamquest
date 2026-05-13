@@ -302,18 +302,27 @@ class _CitySubscriptionPageState extends State<CitySubscriptionPage> {
   }
 
   Widget _buildSubscribeButton() {
-    return SizedBox(
-      width: double.infinity,
-      height: 56,
-      child: ElevatedButton(
-        onPressed: _goToSubscriptionPage,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.textOnDark,
-          foregroundColor: AppColors.primary,
-        ),
-        child: const Text(
-          'View Subscription Plans',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: 56),
+      child: SizedBox(
+        width: double.infinity,
+        child: ElevatedButton(
+          onPressed: _goToSubscriptionPage,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.textOnDark,
+            foregroundColor: AppColors.primary,
+          ),
+          child: const Text(
+            'View Subscription Plans',
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              height: 1.2,
+            ),
+          ),
         ),
       ),
     );

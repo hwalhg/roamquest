@@ -212,15 +212,21 @@ class _ChecklistPageState extends State<ChecklistPage>
             AppSpacing.lg,
             AppSpacing.lg,
           ),
-          child: SizedBox(
-            height: 54,
-            child: ElevatedButton.icon(
-              onPressed: _handleAddCustomSpot,
-              icon: const Icon(Icons.add_location_alt_outlined),
-              label: Text(
-                _items.isEmpty
-                    ? l10n.get('addFirstSpot')
-                    : l10n.get('addSpot'),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 54),
+            child: SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: _handleAddCustomSpot,
+                icon: const Icon(Icons.add_location_alt_outlined),
+                label: Text(
+                  _items.isEmpty
+                      ? l10n.get('addFirstSpot')
+                      : l10n.get('addSpot'),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                ),
               ),
             ),
           ),

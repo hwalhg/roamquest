@@ -754,31 +754,38 @@ class _ReportPageState extends State<ReportPage> {
       ),
       child: SafeArea(
         top: false,
-        child: SizedBox(
-          height: 56,
-          child: ElevatedButton.icon(
-            onPressed: canShare && !_isOpeningPreview ? _showShareDialog : null,
-            icon: _isOpeningPreview
-                ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.white,
-                    ),
-                  )
-                : const Icon(Icons.auto_awesome),
-            label: Text(
-              canShare
-                  ? 'Generate Share Poster'
-                  : 'Complete a check-in to share',
-            ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: _reportInk,
-              foregroundColor: Colors.white,
-              disabledBackgroundColor: _reportMuted.withValues(alpha: 0.24),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(18),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 56),
+          child: SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed:
+                  canShare && !_isOpeningPreview ? _showShareDialog : null,
+              icon: _isOpeningPreview
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : const Icon(Icons.auto_awesome),
+              label: Text(
+                canShare
+                    ? 'Generate Share Poster'
+                    : 'Complete a check-in to share',
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _reportInk,
+                foregroundColor: Colors.white,
+                disabledBackgroundColor: _reportMuted.withValues(alpha: 0.24),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(18),
+                ),
               ),
             ),
           ),

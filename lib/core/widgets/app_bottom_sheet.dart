@@ -149,23 +149,27 @@ class AppActionSheet extends StatelessWidget {
   }
 
   Widget _buildActionButton(BuildContext context, AppActionSheetItem action) {
-    return SizedBox(
-      width: double.infinity,
-      height: 56,
-      child: ElevatedButton(
-        onPressed: () {
-          Navigator.pop(context, action.value);
-          action.onTap?.call();
-        },
-        style: ElevatedButton.styleFrom(
-          backgroundColor: action.isDestructive
-              ? AppColors.error
-              : AppColors.primary,
-        ),
-        child: Text(
-          action.label,
-          style: AppTextStyles.button.copyWith(
-            color: AppColors.textOnDark,
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: 56),
+      child: SizedBox(
+        width: double.infinity,
+        child: ElevatedButton(
+          onPressed: () {
+            Navigator.pop(context, action.value);
+            action.onTap?.call();
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor:
+                action.isDestructive ? AppColors.error : AppColors.primary,
+          ),
+          child: Text(
+            action.label,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+            style: AppTextStyles.button.copyWith(
+              color: AppColors.textOnDark,
+            ),
           ),
         ),
       ),

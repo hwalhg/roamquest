@@ -405,8 +405,8 @@ class _HomePageState extends State<HomePage> {
                         GestureDetector(
                           onTap: _showCitySelection,
                           child: Container(
-                            width: 160,
-                            height: 160,
+                            width: 168,
+                            height: 168,
                             decoration: BoxDecoration(
                               color: const Color(0xFF4CAF50),
                               shape: BoxShape.circle,
@@ -428,14 +428,28 @@ class _HomePageState extends State<HomePage> {
                                         color: Color(0xFF6A11CB),
                                       ),
                                     )
-                                  : Text(
-                                      l10n.createChecklist,
-                                      style: const TextStyle(
-                                        color: Color(0xFF6A11CB),
-                                        fontSize: 20,
-                                        fontWeight: FontWeight.bold,
+                                  : Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 20,
                                       ),
-                                      textAlign: TextAlign.center,
+                                      child: FittedBox(
+                                        fit: BoxFit.scaleDown,
+                                        child: Text(
+                                          l10n.createChecklist.replaceFirst(
+                                            ' ',
+                                            '\n',
+                                          ),
+                                          style: const TextStyle(
+                                            color: Color(0xFF6A11CB),
+                                            fontSize: 20,
+                                            fontWeight: FontWeight.bold,
+                                            height: 1.15,
+                                          ),
+                                          maxLines: 2,
+                                          softWrap: false,
+                                          textAlign: TextAlign.center,
+                                        ),
+                                      ),
                                     ),
                             ),
                           ),

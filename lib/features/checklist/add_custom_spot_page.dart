@@ -46,7 +46,8 @@ class _AddCustomSpotPageState extends State<AddCustomSpotPage> {
     super.initState();
     _titleController.text = widget.initialItem?.title ?? '';
     _locationController.text = widget.initialItem?.location ?? '';
-    _selectedCategory = widget.initialItem?.category ?? AppConstants.categories.first;
+    _selectedCategory =
+        widget.initialItem?.category ?? AppConstants.categories.first;
     _spotLatitude = widget.initialItem?.spotLatitude;
     _spotLongitude = widget.initialItem?.spotLongitude;
   }
@@ -223,7 +224,8 @@ class _AddCustomSpotPageState extends State<AddCustomSpotPage> {
               ),
               const SizedBox(height: AppSpacing.md),
               OutlinedButton.icon(
-                onPressed: _isCapturingLocation ? null : _captureCurrentLocation,
+                onPressed:
+                    _isCapturingLocation ? null : _captureCurrentLocation,
                 icon: _isCapturingLocation
                     ? const SizedBox(
                         width: 18,
@@ -308,21 +310,27 @@ class _AddCustomSpotPageState extends State<AddCustomSpotPage> {
             AppSpacing.lg,
             AppSpacing.lg,
           ),
-          child: SizedBox(
-            height: 52,
-            child: ElevatedButton(
-              onPressed: _isSaving
-                  ? null
-                  : () {
-                      setState(() {
-                        _isSaving = true;
-                      });
-                      _saveSpot();
-                    },
-              child: Text(
-                _isEditing
-                    ? l10n.get('saveChecklistChanges')
-                    : l10n.get('saveAndCheckin'),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 52),
+            child: SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _isSaving
+                    ? null
+                    : () {
+                        setState(() {
+                          _isSaving = true;
+                        });
+                        _saveSpot();
+                      },
+                child: Text(
+                  _isEditing
+                      ? l10n.get('saveChecklistChanges')
+                      : l10n.get('saveAndCheckin'),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                ),
               ),
             ),
           ),

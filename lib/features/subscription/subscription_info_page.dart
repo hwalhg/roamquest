@@ -74,7 +74,7 @@ class SubscriptionInfoPage extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(AppSpacing.lg),
           decoration: BoxDecoration(
-            color: AppColors.textOnDark.withValues(alpha:0.2),
+            color: AppColors.textOnDark.withValues(alpha: 0.2),
             shape: BoxShape.circle,
           ),
           child: const Icon(
@@ -94,7 +94,7 @@ class SubscriptionInfoPage extends StatelessWidget {
         Text(
           l10n.appSlogan,
           style: AppTextStyles.bodyMedium.copyWith(
-            color: AppColors.textOnDark.withValues(alpha:0.9),
+            color: AppColors.textOnDark.withValues(alpha: 0.9),
           ),
         ),
       ],
@@ -105,10 +105,10 @@ class SubscriptionInfoPage extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
-        color: AppColors.textOnDark.withValues(alpha:0.15),
+        color: AppColors.textOnDark.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(AppBorderRadius.lg),
         border: Border.all(
-          color: AppColors.textOnDark.withValues(alpha:0.2),
+          color: AppColors.textOnDark.withValues(alpha: 0.2),
         ),
       ),
       child: Column(
@@ -119,7 +119,7 @@ class SubscriptionInfoPage extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(AppSpacing.sm),
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha:0.2),
+                  color: AppColors.primary.withValues(alpha: 0.2),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
@@ -161,10 +161,10 @@ class SubscriptionInfoPage extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
-        color: AppColors.success.withValues(alpha:0.1),
+        color: AppColors.success.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(AppBorderRadius.lg),
         border: Border.all(
-          color: AppColors.success.withValues(alpha:0.5),
+          color: AppColors.success.withValues(alpha: 0.5),
           width: 2,
         ),
       ),
@@ -176,7 +176,7 @@ class SubscriptionInfoPage extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(AppSpacing.sm),
                 decoration: BoxDecoration(
-                  color: AppColors.success.withValues(alpha:0.2),
+                  color: AppColors.success.withValues(alpha: 0.2),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
@@ -218,10 +218,10 @@ class SubscriptionInfoPage extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
-        color: AppColors.textOnDark.withValues(alpha:0.15),
+        color: AppColors.textOnDark.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(AppBorderRadius.lg),
         border: Border.all(
-          color: AppColors.textOnDark.withValues(alpha:0.2),
+          color: AppColors.textOnDark.withValues(alpha: 0.2),
         ),
       ),
       child: Column(
@@ -232,7 +232,7 @@ class SubscriptionInfoPage extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(AppSpacing.sm),
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha:0.2),
+                  color: AppColors.primary.withValues(alpha: 0.2),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
@@ -299,7 +299,7 @@ class SubscriptionInfoPage extends StatelessWidget {
               Text(
                 description,
                 style: AppTextStyles.bodySmall.copyWith(
-                  color: AppColors.textOnDark.withValues(alpha:0.8),
+                  color: AppColors.textOnDark.withValues(alpha: 0.8),
                 ),
               ),
             ],
@@ -349,7 +349,7 @@ class SubscriptionInfoPage extends StatelessWidget {
               Text(
                 description,
                 style: AppTextStyles.bodySmall.copyWith(
-                  color: AppColors.textOnDark.withValues(alpha:0.8),
+                  color: AppColors.textOnDark.withValues(alpha: 0.8),
                 ),
               ),
             ],
@@ -360,24 +360,33 @@ class SubscriptionInfoPage extends StatelessWidget {
   }
 
   Widget _buildStartButton(BuildContext context, AppLocalizations l10n) {
-    return SizedBox(
-      width: double.infinity,
-      height: 56,
-      child: ElevatedButton(
-        onPressed: () {
-          // Navigate to home page and clear all previous routes
-          Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(builder: (_) => const MainNavigationPage()),
-            (route) => false,
-          );
-        },
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.textOnDark,
-          foregroundColor: AppColors.primary,
-        ),
-        child: Text(
-          l10n.get('startExploring'),
-          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: 56),
+      child: SizedBox(
+        width: double.infinity,
+        child: ElevatedButton(
+          onPressed: () {
+            // Navigate to home page and clear all previous routes
+            Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(builder: (_) => const MainNavigationPage()),
+              (route) => false,
+            );
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.textOnDark,
+            foregroundColor: AppColors.primary,
+          ),
+          child: Text(
+            l10n.get('startExploring'),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              height: 1.2,
+            ),
+          ),
         ),
       ),
     );

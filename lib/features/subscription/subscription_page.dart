@@ -1136,36 +1136,45 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
   }
 
   Widget _buildPurchaseButton(AppLocalizations l10n) {
-    return SizedBox(
-      width: double.infinity,
-      height: 56,
-      child: ElevatedButton(
-        onPressed: _isPurchasing ||
-                _selectedProduct == null ||
-                _hasActivePremiumSubscription
-            ? null
-            : _purchaseSubscription,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.textOnDark,
-          foregroundColor: AppColors.primary,
-          disabledBackgroundColor: AppColors.textOnDark.withValues(alpha: 0.5),
-        ),
-        child: _isPurchasing
-            ? const SizedBox(
-                width: 24,
-                height: 24,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: AppColors.primary,
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: 56),
+      child: SizedBox(
+        width: double.infinity,
+        child: ElevatedButton(
+          onPressed: _isPurchasing ||
+                  _selectedProduct == null ||
+                  _hasActivePremiumSubscription
+              ? null
+              : _purchaseSubscription,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.textOnDark,
+            foregroundColor: AppColors.primary,
+            disabledBackgroundColor:
+                AppColors.textOnDark.withValues(alpha: 0.5),
+          ),
+          child: _isPurchasing
+              ? const SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: AppColors.primary,
+                  ),
+                )
+              : Text(
+                  _hasActivePremiumSubscription
+                      ? 'Premium Active'
+                      : l10n.get('subscribeNow'),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    height: 1.2,
+                  ),
                 ),
-              )
-            : Text(
-                _hasActivePremiumSubscription
-                    ? 'Premium Active'
-                    : l10n.get('subscribeNow'),
-                style:
-                    const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-              ),
+        ),
       ),
     );
   }
@@ -1180,36 +1189,50 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
         ? '${l10n.get('appleManagesRenewals')} ${DateFormat('yyyy-MM-dd HH:mm').format(subscription!.endDate!)}'
         : l10n.get('appleManageBillingFallback');
 
-    return SizedBox(
-      width: double.infinity,
-      height: 64,
-      child: OutlinedButton(
-        onPressed: () => _openUrl(AppLinks.appleSubscriptionHelpUrl),
-        style: OutlinedButton.styleFrom(
-          side: BorderSide(
-            color: AppColors.textOnDark.withValues(alpha: 0.65),
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: 64),
+      child: SizedBox(
+        width: double.infinity,
+        child: OutlinedButton(
+          onPressed: () => _openUrl(AppLinks.appleSubscriptionHelpUrl),
+          style: OutlinedButton.styleFrom(
+            side: BorderSide(
+              color: AppColors.textOnDark.withValues(alpha: 0.65),
+            ),
+            foregroundColor: AppColors.textOnDark,
           ),
-          foregroundColor: AppColors.textOnDark,
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              '${l10n.get('manageInApple')} · $periodName',
-              style: const TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
-              ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  '${l10n.get('manageInApple')} · $periodName',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    height: 1.2,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  renewalText,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 12,
+                    height: 1.2,
+                    color: AppColors.textOnDark.withValues(alpha: 0.75),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 2),
-            Text(
-              renewalText,
-              style: TextStyle(
-                fontSize: 12,
-                color: AppColors.textOnDark.withValues(alpha: 0.75),
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );

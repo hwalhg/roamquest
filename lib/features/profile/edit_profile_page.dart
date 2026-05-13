@@ -368,33 +368,41 @@ class _EditProfilePageState extends State<EditProfilePage> {
                         const SizedBox(height: 32),
 
                         // Save button
-                        SizedBox(
-                          width: double.infinity,
-                          height: 56,
-                          child: ElevatedButton(
-                            onPressed: _isLoading ? null : _saveProfile,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.textOnDark,
-                              foregroundColor: AppColors.primary,
-                              disabledBackgroundColor:
-                                  AppColors.textOnDark.withValues(alpha: 0.5),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
+                        ConstrainedBox(
+                          constraints: const BoxConstraints(minHeight: 56),
+                          child: SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed: _isLoading ? null : _saveProfile,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.textOnDark,
+                                foregroundColor: AppColors.primary,
+                                disabledBackgroundColor:
+                                    AppColors.textOnDark.withValues(alpha: 0.5),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
                               ),
-                            ),
-                            child: _isLoading
-                                ? const SizedBox(
-                                    width: 24,
-                                    height: 24,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: AppColors.primary,
+                              child: _isLoading
+                                  ? const SizedBox(
+                                      width: 24,
+                                      height: 24,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: AppColors.primary,
+                                      ),
+                                    )
+                                  : const Text(
+                                      'Save',
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        height: 1.2,
+                                      ),
                                     ),
-                                  )
-                                : const Text(
-                                    'Save',
-                                    style: TextStyle(fontSize: 18),
-                                  ),
+                            ),
                           ),
                         ),
                       ],

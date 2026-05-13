@@ -408,28 +408,43 @@ class _CheckinPageState extends State<CheckinPage> {
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
       child: Column(
         children: [
-          SizedBox(
-            width: double.infinity,
-            height: 48,
-            child: ElevatedButton.icon(
-              onPressed: () => _pickImage(ImageSource.camera),
-              icon: const Icon(Icons.camera_alt, size: 20),
-              label: Text(l10n.takePhoto, style: const TextStyle(fontSize: 15)),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: AppColors.textOnDark,
+          ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 48),
+            child: SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () => _pickImage(ImageSource.camera),
+                icon: const Icon(Icons.camera_alt, size: 20),
+                label: Text(
+                  l10n.takePhoto,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 15, height: 1.2),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: AppColors.textOnDark,
+                ),
               ),
             ),
           ),
           const SizedBox(height: AppSpacing.sm),
-          SizedBox(
-            width: double.infinity,
-            height: 48,
-            child: OutlinedButton.icon(
-              onPressed: () => _pickImage(ImageSource.gallery),
-              icon: const Icon(Icons.photo_library, size: 20),
-              label: Text(l10n.selectFromGallery,
-                  style: const TextStyle(fontSize: 15)),
+          ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 48),
+            child: SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () => _pickImage(ImageSource.gallery),
+                icon: const Icon(Icons.photo_library, size: 20),
+                label: Text(
+                  l10n.selectFromGallery,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 15, height: 1.2),
+                ),
+              ),
             ),
           ),
           if (_imageFile != null ||
@@ -437,26 +452,33 @@ class _CheckinPageState extends State<CheckinPage> {
                   widget.item.photoUrl != null &&
                   widget.item.photoUrl!.isNotEmpty)) ...[
             const SizedBox(height: AppSpacing.md),
-            SizedBox(
-              width: double.infinity,
-              height: 48,
-              child: ElevatedButton(
-                onPressed: _isUploading ? null : _completeCheckin,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.success,
-                  foregroundColor: AppColors.textOnDark,
-                ),
-                child: _isUploading
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: AppColors.textOnDark,
+            ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 48),
+              child: SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _isUploading ? null : _completeCheckin,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.success,
+                    foregroundColor: AppColors.textOnDark,
+                  ),
+                  child: _isUploading
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: AppColors.textOnDark,
+                          ),
+                        )
+                      : Text(
+                          _isEditMode ? 'Save Changes' : l10n.completeCheckin,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(fontSize: 15, height: 1.2),
                         ),
-                      )
-                    : Text(_isEditMode ? 'Save Changes' : l10n.completeCheckin,
-                        style: const TextStyle(fontSize: 15)),
+                ),
               ),
             ),
           ],

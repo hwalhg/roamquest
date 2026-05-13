@@ -133,21 +133,27 @@ class _CreateCustomChecklistPageState extends State<CreateCustomChecklistPage> {
             AppSpacing.lg,
             AppSpacing.lg,
           ),
-          child: SizedBox(
-            height: 52,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 52),
+            child: SizedBox(
+              width: double.infinity,
               child: ElevatedButton(
-              onPressed: _isSaving
-                  ? null
-                  : () {
-                      setState(() {
-                        _isSaving = true;
-                      });
-                      _saveChecklist();
-                    },
-              child: Text(
-                _isEditing
-                    ? l10n.get('saveChecklistChanges')
-                    : l10n.get('saveChecklistAndAddSpot'),
+                onPressed: _isSaving
+                    ? null
+                    : () {
+                        setState(() {
+                          _isSaving = true;
+                        });
+                        _saveChecklist();
+                      },
+                child: Text(
+                  _isEditing
+                      ? l10n.get('saveChecklistChanges')
+                      : l10n.get('saveChecklistAndAddSpot'),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                ),
               ),
             ),
           ),
